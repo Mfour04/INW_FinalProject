@@ -12,16 +12,12 @@ using System.Threading.Tasks;
 namespace Infrastructure.Repositories.Implements
 {
     public class BaseRepository<T> : IBaseRepository<T> where T : class
-
     {
-        private readonly InwDataContext _context;
         private readonly IMongoCollection<T> _collection;
-
-        public BaseRepository(InwDataContext context, string collectionName)
+        public BaseRepository(MongoDBHelper mongoDBHelper, string collectionName)
         {
-            _context = context;
-            _collection = context.GetCollection<T>(collectionName); 
-
+            // Truy cập trực tiếp collection thông qua MongoDBHelper
+            _collection = mongoDBHelper.GetCollection<T>(collectionName);
         }
 
         public async Task<T> AddAsync(T entity)
@@ -63,4 +59,5 @@ namespace Infrastructure.Repositories.Implements
             return await _collection.Find(Builders<T>.Filter.Eq("_id", id)).FirstOrDefaultAsync();
         }
     }
+
 }

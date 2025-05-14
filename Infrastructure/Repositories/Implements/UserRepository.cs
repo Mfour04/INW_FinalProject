@@ -13,9 +13,9 @@ namespace Infrastructure.Repositories.Implements
     public class UserRepository : BaseRepository<Users>, IUserRepository
     {
         private readonly IMongoCollection<Users> _userCollection;
-        public UserRepository(InwDataContext context) : base(context, "Users")
+        public UserRepository(MongoDBHelper mongoDBHelper) : base(mongoDBHelper, "Users")
         {
-            _userCollection = context.GetCollection<Users>("Users");
+            _userCollection = mongoDBHelper.GetCollection<Users>("Users");
         }
 
         public async Task<Users> CreateUser(Users users)
