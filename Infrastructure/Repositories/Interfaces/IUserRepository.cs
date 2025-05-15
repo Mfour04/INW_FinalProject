@@ -11,5 +11,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<Users> CreateUser(Users users);
         Task<Users> GetByEmail(string email);
         Task<Users> GetById(string userId);
+        Task<Users> GetByName(string userName);
     }
 }
