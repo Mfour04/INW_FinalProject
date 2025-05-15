@@ -36,5 +36,11 @@ namespace Infrastructure.Repositories.Implements
             var filter = Builders<Users>.Filter.Eq(u => u.UserId, userId);
             return await _userCollection.Find(filter).FirstOrDefaultAsync();
         }
+
+        public async Task<Users> GetByName(string userName)
+        {
+            var filter = Builders<Users>.Filter.Eq(u => u.Username, userName);
+            return await _userCollection.Find(filter).FirstOrDefaultAsync();
+        }
     }
 }
