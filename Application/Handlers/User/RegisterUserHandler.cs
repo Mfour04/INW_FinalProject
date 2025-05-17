@@ -3,6 +3,7 @@ using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Respone;
+using Shared.SystemHelpers.TokenGenerate;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,9 +15,11 @@ namespace Application.Handlers.User
     public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
-        public RegisterUserHandler(IUserRepository userRepository)
+        private readonly JwtHelpers _jwtHelpers;
+        public RegisterUserHandler(IUserRepository userRepository, JwtHelpers jwtHelpers)
         {
             _userRepository = userRepository;
+            _jwtHelpers = jwtHelpers;
         }
         public async Task<ApiResponse> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
         {
@@ -40,7 +43,7 @@ namespace Application.Handlers.User
                 };
             }
 
-            var user = new Users
+            var newUser = new Users
             {
                 Username = registerRequest.Username,
                 Email = registerRequest.Email,
@@ -50,12 +53,20 @@ namespace Application.Handlers.User
                 UpdatedAt = DateTime.UtcNow
             };
 
-            await _userRepository.CreateUser(user);
+            await _userRepository.CreateUser(newUser);
+
+            var token = _jwtHelpers.Generate(
+                newUser.UserId.ToString(),
+                newUser.Username,
+                newUser.Role.ToString()
+            );
+
+
             return new ApiResponse
             {
                 Success = true,
                 Message = "Register successfull",
-                Data = user
+                Data = newUser
             };
         }
     }

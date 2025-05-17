@@ -4,7 +4,7 @@ using Infrastructure;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
-using Shared.SystemHelpers;
+using Shared.SystemHelpers.TokenGenerate;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,16 +17,14 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<MongoSetting>(
     builder.Configuration.GetSection("MongoDB"));
 
-builder.Services.AddSingleton<MongoDBHelper>();
-builder.Services.AddSingleton<JwtHelpers>();
+builder.Services.AddInfrastructure(builder.Configuration);
+//builder.Services.AddApplication();
 
 builder.Services.AddMediatR(config =>
 {
     config.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
 });
 
-builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",

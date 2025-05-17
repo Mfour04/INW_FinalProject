@@ -4,9 +4,10 @@ using AutoMapper;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Respone;
-using Shared.SystemHelpers;
+using Shared.SystemHelpers.TokenGenerate;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,7 +47,11 @@ namespace Application.Handlers.User
                 throw new ApiException("Invalid email or password.");
             }
 
-            var token = _jwtHelpers.Generate(user);
+            //var token = _jwtHelpers.Generate(user);
+
+            var accessToken = _jwtHelpers.Generate(user.UserId, user.Email, user.Role);
+            var refreshToken = _jwtHelpers.GenerateRefreshToken(user.UserId);
+
 
             var userResponse = _mapper.Map<UserRespone>(user);
 
@@ -56,7 +61,8 @@ namespace Application.Handlers.User
                 Message = "Login successful.",
                 Data = new
                 {
-                    Token = token,
+                    AcessToken = accessToken,
+                    RefreshToken = refreshToken,
                     User = userResponse
                 }
             };

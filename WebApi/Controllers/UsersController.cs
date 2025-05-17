@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Contracts.Request;
-using Shared.SystemHelpers;
+using Shared.SystemHelpers.TokenGenerate;
 using System.Security.Claims;
 
 namespace WebApi.Controllers
