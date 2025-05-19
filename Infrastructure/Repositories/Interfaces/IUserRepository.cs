@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Domain.Entities;
+﻿using Domain.Entities;
+
 namespace Infrastructure.Repositories.Interfaces
 {
-    public interface IUserRepository : IBaseRepository<Users>
+    public interface IUserRepository
     {
-        Task<Users> CreateUser(Users users);
-        Task<Users> GetByEmail(string email);
-        Task<Users> GetById(string userId);
-        Task<Users> GetByName(string userName);
+        Task<UserEntity> CreateUser(UserEntity entity);
+        Task<UserEntity> GetByEmail(string email);
+        Task<UserEntity> GetById(string userId);
+        Task<UserEntity> GetByName(string userName);
     }
 }

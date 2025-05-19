@@ -1,23 +1,22 @@
-﻿using Application.Queries;
-using Infrastructure.Repositories.Interfaces;
+﻿using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Respone;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Application.Handlers.User
+namespace Application.Features.User.Queries
 {
-    public class GetUserByIdHanlder : IRequestHandler<GetUserByIdQuery, ApiResponse>
+    public class GetUserById : IRequest<ApiResponse>
+    {
+        public string UserId { get; set; }
+    }
+
+    public class GetUserByIdHanlder : IRequestHandler<GetUserById, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
         public GetUserByIdHanlder(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
-        public async Task<ApiResponse> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(GetUserById request, CancellationToken cancellationToken)
         {
             try
             {
@@ -26,7 +25,8 @@ namespace Application.Handlers.User
                     return new ApiResponse { Success = false, Message = "User not found" };
 
                 return new ApiResponse { Success = true, Data = user };
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 return new ApiResponse { Success = false, Message = $"An error occurred: {ex.Message}" };
             }
