@@ -1,47 +1,46 @@
-﻿using Application.Commands.Users;
-using Application.Exceptions;
+﻿using Application.Exceptions;
 using AutoMapper;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Respone;
 using Shared.SystemHelpers.TokenGenerate;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Application.Handlers.User
+namespace Application.Auth.Commands
 {
+    public class LoginCommand : IRequest<ApiResponse>
+    {
+        public string Email { get; set; }
+        public string PasswordHash { get; set; }
+    }
+
     public class LoginHandler : IRequestHandler<LoginCommand, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
         private readonly JwtHelpers _jwtHelpers;
         private readonly IMapper _mapper;
+
         public LoginHandler(IUserRepository userRepository, JwtHelpers jwtHelpers, IMapper mapper)
         {
             _userRepository = userRepository;
             _jwtHelpers = jwtHelpers;
             _mapper = mapper;
         }
+        
         public async Task<ApiResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            var loginRequest = request.LoginRequest;
-
-            if (string.IsNullOrWhiteSpace(loginRequest.Email) || string.IsNullOrWhiteSpace(loginRequest.PasswordHash))
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.PasswordHash))
             {
                 throw new ApiException("Email and Password are required.");
             }
 
-            var user = await _userRepository.GetByEmail(loginRequest.Email);
+            var user = await _userRepository.GetByEmail(request.Email);
             if (user == null)
             {
                 throw new ApiException("Invalid email or password.");
             }
 
             // Kiểm tra mật khẩu
-            var isValidPassword = BCrypt.Net.BCrypt.Verify(loginRequest.PasswordHash, user.PasswordHash);
+            var isValidPassword = BCrypt.Net.BCrypt.Verify(request.PasswordHash, user.password_hash);
             if (!isValidPassword)
             {
                 throw new ApiException("Invalid email or password.");
@@ -49,8 +48,8 @@ namespace Application.Handlers.User
 
             //var token = _jwtHelpers.Generate(user);
 
-            var accessToken = _jwtHelpers.Generate(user.UserId, user.Email, user.Role);
-            var refreshToken = _jwtHelpers.GenerateRefreshToken(user.UserId);
+            var accessToken = _jwtHelpers.Generate(user.id, user.email, user.role.ToString());
+            var refreshToken = _jwtHelpers.GenerateRefreshToken(user.id);
 
 
             var userResponse = _mapper.Map<UserRespone>(user);

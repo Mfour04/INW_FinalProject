@@ -1,10 +1,8 @@
-﻿using Application.Commands.Users;
-using Application.Queries;
+﻿using Application.Auth.Commands;
+using Application.Features.User.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Contracts.Request;
 using Shared.SystemHelpers.TokenGenerate;
 using System.Security.Claims;
 
@@ -25,9 +23,9 @@ namespace WebApi.Controllers
 
         // Đăng ký người dùng mới
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] RegisterCommand request)
         {
-            var result = await _mediator.Send(new RegisterUserCommand { RegisterRequest = request });
+            var result = await _mediator.Send(request);
 
             if (!result.Success)
                 return BadRequest(result);
@@ -37,9 +35,9 @@ namespace WebApi.Controllers
 
         // Đăng nhập và lấy JWT
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginCommand request)
         {
-            var result = await _mediator.Send(new LoginCommand { LoginRequest = request });
+            var result = await _mediator.Send(request);
 
             if (!result.Success)
                 return BadRequest(result);
@@ -96,7 +94,7 @@ namespace WebApi.Controllers
                 var token = _jwtHelpers.Verify(jwt);
 
                 var userId = token.Issuer;
-                var result = await _mediator.Send(new GetUserByIdQuery { UserId = userId });
+                var result = await _mediator.Send(new GetUserById { UserId = userId });
 
                 if (!result.Success) return Unauthorized();
 

@@ -2,45 +2,76 @@
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Shared.Exceptions;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
-    public class UserRepository : BaseRepository<Users>, IUserRepository
+    public class UserRepository : IUserRepository
     {
-        private readonly IMongoCollection<Users> _userCollection;
-        public UserRepository(MongoDBHelper mongoDBHelper) : base(mongoDBHelper, "Users")
+        private readonly IMongoCollection<UserEntity> _collection;
+
+        public UserRepository(MongoDBHelper mongoDBHelper)
         {
-            _userCollection = mongoDBHelper.GetCollection<Users>("Users");
+            // Tạo collection nếu chưa có
+            mongoDBHelper.CreateCollectionIfNotExistsAsync("user").Wait();
+
+            // Gán collection
+            _collection = mongoDBHelper.GetCollection<UserEntity>("user");
         }
 
-        public async Task<Users> CreateUser(Users users)
+        public async Task<UserEntity> CreateUser(UserEntity entity)
         {
-            users.CreatedAt = DateTime.UtcNow;
-            await _userCollection.InsertOneAsync(users);
-            return users;
+            try
+            {
+				entity.user_name_normalized = SystemHelper.RemoveDiacritics(entity.user_name);
+				await _collection.InsertOneAsync(entity);
+
+                return entity;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
 
-        public async Task<Users> GetByEmail(string email)
+        public async Task<UserEntity> GetByEmail(string email)
         {
-            var filter = Builders<Users>.Filter.Eq(u => u.Email, email);
-            return await _userCollection.Find(filter).FirstOrDefaultAsync();
+            try
+            {
+                var result = await _collection.Find(x => x.email == email).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
 
-        public async Task<Users> GetById(string userId)
+        public async Task<UserEntity> GetById(string userId)
         {
-            var filter = Builders<Users>.Filter.Eq(u => u.UserId, userId);
-            return await _userCollection.Find(filter).FirstOrDefaultAsync();
+            try
+            {
+                var result = await _collection.Find(x => x.id == userId).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
 
-        public async Task<Users> GetByName(string userName)
+        public async Task<UserEntity> GetByName(string userName)
         {
-            var filter = Builders<Users>.Filter.Eq(u => u.Username, userName);
-            return await _userCollection.Find(filter).FirstOrDefaultAsync();
+             try
+            {
+                var result = await _collection.Find(x => x.user_name == userName).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
     }
 }

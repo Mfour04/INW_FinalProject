@@ -1,11 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Entities;
 using Shared.Contracts.Respone;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Mapping
 {
@@ -13,7 +8,7 @@ namespace Application.Mapping
     {
         public MappingProfile()
         {
-            CreateMap<Users, UserRespone>();
+            CreateMap<UserEntity, UserRespone>();
         }
     }
 }
