@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Shared.Contracts.Respone
 {
-    public class UserRespone
+    public class UserResponse
     {
         public string UserId { get; set; }
         public string? Username { get; set; }

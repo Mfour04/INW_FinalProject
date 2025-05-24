@@ -52,7 +52,7 @@ namespace Application.Auth.Commands
             var refreshToken = _jwtHelpers.GenerateRefreshToken(user.id);
 
 
-            var userResponse = _mapper.Map<UserRespone>(user);
+            var userResponse = _mapper.Map<UserResponse>(user);
 
             return new ApiResponse
             {
