@@ -1,3 +1,4 @@
+using Domain.Enums;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Domain.Entities
@@ -13,7 +14,7 @@ namespace Domain.Entities
         public string type { get; set; }
         public int amount { get; set; }
         public string payment_method { get; set; }
-        public string status { get; set; }
+        public PaymentStatus status { get; set; }
         public long created_at { get; set; }
     }
 }

@@ -1,3 +1,5 @@
+using Domain.Enums;
+
 namespace Domain.Entities
 {
     public class ReportEntity : BaseEntity
@@ -8,6 +10,6 @@ namespace Domain.Entities
         public string comment_id { get; set; }
         public string type { get; set; }
         public string reason { get; set; }
-        public string status { get; set; }
+        public ReportStatus status { get; set; }
     }
 }
