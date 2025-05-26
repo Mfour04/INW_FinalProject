@@ -40,7 +40,7 @@ namespace Infrastructure
             services.AddSingleton<JwtHelpers>();
             // services.AddScoped<IRoomFeatureRepository, RoomFeatureRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
-
+            services.AddScoped<INovelRepository, NovelRepository>();
             return services;
         }
 

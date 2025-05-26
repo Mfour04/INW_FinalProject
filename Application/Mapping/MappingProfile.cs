@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Domain.Entities;
 using Shared.Contracts.Respone;
+using Shared.Contracts.Response;
 
 namespace Application.Mapping
 {
@@ -8,7 +9,10 @@ namespace Application.Mapping
     {
         public MappingProfile()
         {
-            CreateMap<UserEntity, UserRespone>();
+            CreateMap<UserEntity, UserResponse>();
+            CreateMap<NovelEntity, NovelResponse>();
+            CreateMap<NovelEntity, UpdateNovelResponse>()
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id)); ;
         }
     }
 }
