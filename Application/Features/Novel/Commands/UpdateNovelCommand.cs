@@ -2,13 +2,7 @@
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Shared.Contracts.Respone;
 using Shared.Contracts.Response;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Novel.Commands
 {
@@ -37,15 +31,16 @@ namespace Application.Features.Novel.Commands
             novel.title = input.Title ?? novel.title;
             novel.description = input.Description ?? novel.description;
             novel.status = input.Status ?? novel.status;
-            novel.is_premium = input.IsPremium ?? novel.is_premium;
+            novel.is_public = input.IsPublic ?? novel.is_public;
+            novel.is_paid = input.IsPaid ?? novel.is_paid;
             novel.price = input.Price ?? novel.price;
-            novel.genres = input.Genres ?? novel.genres;
             novel.tags = input.Tags ?? novel.tags;
+            novel.purchase_type = input.PurchaseType ?? novel.purchase_type;
             novel.updated_at = DateTime.UtcNow.Ticks;
 
             await _novelRepository.UpdateNovelAsync(novel);
 
-            var response = _mapper.Map<List<UpdateNovelResponse>>(novel);
+            var response = _mapper.Map<UpdateNovelResponse>(novel);
 
             return new ApiResponse
             {

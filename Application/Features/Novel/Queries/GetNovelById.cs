@@ -2,12 +2,7 @@
 using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Shared.Contracts.Respone;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Shared.Contracts.Response;
 
 namespace Application.Features.Novel.Queries
 {

@@ -2,7 +2,7 @@
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Shared.Contracts.Respone;
+using Shared.Contracts.Response;
 using Shared.Helpers;
 using Shared.SystemHelpers.TokenGenerate;
 
@@ -12,7 +12,7 @@ namespace Application.Auth.Commands
     {
         public string Username { get; set; }
         public string Email { get; set; }
-        public string PasswordHash { get; set; }
+        public string Password { get; set; }
     }
     
     public class RegisterUserHandler : IRequestHandler<RegisterCommand, ApiResponse>
@@ -39,9 +39,10 @@ namespace Application.Auth.Commands
             var newUser = new UserEntity
             {
                 id = SystemHelper.RandomId(),
-                user_name = request.Username,
+                username = request.Username,
+                displayname = request.Username,
                 email = request.Email,
-                password_hash = BCrypt.Net.BCrypt.HashPassword(request.PasswordHash),
+                password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 role = Role.Reader,
                 created_at = DateTime.Now.Ticks,
                 updated_at = DateTime.Now.Ticks
@@ -51,7 +52,7 @@ namespace Application.Auth.Commands
 
             var token = _jwtHelpers.Generate(
                 newUser.id.ToString(),
-                newUser.user_name,
+                newUser.username,
                 newUser.role.ToString()
             );
 

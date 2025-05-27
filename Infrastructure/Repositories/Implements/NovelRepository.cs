@@ -5,12 +5,6 @@ using Infrastructure.Repositories.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Exceptions;
-using SharpCompress.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -62,7 +56,7 @@ namespace Infrastructure.Repositories.Implements
                 {
                     var regexFilters = creterias.SearchTerm.Select(keyword =>
                         builder.Regex(
-                            x => x.title,
+                            x => x.title_unsigned,
                             new BsonRegularExpression(keyword, "i")
                         )
                     );

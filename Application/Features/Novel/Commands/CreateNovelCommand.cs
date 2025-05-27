@@ -1,45 +1,52 @@
-﻿using AutoMapper;
+﻿using Application.Features.User.Queries;
+using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Shared.Contracts.Respone;
 using Shared.Contracts.Response;
 using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace Application.Features.Novel.Commands
 {
     public class CreateNovelCommand: IRequest<ApiResponse>
     {
+        [JsonPropertyName("novel")]
         public CreateNovelResponse Novel { get; set; }
     }
 
     public class CreateNovelHandler : IRequestHandler<CreateNovelCommand, ApiResponse>
     {
         private readonly INovelRepository _novelRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
 
-        public CreateNovelHandler(INovelRepository novelRepository, IMapper mapper)
+        public CreateNovelHandler(INovelRepository novelRepository, IMapper mapper, IUserRepository userRepository)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
         public async Task<ApiResponse> Handle(CreateNovelCommand request, CancellationToken cancellationToken)
         {
+            var author = await _userRepository.GetById(request.Novel.AuthorId);
+            if(author == null)
+            {
+                return new ApiResponse { Success = false, Message = "Author not found" };
+            }
             var novel = new NovelEntity
             {
                 id = SystemHelper.RandomId(),
                 title = request.Novel.Title,
+                title_unsigned = SystemHelper.RemoveDiacritics(request.Novel.Title),
                 description = request.Novel.Description,
-                author_id = request.Novel.AuthorId,
-                genres = request.Novel.Genres ?? new List<string>(),
+                author_id = author.id,
                 tags = request.Novel.Tags ?? new List<string>(),
                 status = request.Novel.Status,
-                is_premium = request.Novel.IsPremium ?? false,
+                is_public = request.Novel.IsPublic ?? false,
+                is_paid = request.Novel.IsPaid ?? false,
+                purchase_type = request.Novel.PurchaseType,
                 price = request.Novel.Price ?? 0,
                 created_at = DateTime.UtcNow.Ticks,
                 updated_at = DateTime.UtcNow.Ticks

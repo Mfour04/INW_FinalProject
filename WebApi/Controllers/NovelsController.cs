@@ -4,8 +4,11 @@ using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using MongoDB.Driver;
-using Shared.Contracts.Respone;
+using Shared.Contracts.Response;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace WebApi.Controllers
 {
@@ -21,13 +24,21 @@ namespace WebApi.Controllers
             _mediator = mediator;
         }
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] FindCreterias find, [FromQuery] List<SortCreterias> sort)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string sortBy = "created_at:desc",
+            [FromQuery] int page = 0,
+            [FromQuery] int limit = 10,
+            [FromQuery] string searchTerm = "")
         {
-            var result = await _mediator.Send(new GetNovel
+            var query = new GetNovel
             {
-                FindCreterias = find,
-                SortCreterias = sort
-            });
+                SortBy = sortBy,
+                Page = page,
+                Limit = limit,
+                SearchTerm = searchTerm
+            };
+
+            var result = await _mediator.Send(query);
 
             return Ok(result);
         }
@@ -42,8 +53,7 @@ namespace WebApi.Controllers
         public async Task<IActionResult> CreateNovel([FromBody] CreateNovelCommand command)
         {
             var result = await _mediator.Send(command);
-            var createdNovel = result.Data as NovelResponse;
-            return CreatedAtAction(nameof(GetNovelById), new { id = createdNovel?.NovelId }, result);
+            return Ok(result);
         }
         [HttpPut("updated")]
         public async Task<IActionResult> UpdateNovel([FromBody] UpdateNovelCommand command)

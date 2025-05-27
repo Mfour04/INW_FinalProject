@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Shared.Contracts.Respone;
+using Shared.Contracts.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
