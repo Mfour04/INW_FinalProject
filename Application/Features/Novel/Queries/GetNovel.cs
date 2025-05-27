@@ -2,20 +2,18 @@
 using Domain.Entities.System;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Shared.Contracts.Respone;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Shared.Contracts.Response;
+using Shared.Helpers;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Features.Novel.Queries
 {
     public class GetNovel: IRequest<ApiResponse>
     {
-        public FindCreterias FindCreterias { get; set; }
-        public List<SortCreterias>? SortCreterias { get; set; }
+        public string SortBy = "created_at:desc";
+        public int Page = 0;
+        public int Limit = int.MaxValue;
+        public string? SearchTerm = "";
     }
 
     public class GetNovelHandle : IRequestHandler<GetNovel, ApiResponse>
@@ -29,10 +27,18 @@ namespace Application.Features.Novel.Queries
         }
         public async Task<ApiResponse> Handle(GetNovel request, CancellationToken cancellationToken)
         {
-            var find = request.FindCreterias ?? new FindCreterias { Page = 0, Limit = int.MaxValue, SearchTerm = new List<string>() };
-            var sort = request.SortCreterias ?? new List<SortCreterias>();
+            FindCreterias findCreterias = new();
 
-            var novel = await _novelRepository.GetAllNovelAsync(find, sort);
+            if (!string.IsNullOrEmpty(request.SearchTerm))
+                findCreterias.SearchTerm = SystemHelper.ParseSearchQuery(request.SearchTerm);
+
+            findCreterias.Limit = request.Limit;
+
+            findCreterias.Page = request.Page;
+
+            var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
+
+            var novel = await _novelRepository.GetAllNovelAsync(findCreterias, sortBy);
             if (novel == null || novel.Count == 0)
                 return new ApiResponse { Success = false, Message = "Novel not found" };
             var novelResponse = _mapper.Map<List<NovelResponse>>(novel);

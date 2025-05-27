@@ -1,20 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Domain.Enums;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
+using System.Text.Json.Serialization;
 
 namespace Shared.Contracts.Response
 {
     public class CreateNovelResponse
     {
         public string Title { get; set; }
-        public string? Description { get; set; }
+        public string Description { get; set; }
         public string AuthorId { get; set; }
-        public List<string>? Genres { get; set; }   
-        public List<string>? Tags { get; set; }
-        public string Status { get; set; }
-        public bool? IsPremium { get; set; }
-        public double? Price { get; set; }
+        public List<string> Tags { get; set; } = new();
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
+        public NovelStatus Status { get; set; }
+        public bool? IsPublic { get; set; }
+        public bool? IsPaid { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
+        public PurchaseType PurchaseType { get; set; }
+        public int? Price { get; set; }
     }
 }

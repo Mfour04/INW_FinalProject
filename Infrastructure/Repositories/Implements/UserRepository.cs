@@ -24,7 +24,7 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-				entity.user_name_normalized = SystemHelper.RemoveDiacritics(entity.user_name);
+				entity.displayname_normalized = SystemHelper.RemoveDiacritics(entity.displayname);
 				await _collection.InsertOneAsync(entity);
 
                 return entity;
@@ -50,14 +50,16 @@ namespace Infrastructure.Repositories.Implements
 
         public async Task<UserEntity> GetById(string userId)
         {
+            if (string.IsNullOrEmpty(userId))
+                throw new ArgumentException("userId must not be null or empty");
             try
             {
                 var result = await _collection.Find(x => x.id == userId).FirstOrDefaultAsync();
                 return result;
             }
-            catch
+            catch (Exception ex)
             {
-                throw new InternalServerException();
+                throw new InternalServerException("Error getting user by id: " + ex.Message);
             }
         }
 
@@ -65,7 +67,7 @@ namespace Infrastructure.Repositories.Implements
         {
              try
             {
-                var result = await _collection.Find(x => x.user_name == userName).FirstOrDefaultAsync();
+                var result = await _collection.Find(x => x.username == userName).FirstOrDefaultAsync();
                 return result;
             }
             catch
