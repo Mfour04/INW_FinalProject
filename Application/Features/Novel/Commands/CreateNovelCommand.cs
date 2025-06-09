@@ -5,6 +5,8 @@ using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Novel;
+using Shared.Contracts.Response.Tag;
 using Shared.Helpers;
 using System.Text.Json.Serialization;
 
@@ -21,20 +23,29 @@ namespace Application.Features.Novel.Commands
         private readonly INovelRepository _novelRepository;
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
-
-        public CreateNovelHandler(INovelRepository novelRepository, IMapper mapper, IUserRepository userRepository)
+        private readonly ITagRepository _tagRepository;
+        public CreateNovelHandler(INovelRepository novelRepository, IMapper mapper, IUserRepository userRepository, ITagRepository tagRepository)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
             _userRepository = userRepository;
+            _tagRepository = tagRepository;
         }
         public async Task<ApiResponse> Handle(CreateNovelCommand request, CancellationToken cancellationToken)
         {
             var author = await _userRepository.GetById(request.Novel.AuthorId);
-            if(author == null)
+            if (author == null)
             {
                 return new ApiResponse { Success = false, Message = "Author not found" };
             }
+
+            var validTagIds = new List<string>();
+            if (request.Novel.Tags != null && request.Novel.Tags.Any())
+            {
+                var existingTags = await _tagRepository.GetTagsByIdsAsync(request.Novel.Tags);
+                validTagIds = existingTags.Select(t => t.id).ToList();
+            }
+
             var novel = new NovelEntity
             {
                 id = SystemHelper.RandomId(),
@@ -42,7 +53,7 @@ namespace Application.Features.Novel.Commands
                 title_unsigned = SystemHelper.RemoveDiacritics(request.Novel.Title),
                 description = request.Novel.Description,
                 author_id = author.id,
-                tags = request.Novel.Tags ?? new List<string>(),
+                tags = validTagIds,
                 status = request.Novel.Status,
                 is_public = request.Novel.IsPublic ?? false,
                 is_paid = request.Novel.IsPaid ?? false,
@@ -53,7 +64,14 @@ namespace Application.Features.Novel.Commands
             };
 
             await _novelRepository.CreateNovelAsync(novel);
+            var tags = await _tagRepository.GetTagsByIdsAsync(validTagIds);
             var response = _mapper.Map<NovelResponse>(novel);
+
+            response.Tags = tags.Select(t => new TagListResponse
+            {
+                TagId = t.id,
+                Name = t.name
+            }).ToList();
 
             return new ApiResponse
             {

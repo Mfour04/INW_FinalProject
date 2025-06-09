@@ -6,7 +6,7 @@ namespace Infrastructure.Repositories.Interfaces
     public interface INovelRepository
     {
         Task<List<NovelEntity>> GetAllNovelAsync(FindCreterias creterias, List<SortCreterias> sortCreterias);
-        Task<NovelEntity> GetByNovelIdAsync(string novelId);
+        Task<NovelEntity> GetByNovelIdAsync(string chapterId);
         Task<NovelEntity> CreateNovelAsync(NovelEntity entity);
         Task<NovelEntity> UpdateNovelAsync(NovelEntity entity);
         Task<bool> DeleteNovelAsync(string id);

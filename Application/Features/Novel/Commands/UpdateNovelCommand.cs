@@ -3,6 +3,7 @@ using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Novel;
 
 namespace Application.Features.Novel.Commands
 {

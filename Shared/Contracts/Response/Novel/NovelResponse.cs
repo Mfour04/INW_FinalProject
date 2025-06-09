@@ -6,15 +6,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Shared.Contracts.Response.Tag;
 
-namespace Shared.Contracts.Response
+namespace Shared.Contracts.Response.Novel
 {
     public class NovelResponse
     {
         public string Title { get; set; }
         public string Description { get; set; }
         public string AuthorId { get; set; }
-        public List<string> Tags { get; set; } = new();
+        public List<TagListResponse> Tags { get; set; } = new();
         [BsonRepresentation(BsonType.String)]
         public NovelStatus Status { get; set; }
         public bool IsPublic { get; set; }

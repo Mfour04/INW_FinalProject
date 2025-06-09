@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 using System.Text.Json.Serialization;
 
-namespace Shared.Contracts.Response
+namespace Shared.Contracts.Response.Novel
 {
     public class CreateNovelResponse
     {
