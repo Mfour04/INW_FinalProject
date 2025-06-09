@@ -3,6 +3,7 @@ using Domain.Entities.System;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Novel;
 using Shared.Helpers;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -16,11 +17,11 @@ namespace Application.Features.Novel.Queries
         public string? SearchTerm = "";
     }
 
-    public class GetNovelHandle : IRequestHandler<GetNovel, ApiResponse>
+    public class GetNovelHandler : IRequestHandler<GetNovel, ApiResponse>
     {
         private readonly INovelRepository _novelRepository;
         private readonly IMapper _mapper;
-        public GetNovelHandle(INovelRepository novelRepository, IMapper mapper)
+        public GetNovelHandler(INovelRepository novelRepository, IMapper mapper)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;

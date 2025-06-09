@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 
-namespace Shared.Contracts.Response
+namespace Shared.Contracts.Response.Novel
 {
     public class UpdateNovelResponse
     {
