@@ -14,13 +14,13 @@ namespace Infrastructure.Repositories.Implements
 {
     public class OwnershipRepository : IOwnershipRepository
     {
-        private readonly IMongoCollection<OwnershipEntity> _collection;
+        private readonly IMongoCollection<PurchaserEntity> _collection;
         public OwnershipRepository(MongoDBHelper mongoDBHelper)
         {
             mongoDBHelper.CreateCollectionIfNotExistsAsync("owner").Wait();
-            _collection = mongoDBHelper.GetCollection<OwnershipEntity>("owner");
+            _collection = mongoDBHelper.GetCollection<PurchaserEntity>("owner");
         }
-        public async Task<OwnershipEntity> CreateOwnerShipAsync(OwnershipEntity entity)
+        public async Task<PurchaserEntity> CreateOwnerShipAsync(PurchaserEntity entity)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var filter = Builders<OwnershipEntity>.Filter.Eq(x => x.id, id);
+                var filter = Builders<PurchaserEntity>.Filter.Eq(x => x.id, id);
                 var result = await _collection.FindOneAndDeleteAsync(filter);
 
                 return result != null;
@@ -48,11 +48,11 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<List<OwnershipEntity>> GetAllOwnerShipAsync(FindCreterias creterias)
+        public async Task<List<PurchaserEntity>> GetAllOwnerShipAsync(FindCreterias creterias)
         {
             try
             {
-                var builder = Builders<OwnershipEntity>.Filter;
+                var builder = Builders<PurchaserEntity>.Filter;
                 var filtered = builder.Empty;
 
                 var query = _collection
@@ -68,7 +68,7 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<OwnershipEntity> GetByOwnerShipIdAsync(string ownershipId)
+        public async Task<PurchaserEntity> GetByOwnerShipIdAsync(string ownershipId)
         {
             try
             {
@@ -85,9 +85,9 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var filter = Builders<OwnershipEntity>.Filter.And(
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.user_id, userId),
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.novel_id, novelId)
+                var filter = Builders<PurchaserEntity>.Filter.And(
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.user_id, userId),
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.novel_id, novelId)
                 );
 
                 var ownerShip = await _collection.Find(filter).FirstOrDefaultAsync();
@@ -104,10 +104,10 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var filter = Builders<OwnershipEntity>.Filter.And(
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.user_id, userId),
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.novel_id, novelId),
-                    Builders<OwnershipEntity>.Filter.SizeGt(x => x.chapter_id, 0)
+                var filter = Builders<PurchaserEntity>.Filter.And(
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.user_id, userId),
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.novel_id, novelId),
+                    Builders<PurchaserEntity>.Filter.SizeGt(x => x.chapter_id, 0)
                 );
 
                 return await _collection.Find(filter).AnyAsync();
@@ -121,10 +121,10 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var filter = Builders<OwnershipEntity>.Filter.And(
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.user_id, userId),
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.novel_id, novelId),
-                    Builders<OwnershipEntity>.Filter.SizeGt(x => x.chapter_id, 0)
+                var filter = Builders<PurchaserEntity>.Filter.And(
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.user_id, userId),
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.novel_id, novelId),
+                    Builders<PurchaserEntity>.Filter.SizeGt(x => x.chapter_id, 0)
                 );
                 return await _collection.Find(filter).AnyAsync();
             }
@@ -139,10 +139,10 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var filter = Builders<OwnershipEntity>.Filter.And(
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.user_id, userId),
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.novel_id, novelId),
-                    Builders<OwnershipEntity>.Filter.Eq(x => x.is_full, true)
+                var filter = Builders<PurchaserEntity>.Filter.And(
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.user_id, userId),
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.novel_id, novelId),
+                    Builders<PurchaserEntity>.Filter.Eq(x => x.is_full, true)
                 );
 
                 return await _collection.Find(filter).AnyAsync();
@@ -153,11 +153,11 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<OwnershipEntity> UpdateOwnerShipAsync(OwnershipEntity entity)
+        public async Task<PurchaserEntity> UpdateOwnerShipAsync(PurchaserEntity entity)
         {
             try
             {
-                var filter = Builders<OwnershipEntity>.Filter.Eq(x => x.id, entity.id);
+                var filter = Builders<PurchaserEntity>.Filter.Eq(x => x.id, entity.id);
                 var result = await _collection.ReplaceOneAsync(filter, entity);
 
                 return entity;

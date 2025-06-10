@@ -10,10 +10,10 @@ namespace Infrastructure.Repositories.Interfaces
 {
     public interface IOwnershipRepository
     {
-        Task<List<OwnershipEntity>> GetAllOwnerShipAsync(FindCreterias creterias);
-        Task<OwnershipEntity> GetByOwnerShipIdAsync(string ownershipId);
-        Task<OwnershipEntity> CreateOwnerShipAsync(OwnershipEntity entity);
-        Task<OwnershipEntity> UpdateOwnerShipAsync(OwnershipEntity entity);
+        Task<List<PurchaserEntity>> GetAllOwnerShipAsync(FindCreterias creterias);
+        Task<PurchaserEntity> GetByOwnerShipIdAsync(string ownershipId);
+        Task<PurchaserEntity> CreateOwnerShipAsync(PurchaserEntity entity);
+        Task<PurchaserEntity> UpdateOwnerShipAsync(PurchaserEntity entity);
         Task<bool> DeleteOwnerShipAsync(string id);
         Task<bool> HasFullNovelOwnershipAsync(string userId, string novelId);
         Task<bool> HasChapterOwnershipAsync(string userId, string novelId, string chapterId);

@@ -2,7 +2,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Domain.Entities
 {
-    public class OwnershipEntity
+    public class PurchaserEntity
     {
         [BsonId]
         [BsonElement("_id")]

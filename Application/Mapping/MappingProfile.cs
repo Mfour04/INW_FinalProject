@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing.Constraints;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
 using Shared.Contracts.Response.Novel;
+using Shared.Contracts.Response.Ownership;
 using Shared.Contracts.Response.Tag;
 
 namespace Application.Mapping
@@ -17,7 +18,8 @@ namespace Application.Mapping
             CreateMap<NovelEntity, NovelResponse>()
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
-                .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid)); 
+                .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
+                .ForMember(dest => dest.Tags, opt => opt.Ignore()); 
             //CreateMap<NovelEntity, CreateNovelResponse>()
             //    .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id));
             CreateMap<NovelEntity, UpdateNovelResponse>()
@@ -40,6 +42,11 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name));
             CreateMap<TagEntity, UpdateTagResponse>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name));
+            //Purchase
+            CreateMap<PurchaserEntity, PurchaserResponse>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id));
         }
     }
 }

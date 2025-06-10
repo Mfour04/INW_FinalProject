@@ -40,7 +40,7 @@ namespace Application.Features.Tag.Command
             };
 
             await _tagRepository.CreateTagAsync(tag);
-            var tagRepose = _mapper.Map<List<TagResponse>>(tag);
+            var tagRepose = _mapper.Map<TagResponse>(tag);
 
             return new ApiResponse
             {

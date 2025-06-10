@@ -17,5 +17,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> DeleteChapterAsync(string id);
         Task<List<ChapterEntity>> GetChaptersByNovelIdAsync(string novelId);
         Task<List<ChapterEntity>> GetFreeChaptersByNovelIdAsync(string novelId);
+        Task<List<ChapterEntity>> GetChapterByChapterIdAsync(List<string> chapterIds);
     }
 }
