@@ -1,6 +1,6 @@
 ﻿using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Shared.Contracts.Respone;
+using Shared.Contracts.Response;
 
 namespace Application.Features.User.Queries
 {

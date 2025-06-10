@@ -2,7 +2,7 @@
 using AutoMapper;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Shared.Contracts.Respone;
+using Shared.Contracts.Response;
 using Shared.SystemHelpers.TokenGenerate;
 
 namespace Application.Auth.Commands
@@ -40,7 +40,7 @@ namespace Application.Auth.Commands
             }
 
             // Kiểm tra mật khẩu
-            var isValidPassword = BCrypt.Net.BCrypt.Verify(request.PasswordHash, user.password_hash);
+            var isValidPassword = BCrypt.Net.BCrypt.Verify(request.PasswordHash, user.password);
             if (!isValidPassword)
             {
                 throw new ApiException("Invalid email or password.");
@@ -52,7 +52,7 @@ namespace Application.Auth.Commands
             var refreshToken = _jwtHelpers.GenerateRefreshToken(user.id);
 
 
-            var userResponse = _mapper.Map<UserRespone>(user);
+            var userResponse = _mapper.Map<UserResponse>(user);
 
             return new ApiResponse
             {
