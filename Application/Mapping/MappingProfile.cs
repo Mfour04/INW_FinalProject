@@ -3,6 +3,7 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Routing.Constraints;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
+using Shared.Contracts.Response.Comment;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Ownership;
 using Shared.Contracts.Response.Tag;
@@ -47,6 +48,24 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id));
+
+            //Comment
+            CreateMap<CommentEntity, CommentResponse>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id))
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.content))
+                .ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.parent_comment_id))
+                .ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src => src.like_count))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at))
+                .ForMember(dest => dest.Replies, opt => opt.Ignore()) 
+                .ForMember(dest => dest.UserName, opt => opt.Ignore());
+
+            CreateMap<CommentEntity, UpdateCommentResponse>()
+                .ForMember(dest => dest.CommentId, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.content));
         }
     }
 }

@@ -44,6 +44,7 @@ namespace Infrastructure
             services.AddScoped<IChapterRepository, ChapterRepository>();
             services.AddScoped<IOwnershipRepository, OwnershipRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
+            services.AddScoped<ICommentRepository, CommentRepository>();
             return services;
         }
 
