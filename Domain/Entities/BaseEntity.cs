@@ -6,8 +6,8 @@ namespace Domain.Entities
     {
         [BsonId]
         [BsonElement("_id")]
-        public string id { get; set; }
-        public long created_at { get; set; }
+      public string id { get; set; }
+        public long created_at { get; set; }  
         public long updated_at { get; set; }
     }
 }
