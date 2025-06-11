@@ -76,7 +76,7 @@ namespace Application.Features.Novel.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Created Novel Successfully.",
+                Message = "Created Novel Successfully",
                 Data = response
             };
         }
