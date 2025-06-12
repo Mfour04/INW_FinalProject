@@ -46,6 +46,9 @@ namespace Infrastructure
             services.AddScoped<ITagRepository, TagRepository>();
 
             services.AddScoped<IForumPostRepository, ForumPostRepository>();
+            services.AddScoped<IForumPostLikeRepository, ForumPostLikeRepository>();
+            services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
+
             services.AddScoped<ICommentRepository, CommentRepository>();
             return services;
         }

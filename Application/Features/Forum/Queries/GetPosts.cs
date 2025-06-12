@@ -13,18 +13,21 @@ namespace Application.Features.Forum.Queries
         public string SortBy { get; set; } = "created_at:desc";
         public int Page { get; set; } = 0;
         public int Limit { get; set; } = int.MaxValue;
+        public string UserId { get; set; }
     }
 
     public class GetPostsHanlder : IRequestHandler<GetPosts, ApiResponse>
     {
         private readonly IForumPostRepository _postRepo;
         private readonly IUserRepository _userRepo;
+        private readonly IForumPostLikeRepository _postLikeRepo;
         private readonly IMapper _mapper;
 
-        public GetPostsHanlder(IForumPostRepository postRepo, IUserRepository userRepo, IMapper mapper)
+        public GetPostsHanlder(IForumPostRepository postRepo, IUserRepository userRepo, IForumPostLikeRepository postLikeRepo, IMapper mapper)
         {
             _postRepo = postRepo;
             _userRepo = userRepo;
+            _postLikeRepo = postLikeRepo;
             _mapper = mapper;
         }
 
@@ -36,7 +39,7 @@ namespace Application.Features.Forum.Queries
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            var postList = await _postRepo.GetAllForumPostAsync(findCreterias, sortBy);
+            var postList = await _postRepo.GetAllAsync(findCreterias, sortBy);
 
             if (postList == null || postList.Count == 0)
                 return new ApiResponse { Success = false, Message = "No forum posts found." };
@@ -56,6 +59,11 @@ namespace Application.Features.Forum.Queries
                         Username = user.username,
                         Avatar = user.avata_url
                     };
+                }
+
+                if (!string.IsNullOrEmpty(request.UserId))
+                {
+                    mapped.IsLiked = await _postLikeRepo.HasUserLikedPostAsync(post.id, request.UserId);
                 }
 
                 response.Add(mapped);

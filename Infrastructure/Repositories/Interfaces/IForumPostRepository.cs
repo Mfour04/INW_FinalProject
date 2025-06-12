@@ -5,9 +5,10 @@ namespace Infrastructure.Repositories.Interfaces
 {
     public interface IForumPostRepository
     {
-        Task<List<ForumPostEntity>> GetAllForumPostAsync(FindCreterias creterias, List<SortCreterias> sortCreterias);
-        Task<ForumPostEntity> CreateForumPostAsync(ForumPostEntity entity);
-        Task<bool> UpdateForumPostAsync(string id, ForumPostEntity entity);
-        Task<bool> DeleteForumPostAsync(string id);
+        Task<List<ForumPostEntity>> GetAllAsync(FindCreterias creterias, List<SortCreterias> sortCreterias);
+        Task<ForumPostEntity> GetByIdAsync(string id);
+        Task<ForumPostEntity> CreateAsync(ForumPostEntity entity);
+        Task<bool> UpdateAsync(string id, ForumPostEntity entity);
+        Task<bool> DeleteAsync(string id);
     }
 }

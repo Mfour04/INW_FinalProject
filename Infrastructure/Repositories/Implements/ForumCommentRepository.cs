@@ -7,34 +7,34 @@ using Shared.Exceptions;
 
 namespace Infrastructure.Repositories.Implements
 {
-    public class ForumPostRepository : IForumPostRepository
+    public class ForumCommentRepository : IForumCommentRepository
     {
-        private readonly IMongoCollection<ForumPostEntity> _collection;
-        
-        public ForumPostRepository(MongoDBHelper mongoDBHelper)
+        private readonly IMongoCollection<ForumCommentEntity> _collection;
+
+        public ForumCommentRepository(MongoDBHelper mongoDBHelper)
         {
-            mongoDBHelper.CreateCollectionIfNotExistsAsync("forum_post").Wait();
-            _collection = mongoDBHelper.GetCollection<ForumPostEntity>("forum_post");
+            mongoDBHelper.CreateCollectionIfNotExistsAsync("forum_comment").Wait();
+            _collection = mongoDBHelper.GetCollection<ForumCommentEntity>("forum_comment");
         }
 
-        public async Task<List<ForumPostEntity>> GetAllAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
+        public async Task<List<ForumCommentEntity>> GetAllByPostIdAsync(string postId, FindCreterias creterias, List<SortCreterias> sortCreterias)
         {
             try
             {
-                var builder = Builders<ForumPostEntity>.Filter;
-                var filtered = builder.Empty;
+                var builder = Builders<ForumCommentEntity>.Filter;
+                var filtered = builder.Eq(x => x.post_id, postId);
 
                 var query = _collection
                     .Find(filtered)
                     .Skip(creterias.Page * creterias.Limit)
                     .Limit(creterias.Limit);
 
-                var sortBuilder = Builders<ForumPostEntity>.Sort;
-                var sortDefinitions = new List<SortDefinition<ForumPostEntity>>();
+                var sortBuilder = Builders<ForumCommentEntity>.Sort;
+                var sortDefinitions = new List<SortDefinition<ForumCommentEntity>>();
 
                 foreach (var criterion in sortCreterias)
                 {
-                    SortDefinition<ForumPostEntity>? sortDef = criterion.Field switch
+                    SortDefinition<ForumCommentEntity>? sortDef = criterion.Field switch
                     {
                         "created_at" => criterion.IsDescending
                             ? sortBuilder.Descending(x => x.created_at)
@@ -60,7 +60,7 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<ForumPostEntity> GetByIdAsync(string id)
+        public async Task<ForumCommentEntity> GetByIdAsync(string id)
         {
             try
             {
@@ -73,7 +73,7 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<ForumPostEntity> CreateAsync(ForumPostEntity entity)
+        public async Task<ForumCommentEntity> CreateAsync(ForumCommentEntity entity)
         {
             try
             {
@@ -86,22 +86,22 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<bool> UpdateAsync(string id, ForumPostEntity entity)
+        public async Task<bool> UpdateAsync(string id, ForumCommentEntity entity)
         {
             try
             {
-                var filter = Builders<ForumPostEntity>.Filter.Eq(x => x.id, id);
+                var filter = Builders<ForumCommentEntity>.Filter.Eq(x => x.id, id);
 
                 var post = await _collection.Find(filter).FirstOrDefaultAsync();
 
-                var update = Builders<ForumPostEntity>
+                var update = Builders<ForumCommentEntity>
                     .Update.Set(x => x.content, entity.content ?? post.content)
                     .Set(x => x.updated_at, DateTime.Now.Ticks);
 
                 var updated = await _collection.FindOneAndUpdateAsync(
                     filter,
                     update,
-                    new FindOneAndUpdateOptions<ForumPostEntity>
+                    new FindOneAndUpdateOptions<ForumCommentEntity>
                     {
                         ReturnDocument = ReturnDocument.After,
                     }
@@ -119,7 +119,7 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var filter = Builders<ForumPostEntity>.Filter.Eq(x => x.id, id);
+                var filter = Builders<ForumCommentEntity>.Filter.Eq(x => x.id, id);
                 var deleted = await _collection.FindOneAndDeleteAsync(filter);
 
                 return deleted != null;

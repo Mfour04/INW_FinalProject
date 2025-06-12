@@ -30,7 +30,7 @@ namespace Application.Features.Forum.Commands
             if (string.IsNullOrWhiteSpace(request.Content))
                 return new ApiResponse { Success = false, Message = "Content cannot be empty." };
 
-            var newPost = new ForumPostEntity
+            ForumPostEntity newPost = new()
             {
                 id = SystemHelper.RandomId(),
                 user_id = request.UserId,
@@ -38,11 +38,10 @@ namespace Application.Features.Forum.Commands
                 img_urls = request.ImgUrls ?? new List<string>(),
                 like_count = 0,
                 comment_count = 0,
-                created_at = DateTime.Now.Ticks,
-                updated_at = DateTime.Now.Ticks
+                created_at = DateTime.Now.Ticks
             };
 
-            await _postRepo.CreateForumPostAsync(newPost);
+            await _postRepo.CreateAsync(newPost);
 
             return new ApiResponse
             {
