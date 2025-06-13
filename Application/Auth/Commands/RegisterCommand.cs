@@ -18,11 +18,13 @@ namespace Application.Auth.Commands
     public class RegisterUserHandler : IRequestHandler<RegisterCommand, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
+        private readonly IEmailService _emailService;
         private readonly JwtHelpers _jwtHelpers;
-        public RegisterUserHandler(IUserRepository userRepository, JwtHelpers jwtHelpers)
+        public RegisterUserHandler(IUserRepository userRepository, JwtHelpers jwtHelpers, IEmailService emailService)
         {
             _userRepository = userRepository;
             _jwtHelpers = jwtHelpers;
+            _emailService = emailService;
         }
         public async Task<ApiResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
@@ -44,6 +46,7 @@ namespace Application.Auth.Commands
                 email = request.Email,
                 password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 role = Role.Reader,
+                is_verified = false,
                 created_at = DateTime.Now.Ticks,
                 updated_at = DateTime.Now.Ticks
             };
@@ -54,6 +57,21 @@ namespace Application.Auth.Commands
                 newUser.id.ToString(),
                 newUser.username,
                 newUser.role.ToString()
+            );
+
+            var verifyUrl = $"https://localhost:7242/api/Users/verify-email?token={token}";
+
+            var emailBody = $@"
+        <h3>Chào {newUser.username},</h3>
+        <p>Cảm ơn bạn đã đăng ký.</p>
+        <p>Vui lòng nhấn vào <a href='{verifyUrl}'>liên kết này</a> để xác thực email.</p>
+        <p>Liên kết sẽ hết hạn sau 15 phút.</p>
+    ";
+
+            await _emailService.SendEmailAsync(
+                newUser.email,
+                "Xác thực tài khoản",
+                emailBody
             );
 
             return new ApiResponse

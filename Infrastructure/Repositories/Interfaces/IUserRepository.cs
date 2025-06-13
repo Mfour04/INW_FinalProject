@@ -8,5 +8,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<UserEntity> GetByEmail(string email);
         Task<UserEntity> GetById(string userId);
         Task<UserEntity> GetByName(string userName);
+        Task<UserEntity> UpdateUser(UserEntity entity);
     }
 }
