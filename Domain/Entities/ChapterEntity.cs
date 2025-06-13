@@ -8,5 +8,7 @@ namespace Domain.Entities
         public int chapter_number { get; set; }
         public bool is_paid { get; set; }
         public int price { get; set; }
+        public bool is_draft { get; set; } = true;
+        public bool is_public { get; set; }
     }
 }

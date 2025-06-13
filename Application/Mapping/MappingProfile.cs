@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
 using Domain.Entities;
 using Microsoft.AspNetCore.Routing.Constraints;
-using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
 using Shared.Contracts.Response.Comment;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Ownership;
 using Shared.Contracts.Response.Tag;
+using Shared.Contracts.Response.User;
 
 namespace Application.Mapping
 {
@@ -14,7 +14,11 @@ namespace Application.Mapping
     {
         public MappingProfile()
         {
+            //User
             CreateMap<UserEntity, UserResponse>();
+            CreateMap<UserEntity, UpdateUserReponse>()
+                .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.displayname))
+                .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id));
             //Novel
             CreateMap<NovelEntity, NovelResponse>()
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
@@ -29,7 +33,10 @@ namespace Application.Mapping
             CreateMap<ChapterEntity, ChapterResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.ChapterNumber, opt => opt.MapFrom(src => src.chapter_number))
-                .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid));
+                .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
+                .ForMember(dest => dest.IsDraft, opt => opt.MapFrom(src => src.is_draft))
+                .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public));
+                
             //CreateMap<ChapterEntity, CreateChapterResponse>()
             //    .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id));
             CreateMap<ChapterEntity, UpdateChapterResponse>()
