@@ -22,23 +22,27 @@ namespace Application.Features.Forum.Commands
         public async Task<ApiResponse> Handle(DeletePostCommentCommand request, CancellationToken cancellationToken)
         {
             var comment = await _commentRepo.GetByIdAsync(request.Id);
-
             if (comment == null)
-                return new ApiResponse { Success = false, Message = "Comment not found." };
+                return Fail("Comment not found.");
 
             if (comment.user_id != request.UserId)
-                return new ApiResponse { Success = false, Message = "User are not allowed to delete this comment." };
+                return Fail("User is not allowed to delete this comment.");
 
-            var isSuccess = await _commentRepo.DeleteAsync(request.Id);
-
-            if (!isSuccess)
-                return new ApiResponse { Success = false, Message = "Failed to delete the post or post not found." };
+            var deleted = await _commentRepo.DeleteAsync(request.Id);
+            if (!deleted)
+                return Fail("Failed to delete the comment.");
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Post deleted successfully.",
+                Message = "Comment deleted successfully."
             };
         }
+
+        private ApiResponse Fail(string message) => new()
+        {
+            Success = false,
+            Message = message
+        };
     }
 }

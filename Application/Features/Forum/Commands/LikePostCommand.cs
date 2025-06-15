@@ -14,27 +14,31 @@ namespace Application.Features.Forum.Commands
 
     public class LikePostCommandHandler : IRequestHandler<LikePostCommand, ApiResponse>
     {
-        // private readonly IForumPostRepository _postRepo;
         private readonly IForumPostLikeRepository _postLikeRepo;
+        private readonly IForumPostRepository _postRepo;
 
-        public LikePostCommandHandler(IForumPostLikeRepository postLikeRepo)
+        public LikePostCommandHandler(
+            IForumPostLikeRepository postLikeRepo,
+            IForumPostRepository postRepo)
         {
             _postLikeRepo = postLikeRepo;
+            _postRepo = postRepo;
         }
 
         public async Task<ApiResponse> Handle(LikePostCommand request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(request.PostId) || string.IsNullOrWhiteSpace(request.UserId))
+                return Fail("Missing required fields: PostId or UserId.");
+
+            var post = await _postRepo.GetByIdAsync(request.PostId);
+            if (post == null)
+                return Fail("Post does not exist.");
+
             var hasLiked = await _postLikeRepo.HasUserLikedPostAsync(request.PostId, request.UserId);
             if (hasLiked)
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "User has already liked this post."
-                };
-            }
-            
-            ForumPostLikeEntity like = new()
+                return Fail("User has already liked this post.");
+
+            var like = new ForumPostLikeEntity
             {
                 id = SystemHelper.RandomId(),
                 post_id = request.PostId,
@@ -51,5 +55,11 @@ namespace Application.Features.Forum.Commands
                 Data = like
             };
         }
+
+        private ApiResponse Fail(string msg) => new()
+        {
+            Success = false,
+            Message = msg
+        };
     }
 }

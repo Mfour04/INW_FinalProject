@@ -1,9 +1,12 @@
 ﻿using Application.Auth.Commands;
+using Application.Features.User.Feature;
 using Application.Features.User.Queries;
+using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared.SystemHelpers.TokenGenerate;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace WebApi.Controllers
@@ -112,6 +115,37 @@ namespace WebApi.Controllers
         {
             Response.Cookies.Delete("jwt");
             return Ok(new { message = "Logout success" });
+        }
+
+        [HttpGet("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+        {
+            try
+            {
+                var jwtToken = _jwtHelpers.Verify(token);
+                if (jwtToken == null)
+                    return BadRequest("Invalid or expired token.");
+
+                var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return BadRequest("Invalid token content.");
+
+                var result = await _mediator.Send(new VerifyUserCommand { UserId = userId });
+                if (!result.Success)
+                    return BadRequest(result.Message);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpPut("update-user")]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserCommand command)
+        {
+            var result = _mediator.Send(command);
+            return Ok(result);
         }
     }
 }

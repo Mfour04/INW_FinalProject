@@ -23,28 +23,33 @@ namespace Application.Features.Forum.Commands
         public async Task<ApiResponse> Handle(UpdatePostCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.Content))
-                return new ApiResponse { Success = false, Message = "Content cannot be empty." };
+                return Fail("Content cannot be empty.");
 
-            var updated = await _postRepo.GetByIdAsync(request.Id);
-            if (updated == null)
-                return new ApiResponse { Success = false, Message = "Post not found." };
+            var post = await _postRepo.GetByIdAsync(request.Id);
+            if (post == null)
+                return Fail("Post not found.");
 
-            if (updated.user_id != request.UserId)
-                return new ApiResponse { Success = false, Message = "User are not allowed to edit this post." };
+            if (post.user_id != request.UserId)
+                return Fail("You are not allowed to edit this post.");
 
-            updated.content = request.Content;
-            updated.updated_at = DateTime.Now.Ticks;
+            post.content = request.Content;
+            post.updated_at = DateTime.Now.Ticks;
 
-            var isSuccess = await _postRepo.UpdateAsync(request.Id, updated);
-
-            if (!isSuccess)
-                return new ApiResponse { Success = false, Message = "Failed to update the post or post not found." };
+            var success = await _postRepo.UpdateAsync(request.Id, post);
+            if (!success)
+                return Fail("Failed to update the post.");
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Post updated successfully.",
+                Message = "Post updated successfully."
             };
         }
+
+        private ApiResponse Fail(string message) => new()
+        {
+            Success = false,
+            Message = message
+        };
     }
 }

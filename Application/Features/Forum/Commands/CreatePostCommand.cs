@@ -1,4 +1,3 @@
-using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -17,12 +16,10 @@ namespace Application.Features.Forum.Commands
     public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, ApiResponse>
     {
         private readonly IForumPostRepository _postRepo;
-        private readonly IMapper _mapper;
 
-        public CreatePostCommandHandler(IForumPostRepository postRepo, IMapper mapper)
+        public CreatePostCommandHandler(IForumPostRepository postRepo)
         {
             _postRepo = postRepo;
-            _mapper = mapper;
         }
 
         public async Task<ApiResponse> Handle(CreatePostCommand request, CancellationToken cancellationToken)

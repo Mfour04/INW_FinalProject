@@ -23,39 +23,34 @@ namespace Application.Features.Forum.Commands
         public async Task<ApiResponse> Handle(UpdatePostCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.Content))
-                return new ApiResponse { Success = false, Message = "Content cannot be empty." };
+                return Fail("Content cannot be empty.");
 
-            var updated = await _commentRepo.GetByIdAsync(request.Id);
+            var comment = await _commentRepo.GetByIdAsync(request.Id);
+            if (comment == null)
+                return Fail("Comment not found.");
 
-            if (updated == null)
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "Comment not found."
-                };
-            }
+            if (comment.user_id != request.UserId)
+                return Fail("You are not allowed to edit this comment.");
 
-            if (updated.user_id != request.UserId)
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "User are not allowed to edit this comment."
-                };
-            }
+            comment.content = request.Content;
+            comment.updated_at = DateTime.Now.Ticks;
 
-            updated.content = request.Content;
-            updated.updated_at = DateTime.Now.Ticks;
-
-            await _commentRepo.UpdateAsync(request.Id, updated);
+            var success = await _commentRepo.UpdateAsync(request.Id, comment);
+            if (!success)
+                return Fail("Failed to update the comment.");
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Comment updated successfully.",
-                Data = updated
+                Data = comment
             };
         }
+
+        private ApiResponse Fail(string msg) => new()
+        {
+            Success = false,
+            Message = msg
+        };
     }
 }

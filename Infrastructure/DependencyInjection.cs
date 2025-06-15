@@ -1,4 +1,5 @@
-﻿using Infrastructure.Common;
+﻿using Domain.Entities.System;
+using Infrastructure.Common;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
@@ -23,14 +24,14 @@ namespace Infrastructure
                 .AddAuthentication(configuration)
                 // .AddAuthorization()
                 .AddPersistence();
-
+            services.Configure<EmailSettings>(
+                configuration.GetSection("EmailSettings"));
             return services;
         }
 
         private static IServiceCollection AddServices(this IServiceCollection services)
         {
             services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
-
             return services;
         }
 
@@ -44,12 +45,15 @@ namespace Infrastructure
             services.AddScoped<IChapterRepository, ChapterRepository>();
             services.AddScoped<IOwnershipRepository, OwnershipRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
+            services.AddTransient<IEmailService, EmailService>();
 
             services.AddScoped<IForumPostRepository, ForumPostRepository>();
             services.AddScoped<IForumPostLikeRepository, ForumPostLikeRepository>();
             services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
+            services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
 
             services.AddScoped<ICommentRepository, CommentRepository>();
+            services.AddScoped<ICloudDinaryService, CloudDinaryService>();
             return services;
         }
 

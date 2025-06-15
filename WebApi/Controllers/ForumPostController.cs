@@ -86,5 +86,41 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+
+        [HttpPost("{id}/likes")]
+        // [Authorize]
+        public async Task<IActionResult> LikePost(string id)
+        {
+            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // if (string.IsNullOrEmpty(userId))
+            //     return Unauthorized(new ApiResponse
+            //     {
+            //         Success = false,
+            //         Message = "User not authenticated."
+            //     });
+            // command.UserId = userId;
+
+            var result = await _mediator.Send(new LikePostCommand { PostId = id, UserId = "user_002" });
+            return Ok(result);
+        }
+
+        [HttpDelete("{id}/likes")]
+        public async Task<IActionResult> UnlikePost(string id)
+        {
+            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // if (string.IsNullOrEmpty(userId))
+            //     return Unauthorized(new ApiResponse
+            //     {
+            //         Success = false,
+            //         Message = "User not authenticated."
+            //     });
+            // command.UserId = userId;
+
+            var result = await _mediator.Send(new UnlikePostCommand { PostId = id, UserId = "user_002" });
+            return Ok(result);
+        }
+
     }
 }

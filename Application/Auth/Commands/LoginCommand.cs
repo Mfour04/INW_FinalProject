@@ -3,6 +3,7 @@ using AutoMapper;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.User;
 using Shared.SystemHelpers.TokenGenerate;
 
 namespace Application.Auth.Commands
