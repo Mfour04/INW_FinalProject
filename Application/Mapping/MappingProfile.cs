@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Domain.Entities;
 using Microsoft.AspNetCore.Routing.Constraints;
+using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
 using Shared.Contracts.Response.Comment;
+using Shared.Contracts.Response.Forum;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Ownership;
 using Shared.Contracts.Response.Tag;
@@ -10,7 +12,7 @@ using Shared.Contracts.Response.User;
 
 namespace Application.Mapping
 {
-    public class MappingProfile: Profile    
+    public class MappingProfile : Profile
     {
         public MappingProfile()
         {
@@ -24,7 +26,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
-                .ForMember(dest => dest.Tags, opt => opt.Ignore()); 
+                .ForMember(dest => dest.Tags, opt => opt.Ignore());
             //CreateMap<NovelEntity, CreateNovelResponse>()
             //    .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id));
             CreateMap<NovelEntity, UpdateNovelResponse>()
@@ -56,8 +58,23 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id));
 
-            //Comment
-            CreateMap<CommentEntity, CommentResponse>()
+            //Forum
+            CreateMap<ForumPostEntity, PostResponse>()
+                .ForMember(dest => dest.ImgUrls, opt => opt.MapFrom(src => src.img_urls))
+                .ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src => src.like_count))
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.comment_count))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
+                .ForMember(dest => dest.Author, opt => opt.Ignore());
+			CreateMap<ForumCommentEntity, PostCommentResponse>()
+				.ForMember(dest => dest.PostId, opt => opt.MapFrom(src => src.post_id))
+				.ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.parent_comment_id))
+				.ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src => src.like_count))
+				.ForMember(dest => dest.ReplyCount, opt => opt.MapFrom(src => src.reply_count))
+				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
+				.ForMember(dest => dest.Author, opt => opt.Ignore());
+
+			//Comment
+			CreateMap<CommentEntity, CommentResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))

@@ -46,6 +46,12 @@ namespace Infrastructure
             services.AddScoped<IOwnershipRepository, OwnershipRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddTransient<IEmailService, EmailService>();
+
+            services.AddScoped<IForumPostRepository, ForumPostRepository>();
+            services.AddScoped<IForumPostLikeRepository, ForumPostLikeRepository>();
+            services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
+            services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
+
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<ICloudDinaryService, CloudDinaryService>();
             return services;
