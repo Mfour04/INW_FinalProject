@@ -61,11 +61,6 @@ namespace Application.Features.Forum.Queries
                     };
                 }
 
-                if (!string.IsNullOrEmpty(request.UserId))
-                {
-                    mapped.IsLiked = await _postLikeRepo.HasUserLikedPostAsync(post.id, request.UserId);
-                }
-
                 response.Add(mapped);
             }
 

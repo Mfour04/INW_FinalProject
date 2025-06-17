@@ -44,7 +44,7 @@ namespace Application.Features.Purchase.Queries
                 Success = true,
                 Message = "Retrieved tags successfully.",
                 Data = purchaserRespone
-            };
+            }; 
         }
     }
 }

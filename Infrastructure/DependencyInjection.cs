@@ -49,6 +49,7 @@ namespace Infrastructure
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddTransient<IEmailService, EmailService>();
 
+            services.AddScoped<IBadgeRepository, BadgeRepository>();
             services.AddScoped<IForumPostRepository, ForumPostRepository>();
             services.AddScoped<IForumPostLikeRepository, ForumPostLikeRepository>();
             services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
