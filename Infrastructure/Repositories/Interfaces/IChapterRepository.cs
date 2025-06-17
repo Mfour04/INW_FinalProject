@@ -18,5 +18,8 @@ namespace Infrastructure.Repositories.Interfaces
         Task<List<ChapterEntity>> GetChaptersByNovelIdAsync(string novelId);
         Task<List<ChapterEntity>> GetFreeChaptersByNovelIdAsync(string novelId);
         Task<List<ChapterEntity>> GetChapterByChapterIdAsync(List<string> chapterIds);
+        Task RenumberChaptersAsync(string novelId);
+        Task<ChapterEntity?> GetLastPublishedChapterAsync(string novelId);
+        Task<List<ChapterEntity>> GetPublishedChapterByNovelIdAsync(string novelId);
     }
 }

@@ -75,5 +75,20 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<UserEntity> UpdateUser(UserEntity entity)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(x => x.id, entity.id);
+                var result = await _collection.ReplaceOneAsync(filter, entity);
+
+                return entity;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }

@@ -47,6 +47,9 @@ namespace Application.Features.Chapter.Command
                 chapter_number = request.Chapter.ChapterNumber,
                 is_paid = request.Chapter.IsPaid ?? false,
                 price = request.Chapter.Price ?? 0,
+                is_lock = false,
+                is_draft = request.Chapter.IsDraft ?? true,
+                is_public = request.Chapter.IsPublic ?? false,
                 created_at = DateTime.UtcNow.Ticks,
                 updated_at = DateTime.UtcNow.Ticks
             };

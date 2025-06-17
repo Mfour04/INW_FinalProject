@@ -22,7 +22,20 @@ namespace Application.Features.Chapter.Command
         }
         public async Task<ApiResponse> Handle(DeleteChapterCommand request, CancellationToken cancellationToken)
         {
+            var chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+            if (chapter == null)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Chapter not found"
+                };
+            }
             var deleted= await _chapterRepository.DeleteChapterAsync(request.ChapterId);
+            if (chapter.is_public && !chapter.is_draft)
+            {
+                await _chapterRepository.RenumberChaptersAsync(chapter.novel_id);
+            }
             return new ApiResponse
             {
                 Success = true,

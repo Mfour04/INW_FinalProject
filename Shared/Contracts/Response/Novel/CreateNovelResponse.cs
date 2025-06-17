@@ -2,6 +2,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http;
 
 namespace Shared.Contracts.Response.Novel
 {
@@ -10,6 +11,7 @@ namespace Shared.Contracts.Response.Novel
         public string Title { get; set; }
         public string Description { get; set; }
         public string AuthorId { get; set; }
+        public IFormFile? NovelImage { get; set; }
         public List<string> Tags { get; set; } = new();
         [JsonConverter(typeof(JsonStringEnumConverter))]
         [BsonRepresentation(BsonType.String)]

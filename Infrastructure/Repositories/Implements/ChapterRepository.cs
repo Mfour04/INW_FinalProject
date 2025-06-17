@@ -126,6 +126,78 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<ChapterEntity?> GetLastPublishedChapterAsync(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(c => c.novel_id, novelId) &
+                             Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false) &
+                             Builders<ChapterEntity>.Filter.Eq(c => c.is_public, true);
+
+                return await _collection.Find(filter)
+                           .SortByDescending(c => c.chapter_number)
+                           .FirstOrDefaultAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<ChapterEntity>> GetPublishedChapterByNovelIdAsync(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(c => c.novel_id, novelId) &
+                             Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false) &
+                             Builders<ChapterEntity>.Filter.Eq(c => c.is_public, true);
+
+                var sort = Builders<ChapterEntity>.Sort.Ascending(c => c.chapter_number);
+                return await _collection.Find(filter).Sort(sort).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task RenumberChaptersAsync(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(c => c.novel_id, novelId) &
+                 Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false) &
+                 Builders<ChapterEntity>.Filter.Eq(c => c.is_public, true);
+
+                var chapters = await _collection.Find(filter)
+                                                .SortBy(c => c.chapter_number)
+                                                .ToListAsync();
+
+                int number = 1;
+                var updates = new List<WriteModel<ChapterEntity>>();
+                foreach(var chapter in chapters)
+                {
+                    if(chapter.chapter_number != number)
+                    {
+                        chapter.chapter_number = number;
+                        var update = Builders<ChapterEntity>.Update.Set(c => c.chapter_number, number);
+                        var updateOne = new UpdateOneModel<ChapterEntity>(
+                            Builders<ChapterEntity>.Filter.Eq(c => c.id, chapter.id), update);
+
+                        updates.Add(updateOne);
+                    }
+                }
+                if (updates.Any())
+                {
+                    await _collection.BulkWriteAsync(updates);
+                }
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task<ChapterEntity> UpdateChapterAsync(ChapterEntity entity)
         {
             try

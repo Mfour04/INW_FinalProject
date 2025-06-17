@@ -10,10 +10,12 @@ namespace Domain.Entities
         public string title_unsigned { get; set; }
         public string description { get; set; }
         public string author_id { get; set; }
+        public string novel_image { get; set; }
         public List<string> tags { get; set; } = new();
         [BsonRepresentation(BsonType.String)]
         public NovelStatus status { get; set; }
         public bool is_public { get; set; }
+        public bool is_lock { get; set; }
         /// <summary>
         /// Trả phí hay không
         /// </summary>

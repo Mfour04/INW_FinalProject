@@ -56,7 +56,7 @@ namespace Shared.Helpers
                     Field = parts[0].Trim(),
                     IsDescending = parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase),
                 })
-                .ToList();
+                .ToList();  
         }
     }
 }
