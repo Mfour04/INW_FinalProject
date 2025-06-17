@@ -26,6 +26,8 @@ namespace Infrastructure
                 .AddPersistence();
             services.Configure<EmailSettings>(
                 configuration.GetSection("EmailSettings"));
+            services.Configure<CloudinarySettings>(
+                configuration.GetSection("CloudinarySettings"));
             return services;
         }
 

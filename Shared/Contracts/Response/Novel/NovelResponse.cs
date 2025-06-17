@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Shared.Contracts.Response.Tag;
+using Microsoft.AspNetCore.Http;
 
 namespace Shared.Contracts.Response.Novel
 {
@@ -15,6 +16,7 @@ namespace Shared.Contracts.Response.Novel
         public string Title { get; set; }
         public string Description { get; set; }
         public string AuthorId { get; set; }
+        public string NovelImage { get; set; }
         public List<TagListResponse> Tags { get; set; } = new();
         [BsonRepresentation(BsonType.String)]
         public NovelStatus Status { get; set; }

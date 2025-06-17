@@ -14,7 +14,15 @@ namespace Application.Features.Chapter.Command
 {
     public class UpdateChapterCommand: IRequest<ApiResponse>
     {
-        public UpdateChapterResponse UpdateChapter { get; set; }
+        public string ChapterId { get; set; }
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public int? ChapterNumber { get; set; }
+        public bool? IsPaid { get; set; }
+        public int? Price { get; set; }
+        public DateTime? ScheduledAt { get; set; }
+        public bool IsDraft { get; set; }
+        public bool IsPublic { get; set; }
     }
     public class UpdateChapterHandler : IRequestHandler<UpdateChapterCommand, ApiResponse>
     {
@@ -30,23 +38,26 @@ namespace Application.Features.Chapter.Command
         }
         public async Task<ApiResponse> Handle(UpdateChapterCommand request, CancellationToken cancellationToken)
         {
-            var input = request.UpdateChapter;
-            var chapter = await _chapterRepository.GetByChapterIdAsync(input.ChapterId);
+            var chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
             if (chapter == null)
                 return new ApiResponse { Success = false, Message = "Chapter not found" };
 
-            chapter.title = input.Title ?? chapter.title;
-            chapter.content = input.Content ?? chapter.content;
-            chapter.chapter_number = input.ChapterNumber ?? chapter.chapter_number;
-            chapter.is_paid = input.IsPaid ?? chapter.is_paid;
-            chapter.price = input.Price ?? chapter.price;
+            chapter.title = request.Title ?? chapter.title;
+            chapter.content = request.Content ?? chapter.content;
+            chapter.chapter_number = request.ChapterNumber ?? chapter.chapter_number;
+            chapter.is_paid = request.IsPaid ?? chapter.is_paid;
+            chapter.price = request.Price ?? chapter.price;
+            if (request.ScheduledAt.HasValue)
+            {
+                chapter.scheduled_at = request.ScheduledAt.Value.ToUniversalTime().Ticks;
+            }
             chapter.updated_at = DateTime.UtcNow.Ticks;
 
-            if (request.UpdateChapter.IsPublic)
+            if (request.IsPublic)
             {
                 chapter.is_draft = false;
                 chapter.is_public = true;
-                if (!input.ChapterNumber.HasValue)
+                if (!request.ChapterNumber.HasValue)
                     {
                     var lastChapter = await _chapterRepository.GetLastPublishedChapterAsync(chapter.novel_id);
                     chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
