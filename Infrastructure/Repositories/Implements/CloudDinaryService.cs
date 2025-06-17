@@ -1,8 +1,10 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Domain.Entities.System;
 using Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 
 namespace Infrastructure.Repositories.Implements
@@ -10,14 +12,19 @@ namespace Infrastructure.Repositories.Implements
     public class CloudDinaryService : ICloudDinaryService
     {
         private readonly Cloudinary _cloudDinary;
-        public CloudDinaryService(IConfiguration configuration)
+        public CloudDinaryService(IOptions<CloudinarySettings> options)
         {
-            var cloudName = configuration["CloudinarySetttings:CloudName"];
-            var apiKey = configuration["CloudinarySetttings:ApiKey"];
-            var apiSecret = configuration["CloudinarySetttings:ApiSecret"];
+            var settings = options.Value;
+            Console.WriteLine($"CloudName: {settings.CloudName}");
+            Console.WriteLine($"ApiKey: {settings.ApiKey}");
+            Console.WriteLine($"ApiSecret: {settings.ApiSecret}");
+            
+            if (string.IsNullOrWhiteSpace(settings.CloudName))
+                throw new Exception("❌ CloudName is null or empty – check your appsettings.json");
 
-            var account = new Account(cloudName, apiKey, apiSecret);
+            var account = new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret);
             _cloudDinary = new Cloudinary(account);
+
         }
 
         public async Task<string> UploadImagesAsync(IFormFile file)
@@ -25,6 +32,12 @@ namespace Infrastructure.Repositories.Implements
             if (file == null || file.Length == 0)
             {
                 throw new ArgumentException("File is empty");
+            }
+
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+            if (!allowedTypes.Contains(file.ContentType.ToLower()))
+            {
+                throw new ArgumentException("File type is not allowed");
             }
 
             using var stream = file.OpenReadStream();
@@ -36,6 +49,12 @@ namespace Infrastructure.Repositories.Implements
             };
 
             var uploadResult = await _cloudDinary.UploadAsync(uploadParams);
+
+            if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK || uploadResult.SecureUrl == null)
+            {
+                throw new Exception("Image upload failed: " + uploadResult.Error?.Message);
+            }
+
             return uploadResult.SecureUrl.AbsoluteUri;
         }
     }

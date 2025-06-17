@@ -24,12 +24,14 @@ namespace Application.Features.Novel.Commands
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly ITagRepository _tagRepository;
-        public CreateNovelHandler(INovelRepository novelRepository, IMapper mapper, IUserRepository userRepository, ITagRepository tagRepository)
+        private readonly ICloudDinaryService _cloudDinaryService;
+        public CreateNovelHandler(INovelRepository novelRepository, IMapper mapper, IUserRepository userRepository, ITagRepository tagRepository, ICloudDinaryService cloudDinaryService)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
             _userRepository = userRepository;
             _tagRepository = tagRepository;
+            _cloudDinaryService = cloudDinaryService;
         }
         public async Task<ApiResponse> Handle(CreateNovelCommand request, CancellationToken cancellationToken)
         {
@@ -46,6 +48,8 @@ namespace Application.Features.Novel.Commands
                 validTagIds = existingTags.Select(t => t.id).ToList();
             }
 
+            var novelImage = await _cloudDinaryService.UploadImagesAsync(request.Novel.NovelImage);
+
             var novel = new NovelEntity
             {
                 id = SystemHelper.RandomId(),
@@ -53,8 +57,10 @@ namespace Application.Features.Novel.Commands
                 title_unsigned = SystemHelper.RemoveDiacritics(request.Novel.Title),
                 description = request.Novel.Description,
                 author_id = author.id,
+                novel_image = novelImage,
                 tags = validTagIds,
                 status = request.Novel.Status,
+                is_lock = false,
                 is_public = request.Novel.IsPublic ?? false,
                 is_paid = request.Novel.IsPaid ?? false,
                 purchase_type = request.Novel.PurchaseType,

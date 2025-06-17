@@ -142,9 +142,9 @@ namespace WebApi.Controllers
         }
 
         [HttpPut("update-user")]
-        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserCommand command)
+        public async Task<IActionResult> UpdateUser([FromForm] UpdateUserProfileCommand command)
         {
-            var result = _mediator.Send(command);
+            var result = await _mediator.Send(command);
             return Ok(result);
         }
     }

@@ -50,13 +50,13 @@ namespace WebApi.Controllers
             return Ok(result);
         }
         [HttpPost("created")]
-        public async Task<IActionResult> CreateNovel([FromBody] CreateNovelCommand command)
+        public async Task<IActionResult> CreateNovel([FromForm] CreateNovelCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
         [HttpPut("updated")]
-        public async Task<IActionResult> UpdateNovel([FromBody] UpdateNovelCommand command)
+        public async Task<IActionResult> UpdateNovel([FromForm] UpdateNovelCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
