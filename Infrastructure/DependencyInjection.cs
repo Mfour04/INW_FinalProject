@@ -59,6 +59,7 @@ namespace Infrastructure
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<ICloudDinaryService, CloudDinaryService>();
             services.AddScoped<IReportRepository, ReportRepository>();
+            services.AddScoped<IReadingProcessRepository, ReadingProcessRepository>();
             return services;
         }
 
