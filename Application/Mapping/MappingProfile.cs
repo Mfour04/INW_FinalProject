@@ -8,6 +8,7 @@ using Shared.Contracts.Response.Comment;
 using Shared.Contracts.Response.Forum;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Ownership;
+using Shared.Contracts.Response.ReadingProcess;
 using Shared.Contracts.Response.Report;
 using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.User;
@@ -135,6 +136,22 @@ namespace Application.Mapping
             CreateMap<ReportEntity, UpdateReportResponse>()
                 .ForMember(dest => dest.ReportId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status));
+
+            //Reading Process
+            CreateMap<ReadingProcessEntity, ReadingProcessResponse>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
+
+            CreateMap<ReadingProcessEntity, UpdateReadingProcessResponse>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id));
+
         }
     }
 }
