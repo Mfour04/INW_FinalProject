@@ -25,7 +25,7 @@ namespace Application.Features.NovelFollower.Queries
         {
             var novelFollow = await _novelFollowRepository.GetByNovelIdAsync(request.NovelId);
             if (novelFollow == null)
-                return new ApiResponse { Success = false, Message = "Can not found this novel" };
+                return new ApiResponse { Success = false, Message = "Can not found this novel." };
 
             return new ApiResponse { Success = true, Data = novelFollow };
         }
