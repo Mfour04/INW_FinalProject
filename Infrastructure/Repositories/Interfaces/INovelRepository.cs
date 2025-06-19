@@ -10,5 +10,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<NovelEntity> CreateNovelAsync(NovelEntity entity);
         Task<NovelEntity> UpdateNovelAsync(NovelEntity entity);
         Task<bool> DeleteNovelAsync(string id);
+        Task IncrementFollowersAsync(string novelId);
+        Task DecrementFollowersAsync(string novelId);
     }
 }

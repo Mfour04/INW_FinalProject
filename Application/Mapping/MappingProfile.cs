@@ -5,6 +5,7 @@ using Shared.Contracts.Response;
 using Shared.Contracts.Response.Badge;
 using Shared.Contracts.Response.Chapter;
 using Shared.Contracts.Response.Comment;
+using Shared.Contracts.Response.Follow;
 using Shared.Contracts.Response.Forum;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Ownership;
@@ -152,6 +153,11 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id));
 
+            //Novel Follower
+            CreateMap<NovelFollowerEntity, NovelFollowResponse>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.followed_at));
         }
     }
 }

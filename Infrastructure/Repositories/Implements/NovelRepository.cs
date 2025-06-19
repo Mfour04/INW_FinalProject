@@ -5,6 +5,7 @@ using Infrastructure.Repositories.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using ZstdSharp.Unsafe;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -28,6 +29,12 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task DecrementFollowersAsync(string novelId)
+        {
+            var update = Builders<NovelEntity>.Update.Inc(x => x.followers, -1);
+            await _collection.UpdateOneAsync(x => x.id == novelId, update);
         }
 
         public async Task<bool> DeleteNovelAsync(string id)
@@ -115,6 +122,12 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task IncrementFollowersAsync(string novelId)
+        {
+            var update = Builders<NovelEntity>.Update.Inc(x => x.followers, 1);
+            await _collection.UpdateOneAsync(x => x.id == novelId, update);
         }
 
         public async Task<NovelEntity> UpdateNovelAsync(NovelEntity entity)
