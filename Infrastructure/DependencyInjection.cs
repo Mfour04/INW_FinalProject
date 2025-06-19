@@ -60,6 +60,7 @@ namespace Infrastructure
             services.AddScoped<ICloudDinaryService, CloudDinaryService>();
             services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<IReadingProcessRepository, ReadingProcessRepository>();
+            services.AddScoped<INovelFollowRepository, NovelFollowRepository>();
             return services;
         }
 
