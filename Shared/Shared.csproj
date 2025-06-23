@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
+    <PackageReference Include="payOS" Version="1.0.9" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,5 +9,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<UserEntity> GetById(string userId);
         Task<UserEntity> GetByName(string userName);
         Task<UserEntity> UpdateUser(UserEntity entity);
+        Task IncreaseCoinAsync(string userId, int amount);
+        Task<bool> DecreaseCoinAsync(string userId, int amount);
     }
 }
