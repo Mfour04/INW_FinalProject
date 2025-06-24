@@ -122,5 +122,19 @@ namespace Shared.SystemHelpers.TokenGenerate
                 return null;
             }
         }
+
+        public string GenerateResetToken(Claim[] claims, int expirationMinutes)
+        {
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
+            var token = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                expires: _datetimeProvider.UtcNow.AddMinutes(expirationMinutes),
+                signingCredentials: creds
+            );
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
     }
 }
