@@ -45,7 +45,6 @@ namespace Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<INovelRepository, NovelRepository>();
             services.AddScoped<IChapterRepository, ChapterRepository>();
-            services.AddScoped<IOwnershipRepository, OwnershipRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddTransient<IEmailService, EmailService>();
 

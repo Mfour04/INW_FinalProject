@@ -1,4 +1,5 @@
 ﻿using Application.Features.Transaction.Commands;
+using Application.Features.Transaction.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,6 +14,13 @@ namespace WebApi.Controllers
         public TransactionController(IMediator mediator)
         {
             _mediator = mediator;
+        }
+
+        [HttpGet()]
+        public async Task<IActionResult> GetTransactions([FromQuery] GetTransactions request)
+        {
+            var result = await _mediator.Send(request);
+            return Ok(result);
         }
 
         [HttpPost("coin-recharge")]
@@ -61,6 +69,25 @@ namespace WebApi.Controllers
             }
 
             return BadRequest();
+        }
+
+        [HttpGet("user-transaction")]
+        public async Task<IActionResult> GetUserTransaction([FromQuery] GetUserTransaction request)
+        {
+            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // if (string.IsNullOrEmpty(userId))
+            //     return Unauthorized(new ApiResponse
+            //     {
+            //         Success = false,
+            //         Message = "User not authenticated."
+            //     });
+            // command.UserId = userId;
+
+            request.UserId = "user_002";
+
+            var result = await _mediator.Send(request);
+            return Ok(result);
         }
     }
 }

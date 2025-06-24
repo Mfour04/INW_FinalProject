@@ -39,10 +39,24 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("id")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetNovelByIdAsync(string id)
         {
-            var result = await _mediator.Send(new GetNovelById { NovelId = id });
+            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // if (string.IsNullOrEmpty(userId))
+            //     return Unauthorized(new ApiResponse
+            //     {
+            //         Success = false,
+            //         Message = "User not authenticated."
+            //     });
+
+            var result = await _mediator.Send(new GetNovelById
+            {
+                NovelId = id,
+                UserId = "user_002"
+            });
+
             return Ok(result);
         }
 
