@@ -1,0 +1,37 @@
+using Domain.Enums;
+using Infrastructure.Repositories.Interfaces;
+using MediatR;
+using Net.payOS;
+
+namespace Application.Features.Transaction.Commands
+{
+    public class CancelPaymentLinkCommand : IRequest
+    {
+        public long OrderCode { get; set; }
+    }
+
+    public class CancelPaymentLinkCommandHandler : IRequestHandler<CancelPaymentLinkCommand>
+    {
+        private readonly PayOS _payOS;
+        private readonly ITransactionRepository _transactionRepo;
+
+        public CancelPaymentLinkCommandHandler(PayOS payOS, ITransactionRepository transactionRepo)
+        {
+            _payOS = payOS;
+            _transactionRepo = transactionRepo;
+        }
+
+        public async Task Handle(CancelPaymentLinkCommand request, CancellationToken cancellationToken)
+        {
+            var transaction = await _transactionRepo.GetByOrderCodeAsync(request.OrderCode);
+            if (transaction == null || transaction.status != PaymentStatus.Pending)
+                return;
+
+            await _payOS.cancelPaymentLink(request.OrderCode, "User inactive too long");
+
+            transaction.updated_at = DateTime.Now.Ticks;
+
+            await _transactionRepo.UpdateStatusAsync(request.OrderCode.ToString(), PaymentStatus.Failed);
+        }
+    }
+}

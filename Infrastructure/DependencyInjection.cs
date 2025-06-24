@@ -45,7 +45,6 @@ namespace Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<INovelRepository, NovelRepository>();
             services.AddScoped<IChapterRepository, ChapterRepository>();
-            services.AddScoped<IOwnershipRepository, OwnershipRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddTransient<IEmailService, EmailService>();
 
@@ -55,6 +54,8 @@ namespace Infrastructure
             services.AddScoped<IForumPostLikeRepository, ForumPostLikeRepository>();
             services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
             services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
+            services.AddScoped<ITransactionRepository, TransactionRepository>();
+            services.AddScoped<IPurchaserRepository, PurchaserRepository>();
 
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<ICloudDinaryService, CloudDinaryService>();

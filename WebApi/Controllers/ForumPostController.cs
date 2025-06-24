@@ -3,7 +3,6 @@ using Application.Features.Forum.Commands;
 using Application.Features.Forum.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Contracts.Response;
 
 namespace WebApi.Controllers
 {

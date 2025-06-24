@@ -1,10 +1,11 @@
 using Application;
 using Application.Mapping;
+using Application.Services;
 using Infrastructure;
 using Infrastructure.InwContext;
-using Infrastructure.Repositories.Implements;
-using Infrastructure.Repositories.Interfaces;
-using Shared.SystemHelpers.TokenGenerate;
+using Microsoft.Extensions.Options;
+using Net.payOS;
+using Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +34,16 @@ builder.Services.AddCors(options =>
                         .AllowAnyHeader());
 });
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// Program.cs
+builder.Services.Configure<PayOSConfig>(builder.Configuration.GetSection("PayOS"));
+builder.Services.AddSingleton<PayOS>(sp =>
+{
+	var config = sp.GetRequiredService<IOptions<PayOSConfig>>().Value;
+	return new PayOS(config.ClientId, config.ApiKey, config.ChecksumKey);
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHostedService<TransactionCleanupService>();
 
 var app = builder.Build();
 

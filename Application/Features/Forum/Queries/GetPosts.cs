@@ -14,7 +14,7 @@ namespace Application.Features.Forum.Queries
         public int Page { get; set; } = 0;
         public int Limit { get; set; } = int.MaxValue;
         public string UserId { get; set; }
-    }
+    } 
 
     public class GetPostsHanlder : IRequestHandler<GetPosts, ApiResponse>
     {

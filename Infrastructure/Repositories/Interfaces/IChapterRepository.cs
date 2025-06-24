@@ -1,10 +1,5 @@
 ﻿using Domain.Entities.System;
 using Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Repositories.Interfaces
 {
@@ -21,5 +16,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task RenumberChaptersAsync(string novelId);
         Task<ChapterEntity?> GetLastPublishedChapterAsync(string novelId);
         Task<List<ChapterEntity>> GetPublishedChapterByNovelIdAsync(string novelId);
+        Task<List<string>> GetChapterIdsByNovelIdAsync(string novelId);
+        Task<List<string>> GetFreeChapterIdsByNovelIdAsync(string novelId);
     }
 }

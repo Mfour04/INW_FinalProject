@@ -24,8 +24,8 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-				entity.displayname_normalized = SystemHelper.RemoveDiacritics(entity.displayname);
-				await _collection.InsertOneAsync(entity);
+                entity.displayname_normalized = SystemHelper.RemoveDiacritics(entity.displayname);
+                await _collection.InsertOneAsync(entity);
 
                 return entity;
             }
@@ -65,7 +65,7 @@ namespace Infrastructure.Repositories.Implements
 
         public async Task<UserEntity> GetByName(string userName)
         {
-             try
+            try
             {
                 var result = await _collection.Find(x => x.username == userName).FirstOrDefaultAsync();
                 return result;
@@ -86,6 +86,43 @@ namespace Infrastructure.Repositories.Implements
                 return entity;
             }
             catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task IncreaseCoinAsync(string userId, int amount)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(u => u.id, userId);
+                var update = Builders<UserEntity>.Update.Inc(u => u.coin, amount);
+
+                var result = await _collection.UpdateOneAsync(filter, update);
+            }
+            catch
+            {
+                throw new InternalServerException();
+
+            }
+        }
+
+        public async Task<bool> DecreaseCoinAsync(string userId, int amount)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.And(
+                    Builders<UserEntity>.Filter.Eq(u => u.id, userId),
+                    Builders<UserEntity>.Filter.Gte(u => u.coin, amount) 
+                );
+
+                var update = Builders<UserEntity>.Update.Inc(u => u.coin, -amount);
+
+                var result = await _collection.UpdateOneAsync(filter, update);
+
+                return result.ModifiedCount > 0; 
+            }
+            catch (Exception)
             {
                 throw new InternalServerException();
             }

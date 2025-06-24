@@ -1,7 +1,6 @@
 ﻿using Application.Auth.Commands;
 using Application.Features.User.Feature;
 using Application.Features.User.Queries;
-using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -201,5 +200,26 @@ namespace WebApi.Controllers
                 return BadRequest(new { success = false, message = "Token không hợp lệ" });
             }
         }
+
+        [HttpGet("coin")]
+        public async Task<IActionResult> GetUserCoin()
+        {
+            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // if (string.IsNullOrEmpty(userId))
+            //     return Unauthorized(new ApiResponse
+            //     {
+            //         Success = false,
+            //         Message = "User not authenticated."
+            //     });
+
+            var result = await _mediator.Send(new GetUserCoin
+            {
+                UserId = "user_002"
+            });
+
+            return Ok(result);
+        }
+
     }
 }

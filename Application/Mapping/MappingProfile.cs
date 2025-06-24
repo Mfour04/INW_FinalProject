@@ -1,17 +1,15 @@
 ﻿using AutoMapper;
 using Domain.Entities;
-using Microsoft.AspNetCore.Routing.Constraints;
-using Shared.Contracts.Response;
 using Shared.Contracts.Response.Badge;
 using Shared.Contracts.Response.Chapter;
 using Shared.Contracts.Response.Comment;
 using Shared.Contracts.Response.Follow;
 using Shared.Contracts.Response.Forum;
 using Shared.Contracts.Response.Novel;
-using Shared.Contracts.Response.Ownership;
 using Shared.Contracts.Response.ReadingProcess;
 using Shared.Contracts.Response.Report;
 using Shared.Contracts.Response.Tag;
+using Shared.Contracts.Response.Transaction;
 using Shared.Contracts.Response.User;
 
 namespace Application.Mapping
@@ -72,11 +70,6 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name));
             CreateMap<TagEntity, UpdateTagResponse>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name));
-            //Purchase
-            CreateMap<PurchaserEntity, PurchaserResponse>()
-                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
-                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
-                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id));
 
             //Forum
             CreateMap<ForumPostEntity, PostResponse>()
@@ -158,6 +151,21 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.followed_at));
+                
+            //Transaction
+            CreateMap<TransactionEntity, TransactionResponse>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id))
+                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.payment_method))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.updated_at))
+                .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => src.completed_at));
+            CreateMap<TransactionEntity, UserTransactionResponse>()
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id))
+                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.payment_method))
+                .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => src.completed_at));
         }
     }
 }
