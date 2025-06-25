@@ -6,4 +6,4 @@ namespace Domain.Entities
         public string chapter_id { get; set; }
         public string user_id { get; set; }
     }
-}
+} 

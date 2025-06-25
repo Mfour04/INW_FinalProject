@@ -3,7 +3,6 @@ using Application.Features.Forum.Commands;
 using Application.Features.Forum.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Contracts.Response;
 
 namespace WebApi.Controllers
 {
@@ -30,7 +29,7 @@ namespace WebApi.Controllers
 
         [HttpGet("{id}")]
         // [Authorize]
-        public async Task<IActionResult> GetHotelById(string id)
+        public async Task<IActionResult> GetPostById(string id)
         {
             var result = await _mediator.Send(new GetPostById { Id = id });
             return Ok(result);

@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Shared.Contracts.Response.Ownership
+namespace Shared.Contracts.Response.ReadingProcess
 {
-    public class CreatePurchaserResponse
+    public class UpdateReadingProcessResponse
     {
+        public string Id { get; set; }
         public string UserId { get; set; }
         public string NovelId { get; set; }
-        public List<string> ChapterId { get; set; } = new();
-        public bool IsFull { get; set; }
+        public string ChapterId { get; set; }
     }
 }

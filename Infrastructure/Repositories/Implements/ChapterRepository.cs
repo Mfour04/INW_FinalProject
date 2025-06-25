@@ -27,7 +27,8 @@ namespace Infrastructure.Repositories.Implements
             {
                 await _collection.InsertOneAsync(entity);
                 return entity;
-            } catch 
+            }
+            catch
             {
                 throw new InternalServerException();
             }
@@ -161,6 +162,28 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<int> ReleaseScheduledChaptersAsync()
+        {
+            try
+            {
+                var currentTicks = DateTime.UtcNow.Ticks;
+                var filter = Builders<ChapterEntity>.Filter.And(
+                             Builders<ChapterEntity>.Filter.Eq(c => c.scheduled_at, currentTicks) &
+                             Builders<ChapterEntity>.Filter.Eq(c => c.is_public, false) &
+                             Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
+                );
+
+                var update = Builders<ChapterEntity>.Update.Set(c => c.is_public, true);
+                var result = await _collection.UpdateManyAsync(filter, update);
+
+                return (int)result.ModifiedCount;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task RenumberChaptersAsync(string novelId)
         {
             try
@@ -175,9 +198,9 @@ namespace Infrastructure.Repositories.Implements
 
                 int number = 1;
                 var updates = new List<WriteModel<ChapterEntity>>();
-                foreach(var chapter in chapters)
+                foreach (var chapter in chapters)
                 {
-                    if(chapter.chapter_number != number)
+                    if (chapter.chapter_number != number)
                     {
                         chapter.chapter_number = number;
                         var update = Builders<ChapterEntity>.Update.Set(c => c.chapter_number, number);
@@ -207,6 +230,41 @@ namespace Infrastructure.Repositories.Implements
                 var result = await _collection.ReplaceOneAsync(filter, entity);
 
                 return entity;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách ID của tất cả các chương trong một truyện.
+        /// </summary>
+        public async Task<List<string>> GetChapterIdsByNovelIdAsync(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(c => c.novel_id, novelId);
+                return await _collection.Find(filter).Project(c => c.id).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách ID của các chương miễn phí trong một truyện.
+        /// </summary>
+        public async Task<List<string>> GetFreeChapterIdsByNovelIdAsync(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.And(
+                    Builders<ChapterEntity>.Filter.Eq(c => c.novel_id, novelId),
+                    Builders<ChapterEntity>.Filter.Eq(c => c.is_paid, false)
+                );
+                return await _collection.Find(filter).Project(c => c.id).ToListAsync();
             }
             catch
             {

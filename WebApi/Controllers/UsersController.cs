@@ -1,7 +1,6 @@
 ﻿using Application.Auth.Commands;
 using Application.Features.User.Feature;
 using Application.Features.User.Queries;
-using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -147,5 +146,80 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(command);
             return Ok(result);
         }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command)
+        {
+            var result = await _mediator.Send(command);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
+        {
+            var result = await _mediator.Send(command);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+        {
+            var result = await _mediator.Send(command);
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpGet("verify-reset-token")]
+        public IActionResult VerifyResetToken([FromQuery] string token)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(token))
+                    return BadRequest(new { success = false, message = "Token không hợp lệ" });
+
+                var jwtToken = _jwtHelpers.Verify(token);
+                if (jwtToken == null)
+                    return BadRequest(new { success = false, message = "Token không hợp lệ hoặc đã hết hạn" });
+
+                var tokenType = jwtToken.Claims.FirstOrDefault(c => c.Type == "Type")?.Value;
+                if (tokenType != "PasswordReset")
+                    return BadRequest(new { success = false, message = "Token không hợp lệ" });
+
+                return Ok(new { success = true, message = "Token hợp lệ" });
+            }
+            catch
+            {
+                return BadRequest(new { success = false, message = "Token không hợp lệ" });
+            }
+        }
+
+        [HttpGet("coin")]
+        public async Task<IActionResult> GetUserCoin()
+        {
+            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // if (string.IsNullOrEmpty(userId))
+            //     return Unauthorized(new ApiResponse
+            //     {
+            //         Success = false,
+            //         Message = "User not authenticated."
+            //     });
+
+            var result = await _mediator.Send(new GetUserCoin
+            {
+                UserId = "user_002"
+            });
+
+            return Ok(result);
+        }
+
     }
 }

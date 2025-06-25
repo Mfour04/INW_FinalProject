@@ -2,6 +2,7 @@ using AutoMapper;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Forum;
 
 namespace Application.Features.Forum.Queries
 {
@@ -25,21 +26,28 @@ namespace Application.Features.Forum.Queries
 
         public async Task<ApiResponse> Handle(GetPostById request, CancellationToken cancellationToken)
         {
-            try
-            {
-                var post = await _postRepo.GetByIdAsync(request.Id);
 
-                if (post == null)
+            var post = await _postRepo.GetByIdAsync(request.Id);
+
+            if (post == null)
+            {
+                return new ApiResponse { Success = false, Message = "No forum posts found." };
+            }
+
+            var response = _mapper.Map<PostResponse>(post);
+
+            var user = await _userRepo.GetById(post.user_id);
+            if (user != null)
+            {
+                response.Author = new ForumPostAuthorResponse
                 {
-                    return new ApiResponse { Success = false, Message = "No forum posts found." };
-                }
-
-                return new ApiResponse { Success = true, Data = post };
+                    Id = user.id,
+                    Username = user.username,
+                    Avatar = user.avata_url
+                };
             }
-            catch (Exception ex)
-            {
-                return new ApiResponse { Success = false, Message = $"An error occurred: {ex.Message}" };
-            }
+            
+            return new ApiResponse { Success = true, Data = response };
         }
     }
 }

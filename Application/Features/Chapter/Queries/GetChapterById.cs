@@ -20,12 +20,12 @@ namespace Application.Features.Chapter.Queries
     public class GetChapterByIdHandler : IRequestHandler<GetChapterById, ApiResponse>
     {
         private readonly IChapterRepository _chapterRepository;
-        private readonly IOwnershipRepository _ownershipRepository;
+        private readonly IPurchaserRepository _purchaserRepository;
         private readonly INovelRepository _novelRepository;
-        public GetChapterByIdHandler(IChapterRepository chapterRepository, IOwnershipRepository ownershipRepository, INovelRepository novelRepository)
+        public GetChapterByIdHandler(IChapterRepository chapterRepository, IPurchaserRepository purchaserRepository, INovelRepository novelRepository)
         {
             _chapterRepository = chapterRepository;
-            _ownershipRepository = ownershipRepository;
+            _purchaserRepository = purchaserRepository;
             _novelRepository = novelRepository;
         }
 
@@ -45,8 +45,8 @@ namespace Application.Features.Chapter.Queries
             if (chapter.is_paid)
             {
                 //bool isAuthor = novel.author_id == request.UserId;
-                bool hasFullChapter = await _ownershipRepository.HasChapterOwnershipAsync(request.UserId, request.NovelId, request.ChapterId);
-                bool hasFullOwnerShip = await _ownershipRepository.HasFullNovelOwnershipAsync(request.UserId, request.NovelId);
+                bool hasFullOwnerShip = await _purchaserRepository.HasPurchasedFullAsync(request.UserId, request.NovelId);
+                bool hasFullChapter = await _purchaserRepository.HasPurchasedChapterAsync(request.UserId, request.NovelId, request.ChapterId);
                 if ( hasFullOwnerShip || hasFullChapter)
                 {
                     return new ApiResponse { Success = true, Data = chapter };

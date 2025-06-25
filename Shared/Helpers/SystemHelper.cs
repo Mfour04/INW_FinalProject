@@ -1,5 +1,6 @@
 using Domain.Entities.System;
 using System.Globalization;
+using System.Net.NetworkInformation;
 using System.Text;
 
 namespace Shared.Helpers
@@ -40,6 +41,17 @@ namespace Shared.Helpers
             if (string.IsNullOrWhiteSpace(query))
                 return new List<string>();
             return query.Split(' ', '+').Select(RemoveDiacritics).ToList();
+        }
+
+        public static (string Exact, List<string> FuzzyTerms) ParseSearchQuerySmart(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return ("", new List<string>());
+
+            string normalized = RemoveDiacritics(query).ToLower().Trim();
+            var fuzzy = normalized.Split(' ').Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+
+            return (normalized, fuzzy);
         }
 
         public static List<SortCreterias> ParseSortCriteria(string sortBy)

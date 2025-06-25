@@ -9,7 +9,6 @@ namespace Shared.Contracts.Response.Forum
         public int CommentCount { get; set; }
         public long CreatedAt { get; set; }
         public long UpdatedAt { get; set; }
-        public bool IsLiked { get; set; }
         public ForumPostAuthorResponse Author { get; set; }
     }
 

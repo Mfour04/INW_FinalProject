@@ -4,6 +4,7 @@ namespace Domain.Enums
     {
         Pending,
         Completed,
+        Cancelled,
         Failed,
         Refunded
     }
