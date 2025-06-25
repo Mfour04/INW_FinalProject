@@ -73,9 +73,23 @@ namespace Infrastructure
             services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.Section));
 
             services
-                .ConfigureOptions<JwtBearerTokenValidationConfiguration>()
-                .AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer();
+            .ConfigureOptions<JwtBearerTokenValidationConfiguration>()
+            .AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                // 👇 Thêm đoạn này để lấy JWT từ Cookie "jwt"
+                options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        if (context.Request.Cookies.ContainsKey("jwt"))
+                        {
+                            context.Token = context.Request.Cookies["jwt"];
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
+            });
 
             return services;
         }

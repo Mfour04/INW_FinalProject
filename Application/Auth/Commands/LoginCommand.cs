@@ -10,8 +10,8 @@ namespace Application.Auth.Commands
 {
     public class LoginCommand : IRequest<ApiResponse>
     {
-        public string Email { get; set; }
-        public string PasswordHash { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
     }
 
     public class LoginHandler : IRequestHandler<LoginCommand, ApiResponse>
@@ -29,19 +29,19 @@ namespace Application.Auth.Commands
         
         public async Task<ApiResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.PasswordHash))
+            if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Password))
             {
                 throw new ApiException("Email and Password are required.");
             }
 
-            var user = await _userRepository.GetByEmail(request.Email);
+            var user = await _userRepository.GetByName(request.UserName);
             if (user == null)
             {
-                throw new ApiException("Invalid email or password.");
+                throw new ApiException("Invalid userName or password.");
             }
 
             // Kiểm tra mật khẩu
-            var isValidPassword = BCrypt.Net.BCrypt.Verify(request.PasswordHash, user.password);
+            var isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.password);
             if (!isValidPassword)
             {
                 throw new ApiException("Invalid email or password.");
@@ -49,7 +49,7 @@ namespace Application.Auth.Commands
 
             //var token = _jwtHelpers.Generate(user);
 
-            var accessToken = _jwtHelpers.Generate(user.id, user.email, user.role.ToString());
+            var accessToken = _jwtHelpers.Generate(user.id, user.username, user.role.ToString());
             var refreshToken = _jwtHelpers.GenerateRefreshToken(user.id);
 
 
@@ -59,9 +59,9 @@ namespace Application.Auth.Commands
             {
                 Success = true,
                 Message = "Login successful.",
-                Data = new
+                Data = new TokenResult
                 {
-                    AcessToken = accessToken,
+                    AccessToken = accessToken,
                     RefreshToken = refreshToken,
                     User = userResponse
                 }

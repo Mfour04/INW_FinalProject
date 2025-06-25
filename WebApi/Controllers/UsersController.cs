@@ -4,6 +4,7 @@ using Application.Features.User.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response.User;
 using Shared.SystemHelpers.TokenGenerate;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -45,10 +46,21 @@ namespace WebApi.Controllers
                 return BadRequest(result);
 
             // Gắn JWT vào cookie nếu đăng nhập thành công
-            Response.Cookies.Append("jwt", result.Data.ToString(), new CookieOptions
+            var tokenData = result.Data as TokenResult;
+            var accessToken = tokenData?.AccessToken;
+
+            if (!string.IsNullOrEmpty(accessToken))
             {
-                HttpOnly = true
-            });
+                // ✅ Gắn JWT accessToken vào cookie
+                Response.Cookies.Append("jwt", accessToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true, // để bảo mật hơn khi chạy https
+                    SameSite = SameSiteMode.None, // nếu dùng frontend khác domain
+                    Expires = DateTime.UtcNow.AddHours(1)
+                });
+            }
+
 
             return Ok(new
             {
@@ -85,28 +97,25 @@ namespace WebApi.Controllers
             return Ok(new { role, email });
         }
 
-        // Lấy thông tin user từ token JWT
         [Authorize]
-        [HttpGet("user")]
+        [HttpGet("user-infor")]
         public async Task<IActionResult> GetUserInfo()
         {
-            try
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
             {
-                var jwt = Request.Cookies["jwt"];
-                var token = _jwtHelpers.Verify(jwt);
-
-                var userId = token.Issuer;
-                var result = await _mediator.Send(new GetUserById { UserId = userId });
-
-                if (!result.Success) return Unauthorized();
-
-                return Ok(result.Data);
+                return Unauthorized(new { message = "Invalid token" });
             }
-            catch
-            {
-                return Unauthorized(new { message = "Unauthorized" });
-            }
+
+            var result = await _mediator.Send(new GetUserById { UserId = userId });
+
+            if (!result.Success) return Unauthorized();
+
+            return Ok(result.Data);
         }
+
+
 
         // Đăng xuất người dùng
         [HttpPost("logout")]
