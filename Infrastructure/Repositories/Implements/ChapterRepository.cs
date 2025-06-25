@@ -162,6 +162,28 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<int> ReleaseScheduledChaptersAsync()
+        {
+            try
+            {
+                var currentTicks = DateTime.UtcNow.Ticks;
+                var filter = Builders<ChapterEntity>.Filter.And(
+                             Builders<ChapterEntity>.Filter.Eq(c => c.scheduled_at, currentTicks) &
+                             Builders<ChapterEntity>.Filter.Eq(c => c.is_public, false) &
+                             Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
+                );
+
+                var update = Builders<ChapterEntity>.Update.Set(c => c.is_public, true);
+                var result = await _collection.UpdateManyAsync(filter, update);
+
+                return (int)result.ModifiedCount;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task RenumberChaptersAsync(string novelId)
         {
             try

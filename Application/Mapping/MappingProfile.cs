@@ -31,6 +31,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
+                .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.Tags, opt => opt.Ignore());
             //CreateMap<NovelEntity, CreateNovelResponse>()
             //    .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id));

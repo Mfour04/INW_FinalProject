@@ -62,6 +62,12 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new DeleteChapterCommand { ChapterId = id });
             return Ok(result);
         }
+        [HttpPost("release-chapter")]
+        public async Task<IActionResult> ReleaseChapter()
+        {
+            var result = await _mediator.Send(new ScheduleChapterReleaseCommand());
+            return Ok(result);
+        }
         
         [HttpPost("{id}/buy")]
         public async Task<IActionResult> BuyNovel(string id, [FromBody] BuyChapterCommand command)

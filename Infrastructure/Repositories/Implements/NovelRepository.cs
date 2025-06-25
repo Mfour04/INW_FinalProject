@@ -58,17 +58,29 @@ namespace Infrastructure.Repositories.Implements
             {
                 var builder = Builders<NovelEntity>.Filter;
                 var filtered = builder.Empty;
-
-                if (creterias.SearchTerm.Count >= 1)
+                var isExact = true;
+                if (creterias.SearchTerm != null && creterias.SearchTerm.Count > 0)
                 {
-                    var regexFilters = creterias.SearchTerm.Select(keyword =>
-                        builder.Regex(
+                    if (creterias.SearchTerm.Count == 1)
+                    {
+                        var keyword = creterias.SearchTerm[0];
+
+                        // ✅ THAY builder.Eq thành Regex để chứa từ đó (fuzzy nhẹ)
+                        filtered &= builder.Regex(
                             x => x.title_unsigned,
                             new BsonRegularExpression(keyword, "i")
-                        )
-                    );
-                    filtered &= builder.Or(regexFilters);
+                        );
+                    }
+                    else
+                    {
+                        // Fuzzy match: tất cả từ phải khớp
+                        var regexFilters = creterias.SearchTerm.Select(term =>
+                            builder.Regex(x => x.title_unsigned, new BsonRegularExpression(term, "i"))
+                        );
+                        filtered &= builder.And(regexFilters);
+                    }
                 }
+
 
                 var query = _collection
                     .Find(filtered)
@@ -89,6 +101,9 @@ namespace Infrastructure.Repositories.Implements
                         "total_views" => criterion.IsDescending
                             ? sortBuilder.Descending(x => x.total_views)
                             : sortBuilder.Ascending(x => x.total_views),
+                        "rating_avg" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.rating_avg)
+                            : sortBuilder.Ascending(x => x.rating_avg),
 
                         _ => null
                     };
