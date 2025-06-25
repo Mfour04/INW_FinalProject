@@ -33,17 +33,35 @@ namespace Application.Features.Novel.Queries
         public async Task<ApiResponse> Handle(GetNovel request, CancellationToken cancellationToken)
         {
             FindCreterias findCreterias = new();
-
-            if (!string.IsNullOrEmpty(request.SearchTerm))
-                findCreterias.SearchTerm = SystemHelper.ParseSearchQuery(request.SearchTerm);
-
-            findCreterias.Limit = request.Limit;
-
-            findCreterias.Page = request.Page;
+            var result = SystemHelper.ParseSearchQuerySmart(request.SearchTerm);
+            var exact = result.Exact;
+            var fuzzyTerms = result.FuzzyTerms;
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            var novel = await _novelRepository.GetAllNovelAsync(findCreterias, sortBy);
+            // ----- THỬ EXACT MATCH -----
+            var findExact = new FindCreterias
+            {
+                Page = request.Page,
+                Limit = request.Limit,
+                SearchTerm = string.IsNullOrEmpty(exact) ? new() : new List<string> { exact }
+            };
+
+            var novel = await _novelRepository.GetAllNovelAsync(findExact, sortBy);
+
+            // ----- NẾU KHÔNG CÓ KẾT QUẢ, THỬ FUZZY MATCH -----
+            if ((novel == null || novel.Count == 0) && fuzzyTerms.Count > 0)
+            {
+                var findFuzzy = new FindCreterias
+                {
+                    Page = request.Page,
+                    Limit = request.Limit,
+                    SearchTerm = fuzzyTerms
+                };
+
+                novel = await _novelRepository.GetAllNovelAsync(findFuzzy, sortBy);
+            }
+
             if (novel == null || novel.Count == 0)
                 return new ApiResponse { Success = false, Message = "Novel not found" };
             var novelResponse = _mapper.Map<List<NovelResponse>>(novel);
