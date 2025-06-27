@@ -18,7 +18,14 @@ namespace Application.Features.Chapter.Command
     public class CreateChapterCommand : IRequest<ApiResponse>
     {
         [JsonPropertyName("chapter")]
-        public CreateChapterResponse Chapter {get; set;}
+        public string NovelId { get; set; }
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public int ChapterNumber { get; set; }
+        public bool? IsPaid { get; set; }
+        public int? Price { get; set; }
+        public bool? IsDraft { get; set; }
+        public bool? IsPublic { get; set; }
     }
 
     public class CreateChapterHandler : IRequestHandler<CreateChapterCommand, ApiResponse>
@@ -34,7 +41,7 @@ namespace Application.Features.Chapter.Command
         }
         public async Task<ApiResponse> Handle(CreateChapterCommand request, CancellationToken cancellationToken)
         {
-            var novel = await _novelRepository.GetByNovelIdAsync(request.Chapter.NovelId);
+            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy novel này" };
 
@@ -42,20 +49,20 @@ namespace Application.Features.Chapter.Command
             {
                 id = SystemHelper.RandomId(),
                 novel_id = novel.id,
-                title = request.Chapter.Title,
-                content = request.Chapter.Content,
-                chapter_number = request.Chapter.ChapterNumber,
-                is_paid = request.Chapter.IsPaid ?? false,
-                price = request.Chapter.Price ?? 0,
+                title = request.Title,
+                content = request.Content,
+                chapter_number = request.ChapterNumber,
+                is_paid = request.IsPaid ?? false,
+                price = request.Price ?? 0,
                 is_lock = false,
-                is_draft = request.Chapter.IsDraft ?? true,
-                is_public = request.Chapter.IsPublic ?? false,
+                is_draft = request.IsDraft ?? true,
+                is_public = request.IsPublic ?? false,
                 created_at = DateTime.UtcNow.Ticks,
                 updated_at = DateTime.UtcNow.Ticks
             };
 
             await _chapterRepository.CreateChapterAsync(chapter);
-            var response = _mapper.Map<ChapterResponse>(chapter);
+            var response = _mapper.Map<CreateChapterResponse>(chapter);
 
             return new ApiResponse
             {

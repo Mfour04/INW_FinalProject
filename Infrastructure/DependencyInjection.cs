@@ -62,6 +62,7 @@ namespace Infrastructure
             services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<IReadingProcessRepository, ReadingProcessRepository>();
             services.AddScoped<INovelFollowRepository, NovelFollowRepository>();
+            services.AddScoped<IRatingRepository, RatingRepository>();
             return services;
         }
 
