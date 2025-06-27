@@ -73,7 +73,7 @@ namespace WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateNovel([FromForm] UpdateNovelCommand command)
         {
-            var result = await _mediator.Send((command)); 
+            var result = await _mediator.Send(command); 
             return Ok(result);
         }
 
