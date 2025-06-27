@@ -18,7 +18,7 @@ namespace Application.Features.Tag.Command
     public class CreateTagCommand: IRequest<ApiResponse>
     {
         [JsonPropertyName("tag")]
-        public CreateTagResponse Tag { get; set; }
+        public string Name { get; set; }
     }
 
     public class CreateTagHandler : IRequestHandler<CreateTagCommand, ApiResponse>
@@ -36,17 +36,16 @@ namespace Application.Features.Tag.Command
             var tag = new TagEntity
             {
                 id = SystemHelper.RandomId(),
-                name = request.Tag.Name 
+                name = request.Name 
             };
 
             await _tagRepository.CreateTagAsync(tag);
-            var tagRepose = _mapper.Map<TagResponse>(tag);
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Created Tag Successfully",
-                Data = tagRepose
+                Data = tag
             };
         }
     }

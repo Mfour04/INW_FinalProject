@@ -14,7 +14,8 @@ namespace Application.Features.Tag.Command
 {
     public class UpdateTagCommand : IRequest<ApiResponse>
     {
-        public UpdateTagResponse UpdateTag { get; set; }
+        public string TagId { get; set; }
+        public string Name { get; set; }
     }
 
     public class UpdateTagHandle : IRequestHandler<UpdateTagCommand, ApiResponse>
@@ -30,12 +31,11 @@ namespace Application.Features.Tag.Command
 
         public async Task<ApiResponse> Handle(UpdateTagCommand request, CancellationToken cancellationToken)
         {
-            var input = request.UpdateTag;
-            var tag = await _tagRepository.GetByTagIdAsync(request.UpdateTag.TagId);
+            var tag = await _tagRepository.GetByTagIdAsync(request.TagId);
             if (tag == null)
                 return new ApiResponse { Success = false, Message = "Tag not found" };
 
-            tag.name = input.Name ?? tag.name;
+            tag.name = request.Name ?? tag.name;
 
             await _tagRepository.UpdateTagAsync(tag);
             var response = _mapper.Map<UpdateTagResponse>(tag);
