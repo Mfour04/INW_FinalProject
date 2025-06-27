@@ -16,7 +16,9 @@ namespace Application.Features.NovelFollower.Commands
 {
     public class CreateNovelFollowerCommand: IRequest<ApiResponse>
     {
-        public CreateNovelFollowReponse NovelFollower { get; set; }
+        public string NovelId { get; set; }
+        public string UserId { get; set; }
+        public string UserName { get; set; }
     }
 
     public class CreateNovelFollowerHandler : IRequestHandler<CreateNovelFollowerCommand, ApiResponse>
@@ -35,11 +37,11 @@ namespace Application.Features.NovelFollower.Commands
         }
         public async Task<ApiResponse> Handle(CreateNovelFollowerCommand request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetById(request.NovelFollower.UserId);
+            var user = await _userRepository.GetById(request.UserId);
             if (user == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy người dùng này" };
 
-            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelFollower.NovelId);
+            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy novel này" };
 
@@ -53,8 +55,8 @@ namespace Application.Features.NovelFollower.Commands
             };
 
             await _novelFollowRepository.CreateNovelFollowAsync(novelfollower);
-            await _novelRepository.IncrementFollowersAsync(request.NovelFollower.NovelId);
-            var response = _mapper.Map<NovelFollowResponse>(novelfollower);
+            await _novelRepository.IncrementFollowersAsync(request.NovelId);
+            var response = _mapper.Map<CreateNovelFollowReponse>(novelfollower);
 
             return new ApiResponse
             {

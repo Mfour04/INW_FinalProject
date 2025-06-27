@@ -6,7 +6,7 @@ using Shared.Contracts.Response.Comment;
 using Shared.Contracts.Response.Follow;
 using Shared.Contracts.Response.Forum;
 using Shared.Contracts.Response.Novel;
-using Shared.Contracts.Response.Ownership;
+using Shared.Contracts.Response.NovelFollow;
 using Shared.Contracts.Response.Rating;
 using Shared.Contracts.Response.ReadingProcess;
 using Shared.Contracts.Response.Report;
@@ -35,8 +35,19 @@ namespace Application.Mapping
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.Tags, opt => opt.Ignore());
-            //CreateMap<NovelEntity, CreateNovelResponse>()
-            //    .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id));
+
+            CreateMap<NovelEntity, CreateNovelResponse>()
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))
+                .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image)) // đây là string ✔️
+                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.tags))              // là List<string>
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
+                .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
+                .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
+                .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
+                .ForMember(dest => dest.PurchaseType, opt => opt.MapFrom(src => src.purchase_type))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price));
+
             CreateMap<NovelEntity, UpdateNovelResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
@@ -57,8 +68,13 @@ namespace Application.Mapping
                 .ForMember(dest => dest.IsDraft, opt => opt.MapFrom(src => src.is_draft))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public));
 
-            //CreateMap<ChapterEntity, CreateChapterResponse>()
-            //    .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id));
+            CreateMap<ChapterEntity, CreateChapterResponse>()
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.ChapterNumber, opt => opt.MapFrom(src => src.chapter_number))
+                .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
+                .ForMember(dest => dest.IsDraft, opt => opt.MapFrom(src => src.is_draft))
+                .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public));
+
             CreateMap<ChapterEntity, UpdateChapterResponse>()
                 .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.ChapterNumber, opt => opt.MapFrom(src => src.chapter_number))
@@ -166,7 +182,11 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.followed_at));
-                
+
+            CreateMap<NovelFollowerEntity, CreateNovelFollowReponse>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.username));
             //Transaction
             CreateMap<TransactionEntity, TransactionResponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
