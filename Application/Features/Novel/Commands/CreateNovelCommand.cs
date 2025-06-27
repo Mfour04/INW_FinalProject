@@ -17,7 +17,6 @@ namespace Application.Features.Novel.Commands
 {
     public class CreateNovelCommand: IRequest<ApiResponse>
     {
-        [JsonPropertyName("novel")]
         public string Title { get; set; }
         public string Description { get; set; }
         public string AuthorId { get; set; }

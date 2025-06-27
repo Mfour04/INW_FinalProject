@@ -17,15 +17,27 @@ namespace Application.Features.Novel.Commands
     public class DeleteNovelHandler : IRequestHandler<DeleteNovelCommand, ApiResponse>
     {
         private readonly INovelRepository _novelRepository;
-        private readonly IMapper _mapper;
+        private readonly ICurrentUserService _currentUserService;
 
-        public DeleteNovelHandler(INovelRepository novelRepository, IMapper mapper)
+        public DeleteNovelHandler(INovelRepository novelRepository, ICurrentUserService currentUserService)
         {
             _novelRepository = novelRepository;
-            _mapper = mapper;
+            _currentUserService = currentUserService;
         }
         public async Task<ApiResponse> Handle(DeleteNovelCommand request, CancellationToken cancellationToken)
         {
+            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
+            if (novel == null)
+                return new ApiResponse { Success = false, Message = "Novel not found" };
+
+            if (novel.author_id != _currentUserService.UserId)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Unauthorized: You are not the author of this novel"
+                };
+            }
             var deleted = await _novelRepository.DeleteNovelAsync(request.NovelId);
 
             return new ApiResponse

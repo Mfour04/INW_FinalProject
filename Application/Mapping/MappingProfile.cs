@@ -21,7 +21,11 @@ namespace Application.Mapping
         public MappingProfile()
         {
             //User
-            CreateMap<UserEntity, UserResponse>();
+            CreateMap<UserEntity, UserResponse>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.avata_url))
+                .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id));
+
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.AvataUrl, opt => opt.MapFrom(src => src.avata_url))
