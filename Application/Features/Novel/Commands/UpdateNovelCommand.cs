@@ -32,17 +32,28 @@ namespace Application.Features.Novel.Commands
         private readonly INovelRepository _novelRepository;
         private readonly IMapper _mapper;
         private readonly ICloudDinaryService _cloudDinaryService;
-        public UpdateNovelHandle(INovelRepository novelRepository, IMapper mapper, ICloudDinaryService cloudDinaryService)
+        private readonly ICurrentUserService _currentUserService;
+        public UpdateNovelHandle(INovelRepository novelRepository, IMapper mapper, ICloudDinaryService cloudDinaryService, ICurrentUserService currentUserService)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
             _cloudDinaryService = cloudDinaryService;
+            _currentUserService = currentUserService;
         }
         public async Task<ApiResponse> Handle(UpdateNovelCommand request, CancellationToken cancellationToken)
         {
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if(novel == null)
                 return new ApiResponse { Success = false, Message = "Novel not found" };
+
+            if (novel.author_id != _currentUserService.UserId)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Unauthorized: You are not the author of this novel"
+                };
+            }
 
             novel.title = request.Title ?? novel.title;
             novel.description = request.Description ?? novel.description;

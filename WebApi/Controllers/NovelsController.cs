@@ -2,7 +2,9 @@
 using Application.Features.Novel.Queries;
 using Domain.Entities.System;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -68,16 +70,22 @@ namespace WebApi.Controllers
         }
 
         [HttpPut("updated")]
+        [Authorize]
         public async Task<IActionResult> UpdateNovel([FromForm] UpdateNovelCommand command)
         {
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send((command)); 
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteNovel(string id)
         {
-            var result = await _mediator.Send(new DeleteNovelCommand { NovelId = id });
+            var result = await _mediator.Send(new DeleteNovelCommand
+            {
+                NovelId = id
+            });
+
             return Ok(result);
         }
 

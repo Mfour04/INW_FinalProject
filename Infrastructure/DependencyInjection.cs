@@ -19,10 +19,10 @@ namespace Infrastructure
         )
         {
             services
-                // .AddHttpContextAccessor()
+                .AddHttpContextAccessor()
                 .AddServices()
                 .AddAuthentication(configuration)
-                // .AddAuthorization()
+                .AddAuthorization()
                 .AddPersistence();
             services.Configure<EmailSettings>(
                 configuration.GetSection("EmailSettings"));
@@ -63,6 +63,7 @@ namespace Infrastructure
             services.AddScoped<IReadingProcessRepository, ReadingProcessRepository>();
             services.AddScoped<INovelFollowRepository, NovelFollowRepository>();
             services.AddScoped<IRatingRepository, RatingRepository>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
             return services;
         }
 
