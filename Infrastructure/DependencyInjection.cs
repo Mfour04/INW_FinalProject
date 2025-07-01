@@ -64,6 +64,7 @@ namespace Infrastructure
             services.AddScoped<INovelFollowRepository, NovelFollowRepository>();
             services.AddScoped<IRatingRepository, RatingRepository>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<INovelViewTrackingRepository, NovelViewTrackingRepository>();
             return services;
         }
 

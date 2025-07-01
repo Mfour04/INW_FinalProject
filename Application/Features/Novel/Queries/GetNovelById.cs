@@ -31,7 +31,7 @@ namespace Application.Features.Novel.Queries
         {
             try
             {
-                var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
+                var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);         
                 if (novel == null)
                 {
                     return new ApiResponse
@@ -40,7 +40,6 @@ namespace Application.Features.Novel.Queries
                         Message = "Novel not found"
                     };
                 }
-
                 var allChapterIds = await _chapterRepository.GetChapterIdsByNovelIdAsync(request.NovelId);
                 var freeChapterIds = await _chapterRepository.GetFreeChapterIdsByNovelIdAsync(request.NovelId);
 

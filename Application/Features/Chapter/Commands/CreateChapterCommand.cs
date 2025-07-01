@@ -59,12 +59,26 @@ namespace Application.Features.Chapter.Command
                 updated_at = DateTime.UtcNow.Ticks
             };
 
-            if (request.IsDraft != true && request.IsPublic == true)
+            if (chapter.is_public && !chapter.is_draft)
             {
-                var lastChapter = await _chapterRepository.GetLastPublishedChapterAsync(request.NovelId);
+                var lastChapter = await _chapterRepository.GetLastPublishedChapterAsync(chapter.novel_id);
                 chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
+
+                await _chapterRepository.CreateChapterAsync(chapter);
+                await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
+
+                var publicChapters = await _chapterRepository.GetPublishedChapterByNovelIdAsync(chapter.novel_id);
+                if (publicChapters.Count == 1 && !novel.is_public)
+                {
+                    novel.is_public = true;
+                    await _novelRepository.UpdateNovelAsync(novel);
+                }
             }
-            await _chapterRepository.CreateChapterAsync(chapter);
+            else
+            {
+                // Nếu không phải public → chỉ tạo bản nháp
+                await _chapterRepository.CreateChapterAsync(chapter);
+            }
             var response = _mapper.Map<CreateChapterResponse>(chapter);
 
             return new ApiResponse

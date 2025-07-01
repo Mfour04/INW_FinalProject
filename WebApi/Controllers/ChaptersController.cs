@@ -4,6 +4,7 @@ using Application.Features.Chapter.Queries;
 using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -45,7 +46,11 @@ namespace WebApi.Controllers
         [HttpGet("id")]
         public async Task<IActionResult> GetChapterByIdAsync(string id)
         {
-            var result = await _mediator.Send(new GetChapterById { ChapterId = id });
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _mediator.Send(new GetChapterById {
+                ChapterId = id,
+                UserId = userId
+            });
             return Ok(result);
         }
 

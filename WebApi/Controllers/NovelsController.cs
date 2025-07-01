@@ -4,6 +4,7 @@ using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
 using System.Security.Claims;
 
 namespace WebApi.Controllers
@@ -44,19 +45,19 @@ namespace WebApi.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetNovelByIdAsync(string id)
         {
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            // if (string.IsNullOrEmpty(userId))
-            //     return Unauthorized(new ApiResponse
-            //     {
-            //         Success = false,
-            //         Message = "User not authenticated."
-            //     });
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "User not authenticated."
+                });
 
             var result = await _mediator.Send(new GetNovelById
             {
                 NovelId = id,
-                UserId = "user_002"
+                UserId = userId
             });
 
             return Ok(result);

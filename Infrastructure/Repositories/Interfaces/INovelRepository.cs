@@ -12,5 +12,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> DeleteNovelAsync(string id);
         Task IncrementFollowersAsync(string novelId);
         Task DecrementFollowersAsync(string novelId);
+        Task UpdateTotalChaptersAsync(string novelId);
+        Task IncreaseTotalViewAsync(string novelId);
     }
 }

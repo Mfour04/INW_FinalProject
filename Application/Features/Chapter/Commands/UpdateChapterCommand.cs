@@ -53,29 +53,36 @@ namespace Application.Features.Chapter.Command
             }
             chapter.updated_at = DateTime.UtcNow.Ticks;
 
-            if (request.IsPublic)
+            bool wasDraftBefore = chapter.is_draft;
+            chapter.is_draft = request.IsDraft;
+            chapter.is_public = request.IsPublic;
+
+            // Nếu từ bản nháp chuyển thành public và chưa có chapter_number
+            if (wasDraftBefore && request.IsPublic && chapter.chapter_number == null)
             {
-                chapter.is_draft = false;
-                chapter.is_public = true;
-                if (!request.ChapterNumber.HasValue)
-                    {
                     var lastChapter = await _chapterRepository.GetLastPublishedChapterAsync(chapter.novel_id);
                     chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
-                }
+            }
+            await _chapterRepository.UpdateChapterAsync(chapter);
 
-                var publicChapter = await _chapterRepository.GetPublishedChapterByNovelIdAsync(chapter.novel_id);
-                if(publicChapter.Count == 0)
+            // Nếu chương này là public và không phải bản nháp → luôn cập nhật total_chapters
+            if (chapter.is_public && !chapter.is_draft)
+            {
+                // Cập nhật total_chapters
+                await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
+
+                // Nếu đây là chương public đầu tiên, thì public luôn cả novel
+                var publicChapters = await _chapterRepository.GetPublishedChapterByNovelIdAsync(chapter.novel_id);
+                if (publicChapters.Count == 1)
                 {
                     var novel = await _novelRepository.GetByNovelIdAsync(chapter.novel_id);
-                    if (novel != null && novel.is_public == false)
+                    if (novel != null && !novel.is_public)
                     {
                         novel.is_public = true;
                         await _novelRepository.UpdateNovelAsync(novel);
                     }
                 }
             }
-
-            await _chapterRepository.UpdateChapterAsync(chapter);
             var response = _mapper.Map<UpdateChapterResponse>(chapter);
 
             return new ApiResponse

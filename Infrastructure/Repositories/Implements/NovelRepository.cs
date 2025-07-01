@@ -12,10 +12,12 @@ namespace Infrastructure.Repositories.Implements
     public class NovelRepository : INovelRepository
     {
         private readonly IMongoCollection<NovelEntity> _collection;
-        public NovelRepository(MongoDBHelper mongoDBHelper)
+        private IChapterRepository _chapterRepository;
+        public NovelRepository(MongoDBHelper mongoDBHelper, IChapterRepository chapterRepository)
         {
             mongoDBHelper.CreateCollectionIfNotExistsAsync("novel").Wait();
             _collection = mongoDBHelper.GetCollection<NovelEntity>("novel");
+            _chapterRepository = chapterRepository;
         }
 
         public async Task<NovelEntity> CreateNovelAsync(NovelEntity entity)
@@ -139,6 +141,13 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task IncreaseTotalViewAsync(string novelId)
+        {
+            var filtered = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
+            var update = Builders<NovelEntity>.Update.Inc(x => x.total_views, 1);
+            await _collection.UpdateOneAsync(filtered, update);
+        }
+
         public async Task IncrementFollowersAsync(string novelId)
         {
             var update = Builders<NovelEntity>.Update.Inc(x => x.followers, 1);
@@ -149,11 +158,28 @@ namespace Infrastructure.Repositories.Implements
         {
            try
             {
-                entity.updated_at = DateTime.UtcNow.Ticks;
                 var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, entity.id);
                 var result = await _collection.ReplaceOneAsync(filter, entity);
 
                 return entity;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task UpdateTotalChaptersAsync(string novelId)
+        {
+            try
+            {
+                int totalChapters = await _chapterRepository.GetTotalPublicChaptersAsync(novelId);
+
+                var update = Builders<NovelEntity>.Update.Set(n => n.total_chapters, totalChapters);
+                await _collection.UpdateOneAsync(
+                    Builders<NovelEntity>.Filter.Eq(n => n.id, novelId),
+                    update
+                );
             }
             catch
             {
