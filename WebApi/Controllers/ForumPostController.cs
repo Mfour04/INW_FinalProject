@@ -19,11 +19,11 @@ namespace WebApi.Controllers
 
         [HttpGet]
         // [Authorize]
-        public async Task<IActionResult> GetPosts([FromQuery] GetPosts request)
+        public async Task<IActionResult> GetPosts([FromQuery] GetPosts query)
         {
             // request.UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;  
 
-            var result = await _mediator.Send(request);
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
 
@@ -53,7 +53,7 @@ namespace WebApi.Controllers
         }
 
         [HttpDelete("{id}")]
-        // [Authorize]
+        // [Authorize] 
         public async Task<IActionResult> DeletePost(string id)
         {
             // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -72,17 +72,17 @@ namespace WebApi.Controllers
 
         [HttpGet("{id}/comments")]
         // [Authorize]
-        public async Task<IActionResult> GetPostComments(string id, [FromQuery] GetPostComments request)
+        public async Task<IActionResult> GetPostComments(string id, [FromQuery] GetPostComments query)
         {
-            GetPostComments query = new()
+            GetPostComments newQuery = new()
             {
                 PostId = id,
-                Page = request.Page,
-                Limit = request.Limit,
-                SortBy = request.SortBy
+                Page = query.Page,
+                Limit = query.Limit,
+                SortBy = query.SortBy
             };
 
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(newQuery);
             return Ok(result);
         }
 

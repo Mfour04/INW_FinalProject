@@ -13,21 +13,18 @@ namespace Application.Features.Forum.Queries
         public string SortBy { get; set; } = "created_at:desc";
         public int Page { get; set; } = 0;
         public int Limit { get; set; } = int.MaxValue;
-        public string UserId { get; set; }
-    } 
+    }
 
     public class GetPostsHanlder : IRequestHandler<GetPosts, ApiResponse>
     {
         private readonly IForumPostRepository _postRepo;
         private readonly IUserRepository _userRepo;
-        private readonly IForumPostLikeRepository _postLikeRepo;
         private readonly IMapper _mapper;
 
-        public GetPostsHanlder(IForumPostRepository postRepo, IUserRepository userRepo, IForumPostLikeRepository postLikeRepo, IMapper mapper)
+        public GetPostsHanlder(IForumPostRepository postRepo, IUserRepository userRepo, IMapper mapper)
         {
             _postRepo = postRepo;
             _userRepo = userRepo;
-            _postLikeRepo = postLikeRepo;
             _mapper = mapper;
         }
 
