@@ -152,6 +152,13 @@ namespace WebApi.Controllers
         [HttpPut("update-user")]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateUserProfileCommand command)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+            command.UserId = userId;
             var result = await _mediator.Send(command);
             return Ok(result);
         }

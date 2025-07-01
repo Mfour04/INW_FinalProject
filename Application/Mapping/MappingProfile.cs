@@ -33,6 +33,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id));
             //Novel
             CreateMap<NovelEntity, NovelResponse>()
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))

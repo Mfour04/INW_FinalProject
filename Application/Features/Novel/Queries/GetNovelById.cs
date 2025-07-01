@@ -43,18 +43,20 @@ namespace Application.Features.Novel.Queries
                 var allChapterIds = await _chapterRepository.GetChapterIdsByNovelIdAsync(request.NovelId);
                 var freeChapterIds = await _chapterRepository.GetFreeChapterIdsByNovelIdAsync(request.NovelId);
 
-                // Kiểm tra nếu tác giả thêm chương mới thì cập nhật lại trạng thái full purchase
-                await _purchaserRepository.ValidateFullPurchaseAsync(request.UserId, request.NovelId, novel.total_chapters);
-
-                bool isAuthor = novel.author_id == request.UserId;
-                bool hasPurchasedFull = await _purchaserRepository.HasPurchasedFullAsync(request.UserId, request.NovelId);
-                var purchasedChapterIds = await _purchaserRepository.GetPurchasedChapterIdsAsync(request.UserId, request.NovelId);
+                // Nếu không có user → xử lý như guest (ẩn chương mất phí nếu chưa mua)
+                bool isGuest = string.IsNullOrEmpty(request.UserId);
+                bool isAuthor = !isGuest && novel.author_id == request.UserId;
+                bool hasPurchasedFull = !isGuest && await _purchaserRepository.HasPurchasedFullAsync(request.UserId, request.NovelId);
+                var purchasedChapterIds = !isGuest ? await _purchaserRepository.GetPurchasedChapterIdsAsync(request.UserId, request.NovelId) : new List<string>();
                 bool hasPurchasedAnyChapter = purchasedChapterIds.Any();
 
-                // Nếu đã mua toàn bộ truyện, đánh dấu là đã sở hữu tất cả các chương
-                if (hasPurchasedFull)
+                if (!isGuest)
                 {
-                    purchasedChapterIds = allChapterIds;
+                    // Cập nhật trạng thái mua full nếu có chương mới
+                    await _purchaserRepository.ValidateFullPurchaseAsync(request.UserId, request.NovelId, novel.total_chapters);
+
+                    if (hasPurchasedFull)
+                        purchasedChapterIds = allChapterIds;
                 }
 
                 // Trả về lỗi nếu truyện chưa public, và người dùng không phải tác giả hoặc chưa mua full.
