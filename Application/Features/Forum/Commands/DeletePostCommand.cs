@@ -6,8 +6,8 @@ namespace Application.Features.Forum.Commands
 {
     public class DeletePostCommand : IRequest<ApiResponse>
     {
-        public string Id { get; set; }
-        public string UserId { get; set; }
+        public string? Id { get; set; }
+        public string? UserId { get; set; }
     }
 
     public class DeletePostCommandHandler : IRequestHandler<DeletePostCommand, ApiResponse>

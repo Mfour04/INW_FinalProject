@@ -70,7 +70,7 @@ namespace WebApi.Controllers
         }
         
         [HttpPost("{id}/buy")]
-        public async Task<IActionResult> BuyNovel(string id, [FromBody] BuyChapterCommand command)
+        public async Task<IActionResult> BuyChapter(string id, [FromBody] BuyChapterCommand command)
         {
             command.ChapterId = id;
             command.UserId = "user_002";

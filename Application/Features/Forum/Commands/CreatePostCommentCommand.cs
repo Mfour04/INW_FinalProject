@@ -8,7 +8,7 @@ namespace Application.Features.Forum.Commands
     public class CreatePostCommentCommand : IRequest<ApiResponse>
     {
         public string? PostId { get; set; }
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public string Content { get; set; }
         public string? ParentCommentId { get; set; }
     }
