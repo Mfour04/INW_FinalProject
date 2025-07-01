@@ -70,5 +70,17 @@ namespace Shared.Helpers
                 })
                 .ToList();  
         }
+
+        public static List<string> ParseTagNames(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return new List<string>();
+
+            return raw
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(tag => tag.Trim())
+                .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                .ToList();
+        }
     }
 }

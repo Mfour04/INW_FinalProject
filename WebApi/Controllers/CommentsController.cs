@@ -4,7 +4,9 @@ using Application.Features.Comment.Queries;
 using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
 using Shared.Contracts.Response.Comment;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -98,7 +100,15 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateComment([FromBody] CreateCommentCommand comment)
         {
-            comment.UserId = "user_002";
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "User not authenticated."
+                });
+            comment.UserId = userId;
             var result = await _mediator.Send(comment);
             return Ok(result);
         }
