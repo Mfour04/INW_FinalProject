@@ -16,6 +16,7 @@ namespace Application.Features.Chapter.Command
     public class DeteleChapterHandler : IRequestHandler<DeleteChapterCommand, ApiResponse>
     {
         private readonly IChapterRepository _chapterRepository;
+        private readonly INovelRepository _novelRepository;
         public DeteleChapterHandler(IChapterRepository chapterRepository)
         {
             _chapterRepository = chapterRepository;
@@ -35,6 +36,7 @@ namespace Application.Features.Chapter.Command
             if (chapter.is_public && !chapter.is_draft)
             {
                 await _chapterRepository.RenumberChaptersAsync(chapter.novel_id);
+                await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
             }
             return new ApiResponse
             {

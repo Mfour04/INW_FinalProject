@@ -271,5 +271,22 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<int> GetTotalPublicChaptersAsync(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.And(
+                    Builders<ChapterEntity>.Filter.Eq(c => c.novel_id, novelId),
+                    Builders<ChapterEntity>.Filter.Eq(c => c.is_public, true),
+                    Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
+                    );
+                return (int)await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }
