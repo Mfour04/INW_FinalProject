@@ -65,7 +65,26 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("get-by-authorid")]
+        [Authorize]
+        public async Task<IActionResult> GetByAuthorId()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "User not authenticated."
+                });
+            var result = await _mediator.Send(new GetNovelByAuthorId
+            {
+                AuthorId = userId
+            });
+            return Ok(new ApiResponse { Success = true, Data = result });
+        }
+
         [HttpPost("created")]
+        [Authorize]
         public async Task<IActionResult> CreateNovel([FromForm] CreateNovelCommand command)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

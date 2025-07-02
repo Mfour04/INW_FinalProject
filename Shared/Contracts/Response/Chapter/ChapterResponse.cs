@@ -8,6 +8,7 @@ namespace Shared.Contracts.Response.Chapter
 {
     public class ChapterResponse
     {
+        public string ChapterId { get; set; }
         public string NovelId { get; set; }
         public string Title { get; set; }
         public int ChapterNumber { get; set; }

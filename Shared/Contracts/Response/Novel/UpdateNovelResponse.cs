@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
+using Shared.Contracts.Response.Tag;
 
 namespace Shared.Contracts.Response.Novel
 {
@@ -17,7 +18,7 @@ namespace Shared.Contracts.Response.Novel
         public string Title { get; set; }
         public string? Description { get; set; }
         public string NovelImage { get; set; }
-        public List<string>? Tags { get; set; } = new();
+        public List<TagListResponse>? Tags { get; set; } = new();
         [JsonConverter(typeof(JsonStringEnumConverter))]
         [BsonRepresentation(BsonType.String)]
         public NovelStatus? Status { get; set; }
