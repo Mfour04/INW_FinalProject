@@ -203,5 +203,17 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<List<NovelEntity>> GetNovelByAuthorId(string authorId)
+        {
+            try
+            {
+                return await _collection.Find(x => x.author_id == authorId).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }

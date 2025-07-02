@@ -45,7 +45,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image)) // đây là string ✔️
-                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.tags))              // là List<string>
+                .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
@@ -58,7 +58,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image)) // đây là string ✔️
-                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.tags))              // là List<string>
+                .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
@@ -67,6 +67,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price));
             //Chapter
             CreateMap<ChapterEntity, ChapterResponse>()
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.ChapterNumber, opt => opt.MapFrom(src => src.chapter_number))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
