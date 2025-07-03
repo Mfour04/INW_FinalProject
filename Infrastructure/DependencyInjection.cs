@@ -34,6 +34,7 @@ namespace Infrastructure
         private static IServiceCollection AddServices(this IServiceCollection services)
         {
             services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
+            services.AddSignalR();
             return services;
         }
 
@@ -65,6 +66,8 @@ namespace Infrastructure
             services.AddScoped<IRatingRepository, RatingRepository>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<INovelViewTrackingRepository, NovelViewTrackingRepository>();
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
             return services;
         }
 

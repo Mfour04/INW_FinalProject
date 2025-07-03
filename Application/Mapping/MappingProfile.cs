@@ -92,8 +92,10 @@ namespace Application.Mapping
 
             //Tag
             CreateMap<TagEntity, TagResponse>()
+                .ForMember(dest => dest.TagId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name));
             CreateMap<TagEntity, UpdateTagResponse>()
+                .ForMember(dest => dest.TagId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name));
 
             //Forum
