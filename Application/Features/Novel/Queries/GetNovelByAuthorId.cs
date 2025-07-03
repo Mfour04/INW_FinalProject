@@ -3,6 +3,7 @@ using DnsClient;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Novel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,9 +20,11 @@ namespace Application.Features.Novel.Queries
     public class GetNovelByAuthorIdHandler : IRequestHandler<GetNovelByAuthorId, ApiResponse>
     {
         private readonly INovelRepository _novelRepository;
+        private readonly IMapper _mapper;
         public GetNovelByAuthorIdHandler(INovelRepository novelRepository, IMapper mapper)
         {
             _novelRepository = novelRepository;
+            _mapper = mapper;
         }
         public async Task<ApiResponse> Handle(GetNovelByAuthorId request, CancellationToken cancellationToken)
         {
@@ -34,11 +37,12 @@ namespace Application.Features.Novel.Queries
                     Message = "AuthorId not found"
                 };
             }
+            var novelResponse = _mapper.Map<List<NovelResponse>>(novelAuthor);
             return new ApiResponse
             {
                 Success = true,
                 Message = "Get Novel By Novel By AuthorId Successfully",
-                Data = novelAuthor
+                Data = novelResponse
             };
         }
     }
