@@ -29,13 +29,6 @@ builder.Services.AddMediatR(config =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        policy => 
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
     options.AddPolicy("AllowFrontendDev", policy =>
     {
         policy.WithOrigins("http://localhost:5173")
@@ -65,11 +58,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowFrontendDev");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowAll");
-app.UseCors("AllowFrontendDev");
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notification");
 app.Run();
