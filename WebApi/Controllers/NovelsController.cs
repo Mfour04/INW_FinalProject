@@ -80,7 +80,7 @@ namespace WebApi.Controllers
             {
                 AuthorId = userId
             });
-            return Ok(new ApiResponse { Success = true, Data = result });
+            return Ok(result);
         }
 
         [HttpPost("created")]
