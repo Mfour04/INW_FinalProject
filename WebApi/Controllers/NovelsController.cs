@@ -129,5 +129,20 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(command);
             return Ok(result);
         }
+
+        [HttpPut("hide/{novelId}")]
+        [Authorize] 
+        public async Task<IActionResult> HideNovel(string novelId)
+        {
+            var result = await _mediator.Send(new HideNovelCommand
+            {
+                NovelId = novelId
+            });
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
     }
 }

@@ -55,14 +55,14 @@ namespace WebApi.Controllers
         }
 
         [HttpPut("updated")]
-        public async Task<IActionResult> UpdateNovel([FromBody] UpdateChapterCommand command)
+        public async Task<IActionResult> UpdateChapter([FromBody] UpdateChapterCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNovel(string id)
+        public async Task<IActionResult> DeleteChapter(string id)
         {
             var result = await _mediator.Send(new DeleteChapterCommand { ChapterId = id });
             return Ok(result);

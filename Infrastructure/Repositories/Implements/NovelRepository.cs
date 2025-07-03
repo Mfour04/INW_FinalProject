@@ -215,5 +215,21 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task UpdateLockStatusAsync(string novelId, bool isLocked)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
+                var updateLock = Builders<NovelEntity>.Update.Combine(
+                                 Builders<NovelEntity>.Update.Set(x => x.is_lock, isLocked),
+                                 Builders<NovelEntity>.Update.Set(x => x.is_public, false));
+                await _collection.UpdateOneAsync(filter, updateLock);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }
