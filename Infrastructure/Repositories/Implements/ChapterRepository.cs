@@ -95,7 +95,7 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<List<ChapterEntity>> GetChaptersByNovelIdAsync(string novelId)
+        public async Task<List<ChapterEntity>> GetChapterNmbersByNovelIdAsync(string novelId)
         {
             try
             {
@@ -282,6 +282,20 @@ namespace Infrastructure.Repositories.Implements
                     Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
                     );
                 return (int)await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<ChapterEntity>> GetAllChapterByNovelId(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(x => x.novel_id, novelId);
+
+                return await _collection.Find(filter).SortBy(x => x.chapter_number).ToListAsync();
             }
             catch
             {

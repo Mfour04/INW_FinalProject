@@ -1,4 +1,5 @@
-﻿using Application.Features.Novel.Commands;
+﻿using Application.Features.Chapter.Queries;
+using Application.Features.Novel.Commands;
 using Application.Features.Novel.Queries;
 using Domain.Entities.System;
 using MediatR;
@@ -39,7 +40,7 @@ namespace WebApi.Controllers
                 Page = page,
                 Limit = limit,
                 SearchTerm = searchTerm,
-                SearchTagTerm = tagNames 
+                SearchTagTerm = tagNames
             };
 
             var result = await _mediator.Send(query);
@@ -104,7 +105,7 @@ namespace WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateNovel([FromForm] UpdateNovelCommand command)
         {
-            var result = await _mediator.Send(command); 
+            var result = await _mediator.Send(command);
             return Ok(result);
         }
 
@@ -131,7 +132,7 @@ namespace WebApi.Controllers
         }
 
         [HttpPut("hide/{novelId}")]
-        [Authorize] 
+        [Authorize]
         public async Task<IActionResult> HideNovel(string novelId)
         {
             var result = await _mediator.Send(new HideNovelCommand

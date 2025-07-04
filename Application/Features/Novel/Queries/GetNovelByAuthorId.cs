@@ -37,12 +37,11 @@ namespace Application.Features.Novel.Queries
                     Message = "AuthorId not found"
                 };
             }
-            var novelResponse = _mapper.Map<List<NovelResponse>>(novelAuthor);
             return new ApiResponse
             {
                 Success = true,
                 Message = "Get Novel By Novel By AuthorId Successfully",
-                Data = novelResponse
+                Data = novelAuthor
             };
         }
     }

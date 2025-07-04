@@ -4,6 +4,7 @@ using Application.Features.Chapter.Queries;
 using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
 using System.Security.Claims;
 
 namespace WebApi.Controllers
@@ -81,6 +82,22 @@ namespace WebApi.Controllers
             command.UserId = "user_002";
 
             var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpGet("get-chapter-by-novelId")]
+        public async Task<IActionResult> GetAllChapterByNovelId(string novelId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "User not authenticated."
+                });
+            var result = await _mediator.Send(new GetAllChapterByNovelId { NovelId = novelId, UserId = userId });
+
             return Ok(result);
         }
     }
