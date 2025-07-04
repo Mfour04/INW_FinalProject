@@ -21,7 +21,11 @@ namespace Application.Mapping
         public MappingProfile()
         {
             //User
-            CreateMap<UserEntity, UserResponse>();
+            CreateMap<UserEntity, UserResponse>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.avata_url))
+                .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id));
+
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.AvataUrl, opt => opt.MapFrom(src => src.avata_url))
@@ -29,6 +33,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id));
             //Novel
             CreateMap<NovelEntity, NovelResponse>()
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
@@ -40,7 +45,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image)) // đây là string ✔️
-                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.tags))              // là List<string>
+                .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
@@ -53,7 +58,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image)) // đây là string ✔️
-                .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.tags))              // là List<string>
+                .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
@@ -62,6 +67,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price));
             //Chapter
             CreateMap<ChapterEntity, ChapterResponse>()
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.ChapterNumber, opt => opt.MapFrom(src => src.chapter_number))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
@@ -86,8 +92,10 @@ namespace Application.Mapping
 
             //Tag
             CreateMap<TagEntity, TagResponse>()
+                .ForMember(dest => dest.TagId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name));
             CreateMap<TagEntity, UpdateTagResponse>()
+                .ForMember(dest => dest.TagId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name));
 
             //Forum

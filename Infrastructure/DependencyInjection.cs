@@ -19,10 +19,10 @@ namespace Infrastructure
         )
         {
             services
-                // .AddHttpContextAccessor()
+                .AddHttpContextAccessor()
                 .AddServices()
                 .AddAuthentication(configuration)
-                // .AddAuthorization()
+                .AddAuthorization()
                 .AddPersistence();
             services.Configure<EmailSettings>(
                 configuration.GetSection("EmailSettings"));
@@ -34,6 +34,7 @@ namespace Infrastructure
         private static IServiceCollection AddServices(this IServiceCollection services)
         {
             services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
+            services.AddSignalR();
             return services;
         }
 
@@ -63,6 +64,10 @@ namespace Infrastructure
             services.AddScoped<IReadingProcessRepository, ReadingProcessRepository>();
             services.AddScoped<INovelFollowRepository, NovelFollowRepository>();
             services.AddScoped<IRatingRepository, RatingRepository>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<INovelViewTrackingRepository, NovelViewTrackingRepository>();
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
             return services;
         }
 

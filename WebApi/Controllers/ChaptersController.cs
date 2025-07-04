@@ -4,6 +4,8 @@ using Application.Features.Chapter.Queries;
 using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -45,19 +47,23 @@ namespace WebApi.Controllers
         [HttpGet("id")]
         public async Task<IActionResult> GetChapterByIdAsync(string id)
         {
-            var result = await _mediator.Send(new GetChapterById { ChapterId = id });
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _mediator.Send(new GetChapterById {
+                ChapterId = id,
+                UserId = userId
+            });
             return Ok(result);
         }
 
         [HttpPut("updated")]
-        public async Task<IActionResult> UpdateNovel([FromBody] UpdateChapterCommand command)
+        public async Task<IActionResult> UpdateChapter([FromBody] UpdateChapterCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNovel(string id)
+        public async Task<IActionResult> DeleteChapter(string id)
         {
             var result = await _mediator.Send(new DeleteChapterCommand { ChapterId = id });
             return Ok(result);
@@ -70,12 +76,28 @@ namespace WebApi.Controllers
         }
         
         [HttpPost("{id}/buy")]
-        public async Task<IActionResult> BuyNovel(string id, [FromBody] BuyChapterCommand command)
+        public async Task<IActionResult> BuyChapter(string id, [FromBody] BuyChapterCommand command)
         {
             command.ChapterId = id;
             command.UserId = "user_002";
 
             var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpGet("get-chapter-by-novelId")]
+        public async Task<IActionResult> GetAllChapterByNovelId(string novelId)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "User not authenticated."
+                });
+            var result = await _mediator.Send(new GetAllChapterByNovelId { NovelId = novelId, UserId = userId });
+
             return Ok(result);
         }
     }

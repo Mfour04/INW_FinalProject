@@ -17,7 +17,6 @@ namespace Application.Features.Novel.Commands
 {
     public class CreateNovelCommand: IRequest<ApiResponse>
     {
-        [JsonPropertyName("novel")]
         public string Title { get; set; }
         public string Description { get; set; }
         public string AuthorId { get; set; }
@@ -29,11 +28,6 @@ namespace Application.Features.Novel.Commands
         public bool? IsLock { get; set; }
         public PurchaseType PurchaseType { get; set; }
         public int? Price { get; set; }
-        public int TotalChapters { get; set; }
-        public int TotalViews { get; set; }
-        public int Followers { get; set; }
-        public double RatingAvg { get; set; }
-        public int RatingCount { get; set; }
     }
 
     public class CreateNovelHandler : IRequestHandler<CreateNovelCommand, ApiResponse>
@@ -83,6 +77,11 @@ namespace Application.Features.Novel.Commands
                 is_paid = request.IsPaid ?? false,
                 purchase_type = request.PurchaseType,
                 price = request.Price ?? 0,
+                total_chapters = 0,
+                total_views = 0,
+                followers = 0,
+                rating_avg = 0,
+                rating_count = 0,
                 created_at = DateTime.UtcNow.Ticks,
                 updated_at = DateTime.UtcNow.Ticks
             };

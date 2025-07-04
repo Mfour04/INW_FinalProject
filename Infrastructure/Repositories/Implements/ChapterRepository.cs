@@ -95,7 +95,7 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<List<ChapterEntity>> GetChaptersByNovelIdAsync(string novelId)
+        public async Task<List<ChapterEntity>> GetChapterNmbersByNovelIdAsync(string novelId)
         {
             try
             {
@@ -265,6 +265,37 @@ namespace Infrastructure.Repositories.Implements
                     Builders<ChapterEntity>.Filter.Eq(c => c.is_paid, false)
                 );
                 return await _collection.Find(filter).Project(c => c.id).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<int> GetTotalPublicChaptersAsync(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.And(
+                    Builders<ChapterEntity>.Filter.Eq(c => c.novel_id, novelId),
+                    Builders<ChapterEntity>.Filter.Eq(c => c.is_public, true),
+                    Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
+                    );
+                return (int)await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<ChapterEntity>> GetAllChapterByNovelId(string novelId)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(x => x.novel_id, novelId);
+
+                return await _collection.Find(filter).SortBy(x => x.chapter_number).ToListAsync();
             }
             catch
             {

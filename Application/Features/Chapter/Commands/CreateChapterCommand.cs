@@ -17,11 +17,9 @@ namespace Application.Features.Chapter.Command
 {
     public class CreateChapterCommand : IRequest<ApiResponse>
     {
-        [JsonPropertyName("chapter")]
         public string NovelId { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
-        public int ChapterNumber { get; set; }
         public bool? IsPaid { get; set; }
         public int? Price { get; set; }
         public bool? IsDraft { get; set; }
@@ -44,14 +42,14 @@ namespace Application.Features.Chapter.Command
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy novel này" };
-
+            
             var chapter = new ChapterEntity
             {
                 id = SystemHelper.RandomId(),
                 novel_id = novel.id,
                 title = request.Title,
                 content = request.Content,
-                chapter_number = request.ChapterNumber,
+                chapter_number = null,
                 is_paid = request.IsPaid ?? false,
                 price = request.Price ?? 0,
                 is_lock = false,
@@ -61,7 +59,26 @@ namespace Application.Features.Chapter.Command
                 updated_at = DateTime.UtcNow.Ticks
             };
 
-            await _chapterRepository.CreateChapterAsync(chapter);
+            if (chapter.is_public && !chapter.is_draft)
+            {
+                var lastChapter = await _chapterRepository.GetLastPublishedChapterAsync(chapter.novel_id);
+                chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
+
+                await _chapterRepository.CreateChapterAsync(chapter);
+                await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
+
+                var publicChapters = await _chapterRepository.GetPublishedChapterByNovelIdAsync(chapter.novel_id);
+                if (publicChapters.Count == 1 && !novel.is_public)
+                {
+                    novel.is_public = true;
+                    await _novelRepository.UpdateNovelAsync(novel);
+                }
+            }
+            else
+            {
+                // Nếu không phải public → chỉ tạo bản nháp
+                await _chapterRepository.CreateChapterAsync(chapter);
+            }
             var response = _mapper.Map<CreateChapterResponse>(chapter);
 
             return new ApiResponse

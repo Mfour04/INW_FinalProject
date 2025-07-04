@@ -2,7 +2,9 @@
 using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
+using MongoDB.Bson;
 using Shared.Contracts.Response;
+using Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,18 +17,19 @@ namespace Application.Features.Chapter.Queries
     {
         public string ChapterId { get; set; }
         public string UserId { get; set; }
-        public string NovelId { get; set; }
     }
     public class GetChapterByIdHandler : IRequestHandler<GetChapterById, ApiResponse>
     {
         private readonly IChapterRepository _chapterRepository;
         private readonly IPurchaserRepository _purchaserRepository;
         private readonly INovelRepository _novelRepository;
-        public GetChapterByIdHandler(IChapterRepository chapterRepository, IPurchaserRepository purchaserRepository, INovelRepository novelRepository)
+        private readonly INovelViewTrackingRepository _viewTrackingRepository;
+        public GetChapterByIdHandler(IChapterRepository chapterRepository, IPurchaserRepository purchaserRepository, INovelRepository novelRepository, INovelViewTrackingRepository viewTrackingRepository)
         {
             _chapterRepository = chapterRepository;
             _purchaserRepository = purchaserRepository;
             _novelRepository = novelRepository;
+            _viewTrackingRepository = viewTrackingRepository;
         }
 
         public async Task<ApiResponse> Handle(GetChapterById request, CancellationToken cancellationToken)
@@ -35,20 +38,27 @@ namespace Application.Features.Chapter.Queries
             if (chapter == null)
                 return new ApiResponse { Success = false, Message = "Chapter not found" };
 
-            //var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);    
-            //if (novel == null)
-            //    return new ApiResponse { Success = false, Message = "Novel not found" };
+            var novelId = chapter.novel_id;
+            var novel = await _novelRepository.GetByNovelIdAsync(novelId);
+            if (novel == null)
+            {
+                return new ApiResponse { Success = false, Message = "Novel not found" };
+            }
 
             if (!chapter.is_paid)
+            {
+                await HandleNovelViewAsync(request.UserId, novelId);
                 return new ApiResponse { Success = true, Data = chapter };
+            }
+                
 
             if (chapter.is_paid)
             {
-                //bool isAuthor = novel.author_id == request.UserId;
-                bool hasFullOwnerShip = await _purchaserRepository.HasPurchasedFullAsync(request.UserId, request.NovelId);
-                bool hasFullChapter = await _purchaserRepository.HasPurchasedChapterAsync(request.UserId, request.NovelId, request.ChapterId);
+                bool hasFullOwnerShip = await _purchaserRepository.HasPurchasedFullAsync(request.UserId, novelId);
+                bool hasFullChapter = await _purchaserRepository.HasPurchasedChapterAsync(request.UserId, novelId, request.ChapterId);
                 if ( hasFullOwnerShip || hasFullChapter)
                 {
+                    await HandleNovelViewAsync(request.UserId, novelId);
                     return new ApiResponse { Success = true, Data = chapter };
                 }
                 else
@@ -58,6 +68,35 @@ namespace Application.Features.Chapter.Queries
 
             }
             return new ApiResponse { Success = false, Message = "Bạn không có quyền xem chương này." };
+        }
+
+        private async Task HandleNovelViewAsync(string userId, string novelId)
+        {
+            var tracking = await _viewTrackingRepository.FindByUserAndNovelAsync(userId, novelId);
+            var today = DateTime.UtcNow.Date;
+            if (tracking == null)
+            {
+                var newTracking = new NovelViewTrackingEntity
+                {
+                    id = SystemHelper.RandomId(),
+                    user_id = userId,
+                    novel_id = novelId,
+                    created_at = DateTime.UtcNow.Ticks,
+                    updated_at = DateTime.UtcNow.Ticks
+                };
+                await _viewTrackingRepository.CreateViewTrackingAsync(newTracking);
+                await _novelRepository.IncreaseTotalViewAsync(novelId);
+            }
+            else
+            {
+                var lastViewDate = new DateTime(tracking.updated_at).Date;
+                if (lastViewDate < today)
+                {
+                    tracking.updated_at = DateTime.UtcNow.Ticks;
+                    await _viewTrackingRepository.UpdateViewTrackingAsync(tracking);
+                    await _novelRepository.IncreaseTotalViewAsync(novelId);
+                }
+            }
         }
     }
 }

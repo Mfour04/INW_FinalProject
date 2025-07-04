@@ -17,6 +17,7 @@ namespace Application.Features.Novel.Queries
         public int Page = 0;
         public int Limit = int.MaxValue;
         public string? SearchTerm = "";
+        public List<string>? SearchTagTerm = new();
     }
 
     public class GetNovelHandler : IRequestHandler<GetNovel, ApiResponse>
@@ -44,7 +45,8 @@ namespace Application.Features.Novel.Queries
             {
                 Page = request.Page,
                 Limit = request.Limit,
-                SearchTerm = string.IsNullOrEmpty(exact) ? new() : new List<string> { exact }
+                SearchTerm = string.IsNullOrEmpty(exact) ? new() : new List<string> { exact },
+                SearchTagTerm = request.SearchTagTerm
             };
 
             var novel = await _novelRepository.GetAllNovelAsync(findExact, sortBy);
@@ -56,7 +58,8 @@ namespace Application.Features.Novel.Queries
                 {
                     Page = request.Page,
                     Limit = request.Limit,
-                    SearchTerm = fuzzyTerms
+                    SearchTerm = fuzzyTerms,
+                    SearchTagTerm = request.SearchTagTerm
                 };
 
                 novel = await _novelRepository.GetAllNovelAsync(findFuzzy, sortBy);

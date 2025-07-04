@@ -10,7 +10,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<ChapterEntity> CreateChapterAsync(ChapterEntity entity);
         Task<ChapterEntity> UpdateChapterAsync(ChapterEntity entity);
         Task<bool> DeleteChapterAsync(string id);
-        Task<List<ChapterEntity>> GetChaptersByNovelIdAsync(string novelId);
+        Task<List<ChapterEntity>> GetChapterNmbersByNovelIdAsync(string novelId);
         Task<List<ChapterEntity>> GetFreeChaptersByNovelIdAsync(string novelId);
         Task<List<ChapterEntity>> GetChapterByChapterIdAsync(List<string> chapterIds);
         Task RenumberChaptersAsync(string novelId);
@@ -19,5 +19,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<List<string>> GetChapterIdsByNovelIdAsync(string novelId);
         Task<List<string>> GetFreeChapterIdsByNovelIdAsync(string novelId);
         Task<int> ReleaseScheduledChaptersAsync();
+        Task<int> GetTotalPublicChaptersAsync(string novelId);
+        Task<List<ChapterEntity>> GetAllChapterByNovelId(string novelId);
     }
 }
