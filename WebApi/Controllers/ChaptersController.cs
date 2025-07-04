@@ -90,12 +90,6 @@ namespace WebApi.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new ApiResponse
-                {
-                    Success = false,
-                    Message = "User not authenticated."
-                });
             var result = await _mediator.Send(new GetAllChapterByNovelId { NovelId = novelId, UserId = userId });
 
             return Ok(result);
