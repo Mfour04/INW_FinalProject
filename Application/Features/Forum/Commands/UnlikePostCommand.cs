@@ -40,6 +40,8 @@ namespace Application.Features.Forum.Commands
             if (!isSuccess)
                 return Fail("Failed to unlike the post.");
 
+            await _postRepo.DecrementLikesAsync(request.PostId);
+
             return new ApiResponse
             {
                 Success = true,
@@ -47,7 +49,7 @@ namespace Application.Features.Forum.Commands
             };
         }
 
-          private ApiResponse Fail(string msg) => new()
+        private ApiResponse Fail(string msg) => new()
         {
             Success = false,
             Message = msg

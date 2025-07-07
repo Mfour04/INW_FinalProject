@@ -2,14 +2,8 @@
 using Domain.Entities.System;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -282,6 +276,42 @@ namespace Infrastructure.Repositories.Implements
                     Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
                     );
                 return (int)await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Tăng bộ đếm Comment của Chapter
+        /// </summary>
+        public async Task<bool> IncrementCommentsAsync(string chapterId)
+        {
+            try
+            {
+                var update = Builders<ChapterEntity>.Update.Inc(x => x.comment_count, 1);
+                var result = await _collection.UpdateOneAsync(x => x.id == chapterId, update);
+
+                return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Giảm bộ đếm Comment của Chapter
+        /// </summary>
+        public async Task<bool> DecrementCommentsAsync(string chapterId)
+        {
+            try
+            {
+                var update = Builders<ChapterEntity>.Update.Inc(x => x.comment_count, -1);
+                var result = await _collection.UpdateOneAsync(x => x.id == chapterId, update);
+
+                return result.ModifiedCount > 0;
             }
             catch
             {

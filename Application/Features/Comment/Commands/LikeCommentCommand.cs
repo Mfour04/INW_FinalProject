@@ -7,19 +7,19 @@ using Shared.Helpers;
 
 namespace Application.Features.Comment.Commands
 {
-    public class LikeChapterCommentCommand : IRequest<ApiResponse>
+    public class LikeCommentCommand : IRequest<ApiResponse>
     {
         public string? CommentId { get; set; }
         public string? UserId { get; set; }
         public int Type { get; set; }
     }
 
-    public class LikeChapterCommentCommandHandler : IRequestHandler<LikeChapterCommentCommand, ApiResponse>
+    public class LikeCommentCommandHandler : IRequestHandler<LikeCommentCommand, ApiResponse>
     {
         private readonly ICommentLikeRepository _commentLikeRepo;
         private readonly ICommentRepository _commentRepo;
 
-        public LikeChapterCommentCommandHandler(
+        public LikeCommentCommandHandler(
             ICommentLikeRepository commentLikeRepo,
             ICommentRepository commentRepo)
         {
@@ -27,17 +27,16 @@ namespace Application.Features.Comment.Commands
             _commentRepo = commentRepo;
         }
 
-        public async Task<ApiResponse> Handle(LikeChapterCommentCommand request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(LikeCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.CommentId) || string.IsNullOrWhiteSpace(request.UserId))
                 return Fail("Missing required fields: CommentId or UserId.");
 
-            if (!Enum.IsDefined(typeof(CommentType), request.Type))
-                return Fail("Invalid comment type.");
-
-            var commentType = (CommentType)request.Type;
-            if (commentType != CommentType.Novel && commentType != CommentType.Chapter)
-                return Fail("Only Novel or Chapter comment type is supported.");
+            if (!Enum.TryParse<CommentType>(request.Type.ToString(), out var commentType)
+                 || (commentType != CommentType.Novel && commentType != CommentType.Chapter))
+            {
+                return Fail("Invalid or unsupported comment type.");
+            }
 
             var targetComment = await _commentRepo.GetCommentByIdAsync(request.CommentId);
             if (targetComment == null)

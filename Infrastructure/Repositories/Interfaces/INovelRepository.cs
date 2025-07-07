@@ -14,5 +14,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task DecrementFollowersAsync(string novelId);
         Task UpdateTotalChaptersAsync(string novelId);
         Task IncreaseTotalViewAsync(string novelId);
+        Task<bool> IncrementCommentsAsync(string novelId);
+        Task<bool> DecrementCommentsAsync(string novelId);
     }
 }

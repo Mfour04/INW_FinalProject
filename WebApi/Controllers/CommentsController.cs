@@ -1,5 +1,4 @@
-﻿using Application.Features.Chapter.Commands;
-using Application.Features.Comment.Command;
+using Application.Features.Comment.Commands;
 using Application.Features.Comment.Queries;
 using Domain.Entities.System;
 using MediatR;
@@ -125,7 +124,7 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("{id}/likes")]
-        public async Task<IActionResult> LikeComment(string id, [FromBody] LikeChapterCommentCommand command)
+        public async Task<IActionResult> LikeComment(string id, [FromBody] LikeCommentCommand command)
         {
             // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -157,7 +156,7 @@ namespace WebApi.Controllers
             //     });
             // command.UserId = userId;
 
-            var result = await _mediator.Send(new UnlikeChapterCommentCommand { CommentId = id, UserId = "user_002" });
+            var result = await _mediator.Send(new UnlikeCommentCommand { CommentId = id, UserId = "user_002" });
             return Ok(result);
         }
     }

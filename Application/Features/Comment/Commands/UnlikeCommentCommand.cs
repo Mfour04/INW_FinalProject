@@ -4,18 +4,18 @@ using Shared.Contracts.Response;
 
 namespace Application.Features.Comment.Commands
 {
-    public class UnlikeChapterCommentCommand : IRequest<ApiResponse>
+    public class UnlikeCommentCommand : IRequest<ApiResponse>
     {
         public string? CommentId { get; set; }
         public string? UserId { get; set; }
     }
 
-    public class UnlikeChapterCommentCommandHandler : IRequestHandler<UnlikeChapterCommentCommand, ApiResponse>
+    public class UnlikeCommentCommandHandler : IRequestHandler<UnlikeCommentCommand, ApiResponse>
     {
         private readonly ICommentLikeRepository _commentLikeRepo;
         private readonly ICommentRepository _commentRepo;
 
-        public UnlikeChapterCommentCommandHandler(
+        public UnlikeCommentCommandHandler(
             ICommentLikeRepository commentLikeRepo,
               ICommentRepository commentRepo)
         {
@@ -23,7 +23,7 @@ namespace Application.Features.Comment.Commands
             _commentRepo = commentRepo;
         }
 
-        public async Task<ApiResponse> Handle(UnlikeChapterCommentCommand request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(UnlikeCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.CommentId) || string.IsNullOrWhiteSpace(request.UserId))
                 return Fail("Missing required fields: CommentId or UserId.");

@@ -16,10 +16,8 @@ namespace Domain.Entities
         public NovelStatus status { get; set; }
         public bool is_public { get; set; }
         public bool is_lock { get; set; }
-        /// <summary>
-        /// Trả phí hay không
-        /// </summary>
         public bool is_paid { get; set; }
+        public bool is_completed { get; set; }
         [BsonRepresentation(BsonType.String)]
         public PurchaseType purchase_type { get; set; }
         public int price { get; set; }
@@ -28,5 +26,6 @@ namespace Domain.Entities
         public int followers { get; set; }
         public double rating_avg { get; set; }
         public int rating_count { get; set; }
+        public int comment_count { get; set; }
     }
 }

@@ -63,6 +63,11 @@ namespace Application.Features.Forum.Commands
 
             await _postCommentRepo.CreateAsync(comment);
 
+            if (!string.IsNullOrEmpty(comment.post_id))
+            {
+                await _postRepo.IncrementCommentsAsync(comment.post_id);
+            }
+
             return new ApiResponse
             {
                 Success = true,

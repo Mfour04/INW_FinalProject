@@ -20,5 +20,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<List<string>> GetFreeChapterIdsByNovelIdAsync(string novelId);
         Task<int> ReleaseScheduledChaptersAsync();
         Task<int> GetTotalPublicChaptersAsync(string novelId);
+        Task<bool> IncrementCommentsAsync(string novelId);
+        Task<bool> DecrementCommentsAsync(string novelId);
     }
 }
