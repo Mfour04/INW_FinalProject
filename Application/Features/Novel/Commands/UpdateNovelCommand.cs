@@ -9,6 +9,7 @@ using MongoDB.Bson;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Novel;
 using System.Text.Json.Serialization;
+using Shared.Contracts.Response.Tag;
 
 namespace Application.Features.Novel.Commands
 {
@@ -33,12 +34,14 @@ namespace Application.Features.Novel.Commands
         private readonly IMapper _mapper;
         private readonly ICloudDinaryService _cloudDinaryService;
         private readonly ICurrentUserService _currentUserService;
-        public UpdateNovelHandle(INovelRepository novelRepository, IMapper mapper, ICloudDinaryService cloudDinaryService, ICurrentUserService currentUserService)
+        private readonly ITagRepository _tagRepository;
+        public UpdateNovelHandle(INovelRepository novelRepository, IMapper mapper, ICloudDinaryService cloudDinaryService, ICurrentUserService currentUserService, ITagRepository tagRepository)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
             _cloudDinaryService = cloudDinaryService;
             _currentUserService = currentUserService;
+            _tagRepository = tagRepository;
         }
         public async Task<ApiResponse> Handle(UpdateNovelCommand request, CancellationToken cancellationToken)
         {
@@ -67,13 +70,25 @@ namespace Application.Features.Novel.Commands
             novel.is_lock = request.IsLock ?? novel.is_lock;
             novel.is_paid = request.IsPaid ?? novel.is_paid;
             novel.price = request.Price ?? novel.price;
-            novel.tags = request.Tags ?? novel.tags;
+            if (request.Tags != null && request.Tags.Any())
+            {
+                novel.tags = request.Tags;
+            }
             novel.purchase_type = request.PurchaseType ?? novel.purchase_type;
             novel.updated_at = DateTime.UtcNow.Ticks;
 
             await _novelRepository.UpdateNovelAsync(novel);
-
+            List<TagEntity> tagEntities = new();
+            if (novel.tags != null && novel.tags.Any())
+            {
+                tagEntities = await _tagRepository.GetTagsByIdsAsync(novel.tags);
+            }
             var response = _mapper.Map<UpdateNovelResponse>(novel);
+            response.Tags = tagEntities.Select(tag => new TagListResponse
+            {
+                TagId = tag.id,
+                Name = tag.name
+            }).ToList();
 
             return new ApiResponse
             {

@@ -8,6 +8,7 @@ namespace Shared.Contracts.Response.Tag
 {
     public class TagResponse
     {
+        public string TagId { get; set; }
         public string Name { get; set; }
     }
 }

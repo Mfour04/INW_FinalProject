@@ -11,12 +11,14 @@ namespace Infrastructure.Repositories.Implements
     public class NovelRepository : INovelRepository
     {
         private readonly IMongoCollection<NovelEntity> _collection;
-        private IChapterRepository _chapterRepository;
-        public NovelRepository(MongoDBHelper mongoDBHelper, IChapterRepository chapterRepository)
+        private readonly IChapterRepository _chapterRepository;
+        private readonly ITagRepository _tagRepository;
+        public NovelRepository(MongoDBHelper mongoDBHelper, IChapterRepository chapterRepository, ITagRepository tagRepository)
         {
             mongoDBHelper.CreateCollectionIfNotExistsAsync("novel").Wait();
             _collection = mongoDBHelper.GetCollection<NovelEntity>("novel");
             _chapterRepository = chapterRepository;
+            _tagRepository = tagRepository;
         }
 
         public async Task<NovelEntity> CreateNovelAsync(NovelEntity entity)
@@ -81,7 +83,22 @@ namespace Infrastructure.Repositories.Implements
                         filtered &= builder.And(regexFilters);
                     }
                 }
+                // 📌 Filter theo tag name
+                if (creterias.SearchTagTerm != null && creterias.SearchTagTerm.Any())
+                {
+                    var matchedTags = await _tagRepository.GetByNamesAsync(creterias.SearchTagTerm);
+                    var tagIds = matchedTags.Select(t => t.id).ToList();
 
+                    if (tagIds.Any())
+                    {
+                        filtered &= builder.In("tags", tagIds);
+                    }
+                    else
+                    {
+                        // Không có tag phù hợp → trả về rỗng
+                        return new List<NovelEntity>();
+                    }
+                }
 
                 var query = _collection
                     .Find(filtered)
@@ -179,6 +196,34 @@ namespace Infrastructure.Repositories.Implements
                     Builders<NovelEntity>.Filter.Eq(n => n.id, novelId),
                     update
                 );
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<NovelEntity>> GetNovelByAuthorId(string authorId)
+        {
+            try
+            {
+                return await _collection.Find(x => x.author_id == authorId).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task UpdateLockStatusAsync(string novelId, bool isLocked)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
+                var updateLock = Builders<NovelEntity>.Update.Combine(
+                                 Builders<NovelEntity>.Update.Set(x => x.is_lock, isLocked),
+                                 Builders<NovelEntity>.Update.Set(x => x.is_public, false));
+                await _collection.UpdateOneAsync(filter, updateLock);
             }
             catch
             {

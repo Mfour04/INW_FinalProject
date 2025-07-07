@@ -16,5 +16,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<TagEntity> UpdateTagAsync(TagEntity entity);
         Task<bool> DeleteTagAsync(string id);
         Task<List<TagEntity>> GetTagsByIdsAsync(List<string> ids);
+        Task<List<TagEntity>> GetByNamesAsync(List<string> names);
     }
 }
