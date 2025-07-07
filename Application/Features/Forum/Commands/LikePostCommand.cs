@@ -47,6 +47,7 @@ namespace Application.Features.Forum.Commands
             };
 
             await _postLikeRepo.LikePostAsync(like);
+            await _postRepo.IncrementLikesAsync(request.PostId);
 
             return new ApiResponse
             {

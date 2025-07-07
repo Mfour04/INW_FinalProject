@@ -1,11 +1,10 @@
-﻿using AutoMapper;
-using Domain.Entities;
+﻿using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Helpers;
 
-namespace Application.Features.Comment.Command
+namespace Application.Features.Comment.Commands
 {
     public class CreateCommentCommand : IRequest<ApiResponse>
     {
@@ -25,8 +24,7 @@ namespace Application.Features.Comment.Command
         public CreateCommentCommandHandler(
             ICommentRepository commentRepository,
             IChapterRepository chapterRepository,
-            INovelRepository novelRepository,
-            IMapper mapper)
+            INovelRepository novelRepository)
         {
             _commentRepository = commentRepository;
             _chapterRepository = chapterRepository;
@@ -37,6 +35,9 @@ namespace Application.Features.Comment.Command
         {
             if (string.IsNullOrWhiteSpace(request.NovelId))
                 return Fail("NovelId is required.");
+
+            if (string.IsNullOrWhiteSpace(request.Content))
+                return Fail("Content is required.");
 
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
@@ -52,7 +53,7 @@ namespace Application.Features.Comment.Command
                     return Fail("Chapter does not belong to the specified novel.");
             }
 
-            var createdComment = new CommentEntity
+            var comment = new CommentEntity
             {
                 id = SystemHelper.RandomId(),
                 novel_id = novel.id,
@@ -63,14 +64,23 @@ namespace Application.Features.Comment.Command
                 created_at = DateTime.UtcNow.Ticks
             };
 
-            await _commentRepository.CreateCommentAsync(createdComment);
+            await _commentRepository.CreateCommentAsync(comment);
 
+            if (!string.IsNullOrWhiteSpace(request.ChapterId))
+            {
+                await _chapterRepository.IncrementCommentsAsync(request.ChapterId);
+            }
+            else
+            {
+                await _novelRepository.IncrementCommentsAsync(request.NovelId);
+            }
+            
             return new ApiResponse
             {
                 Success = true,
                 Message = "Comment created successfully",
-                Data = createdComment
-            };
+                Data = comment
+			};
         }
 
         private ApiResponse Fail(string msg) => new()

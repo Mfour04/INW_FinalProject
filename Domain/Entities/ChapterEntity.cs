@@ -10,7 +10,8 @@ namespace Domain.Entities
         public int price { get; set; }
         public long scheduled_at { get; set; }
         public bool is_lock { get; set; }
-        public bool is_draft { get; set; } 
+        public bool is_draft { get; set; }
         public bool is_public { get; set; }
+        public int comment_count { get; set; }
     }
 }

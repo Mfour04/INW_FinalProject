@@ -5,7 +5,6 @@ using Infrastructure.Repositories.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Exceptions;
-using ZstdSharp.Unsafe;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -173,7 +172,7 @@ namespace Infrastructure.Repositories.Implements
 
         public async Task<NovelEntity> UpdateNovelAsync(NovelEntity entity)
         {
-           try
+            try
             {
                 var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, entity.id);
                 var result = await _collection.ReplaceOneAsync(filter, entity);
@@ -225,6 +224,36 @@ namespace Infrastructure.Repositories.Implements
                                  Builders<NovelEntity>.Update.Set(x => x.is_lock, isLocked),
                                  Builders<NovelEntity>.Update.Set(x => x.is_public, false));
                 await _collection.UpdateOneAsync(filter, updateLock);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> IncrementCommentsAsync(string novelId)
+        {
+            try
+            {
+                var update = Builders<NovelEntity>.Update.Inc(x => x.comment_count, 1);
+                var result = await _collection.UpdateOneAsync(x => x.id == novelId, update);
+
+                return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> DecrementCommentsAsync(string novelId)
+        {
+            try
+            {
+                var update = Builders<NovelEntity>.Update.Inc(x => x.comment_count, -1);
+                var result = await _collection.UpdateOneAsync(x => x.id == novelId, update);
+
+                return result.ModifiedCount > 0;
             }
             catch
             {

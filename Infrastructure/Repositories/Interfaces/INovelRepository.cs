@@ -16,5 +16,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task IncreaseTotalViewAsync(string novelId);
         Task<List<NovelEntity>> GetNovelByAuthorId(string authorId);
         Task UpdateLockStatusAsync(string novelId, bool isLocked);
+        Task<bool> IncrementCommentsAsync(string novelId);
+        Task<bool> DecrementCommentsAsync(string novelId);
     }
 }
