@@ -11,5 +11,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<UserEntity> UpdateUser(UserEntity entity);
         Task IncreaseCoinAsync(string userId, int amount);
         Task<bool> DecreaseCoinAsync(string userId, int amount);
+        Task UpdateUserCoin(string userId, int coin, int blockedCoin);
     }
 }

@@ -113,19 +113,31 @@ namespace Infrastructure.Repositories.Implements
             {
                 var filter = Builders<UserEntity>.Filter.And(
                     Builders<UserEntity>.Filter.Eq(u => u.id, userId),
-                    Builders<UserEntity>.Filter.Gte(u => u.coin, amount) 
+                    Builders<UserEntity>.Filter.Gte(u => u.coin, amount)
                 );
 
                 var update = Builders<UserEntity>.Update.Inc(u => u.coin, -amount);
 
                 var result = await _collection.UpdateOneAsync(filter, update);
 
-                return result.ModifiedCount > 0; 
+                return result.ModifiedCount > 0;
             }
             catch (Exception)
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task UpdateUserCoin(string userId, int coin, int blockedCoin)
+        {
+            var filter = Builders<UserEntity>.Filter.Eq(x => x.id, userId);
+
+            var update = Builders<UserEntity>.Update
+                .Set(x => x.coin, coin)
+                .Set(x => x.block_coin, blockedCoin)
+                .Set(x => x.updated_at, DateTime.Now.Ticks);
+
+            await _collection.UpdateOneAsync(filter, update);
         }
     }
 }

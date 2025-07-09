@@ -2,7 +2,7 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 
-namespace Application.Features.Comment.Command
+namespace Application.Features.Comment.Commands
 {
     public class UnlikeCommentCommand : IRequest<ApiResponse>
     {

@@ -36,11 +36,11 @@ namespace Application.Features.Transaction.Queries
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            var userTransaction = await _transactionRepo.GetAllAsync(request.Type, findCreterias, sortBy);
-            if (userTransaction == null || userTransaction.Count == 0)
+            var transactions = await _transactionRepo.GetAllAsync(request.Type, findCreterias, sortBy);
+            if (transactions == null || transactions.Count == 0)
                 return new ApiResponse { Success = false, Message = "No transaction found." };
 
-            var response = _mapper.Map<List<TransactionResponse>>(userTransaction);
+            var response = _mapper.Map<List<TransactionResponse>>(transactions);
             return new ApiResponse
             {
                 Success = true,

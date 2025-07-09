@@ -77,6 +77,9 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        /// <summary>
+        /// Tạo mới một giao dịch.
+        /// </summary>
         public async Task AddAsync(TransactionEntity transaction)
         {
             try
@@ -89,6 +92,9 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        /// <summary>
+        /// Lấy giao dịch theo mã đơn hàng (orderCode) nạp PayOS.
+        /// </summary>
         public async Task<TransactionEntity> GetByOrderCodeAsync(long orderCode)
         {
             try
@@ -101,6 +107,9 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        /// <summary>
+        /// Cập nhật trạng thái (status) của giao dịch theo id.
+        /// </summary>
         public async Task UpdateStatusAsync(string id, PaymentStatus newStatus)
         {
             try
@@ -114,13 +123,23 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách giao dịch nạp tiền có trạng thái Pending nhưng đã quá thời gian timeout.
+        /// </summary>
         public async Task<List<TransactionEntity>> GetExpiredPendingTransactionsAsync(long timeoutTimestamp)
         {
 
             try
             {
-                var result = await _collection.Find(t => t.status == PaymentStatus.Pending
-                    && t.created_at < timeoutTimestamp).ToListAsync();
+                var builder = Builders<TransactionEntity>.Filter;
+
+                var filter = builder.And(
+                    builder.Eq(t => t.status, PaymentStatus.Pending),
+                    builder.Eq(t => t.type, PaymentType.TopUp),
+                    builder.Lt(t => t.created_at, timeoutTimestamp)
+                );
+
+                var result = await _collection.Find(filter).ToListAsync();
                 return result;
             }
             catch
@@ -180,6 +199,72 @@ namespace Infrastructure.Repositories.Implements
                 query = query
                     .Skip(creterias.Page * creterias.Limit)
                     .Limit(creterias.Limit);
+
+                return await query.ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Lấy chi tiết thông tin 1 giao dịch
+        /// </summary>
+        public async Task<TransactionEntity> GetByIdAsync(string id)
+        {
+            try
+            {
+                var result = await _collection.Find(x => x.id == id).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách yêu cầu rút tiền (withdraw) đang chờ xử lý (Pending).
+        /// </summary>
+        public async Task<List<TransactionEntity>> GetPendingWithdrawRequestsAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
+        {
+            try
+            {
+                var builder = Builders<TransactionEntity>.Filter;
+
+                var filtered = builder.And(
+                    builder.Eq(x => x.type, PaymentType.WithdrawCoin),
+                    builder.Eq(x => x.status, PaymentStatus.Pending)
+                );
+
+                var query = _collection
+                  .Find(filtered)
+                  .Skip(creterias.Page * creterias.Limit)
+                  .Limit(creterias.Limit);
+
+                var sortBuilder = Builders<TransactionEntity>.Sort;
+                var sortDefinitions = new List<SortDefinition<TransactionEntity>>();
+
+                foreach (var criterion in sortCreterias)
+                {
+                    SortDefinition<TransactionEntity>? sortDef = criterion.Field switch
+                    {
+                        "created_at" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.created_at)
+                            : sortBuilder.Ascending(x => x.created_at),
+                        _ => null
+                    };
+
+                    if (sortDef != null)
+                        sortDefinitions.Add(sortDef);
+                }
+
+                if (sortDefinitions.Count >= 1)
+                {
+                    var combinedSort = sortBuilder.Combine(sortDefinitions);
+                    query = query.Sort(combinedSort);
+                }
 
                 return await query.ToListAsync();
             }

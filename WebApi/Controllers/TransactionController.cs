@@ -1,7 +1,10 @@
-﻿using Application.Features.Transaction.Commands;
+﻿using System.Security.Claims;
+using Application.Features.Transaction.Commands;
 using Application.Features.Transaction.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
 
 namespace WebApi.Controllers
 {
@@ -17,13 +20,13 @@ namespace WebApi.Controllers
         }
 
         [HttpGet()]
-        public async Task<IActionResult> GetTransactions([FromQuery] GetTransactions request)
+        public async Task<IActionResult> GetTransactions([FromQuery] GetTransactions query)
         {
-            var result = await _mediator.Send(request);
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
 
-        [HttpPost("coin-recharge")]
+        [HttpPost("recharges")]
         public async Task<IActionResult> CreateCoinRecharge([FromBody] CreateCoinRechargeCommand command)
         {
             // command.UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -32,7 +35,7 @@ namespace WebApi.Controllers
             return Ok(new { checkoutUrl = url });
         }
 
-        [HttpGet("return-url")]
+        [HttpGet("recharges/return-url")]
         public async Task<IActionResult> HandleReturn(
         [FromQuery] string code,
         [FromQuery] bool cancel,
@@ -52,7 +55,7 @@ namespace WebApi.Controllers
             return BadRequest();
         }
 
-        [HttpGet("cancel-url")]
+        [HttpGet("recharges/cancel-url")]
         public async Task<IActionResult> HandleCancel(
         [FromQuery] bool cancel,
         [FromQuery] string status,
@@ -71,7 +74,8 @@ namespace WebApi.Controllers
             return BadRequest();
         }
 
-        [HttpGet("user-transaction")]
+        // [Authorize]
+        [HttpGet("user")]
         public async Task<IActionResult> GetUserTransaction([FromQuery] GetUserTransaction request)
         {
             // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -82,11 +86,44 @@ namespace WebApi.Controllers
             //         Success = false,
             //         Message = "User not authenticated."
             //     });
-            // command.UserId = userId;
 
-            request.UserId = "user_002";
+            // request.UserId = userId;
+
+            // request.UserId = "user_002";
 
             var result = await _mediator.Send(request);
+            return Ok(result);
+        }
+
+        [HttpPost("withdraws")]
+        public async Task<IActionResult> RequestWithdraw([FromBody] WithdrawRequestCommand command)
+        {
+            command.UserId = "user_002"; // hardcode tạm
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPost("withdraws/{id}/process")]
+        public async Task<IActionResult> ProcessWithdraw(string id, [FromBody] ProcessWithdrawRequestCommand command)
+        {
+            command.TransactionId = id;
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPost("withdraws/{id}/cancel")]
+        public async Task<IActionResult> CancelWithdraw(string id, [FromBody] CancelWithdrawRequestCommand command)
+        {
+            command.TransactionId = id;
+            command.UserId = "user_002"; // hardcode tạm
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpGet("withdraws/pending")]
+        public async Task<IActionResult> GetPendingWithdraws([FromQuery] GetPendingWithdraws query)
+        {
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
     }

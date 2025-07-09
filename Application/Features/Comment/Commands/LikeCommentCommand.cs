@@ -5,7 +5,7 @@ using MediatR;
 using Shared.Contracts.Response;
 using Shared.Helpers;
 
-namespace Application.Features.Comment.Command
+namespace Application.Features.Comment.Commands
 {
     public class LikeCommentCommand : IRequest<ApiResponse>
     {
