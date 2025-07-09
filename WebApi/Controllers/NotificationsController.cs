@@ -1,4 +1,4 @@
-﻿using Application.Features.Notification.Command;
+﻿using Application.Features.Notification.Commands;
 using Application.Features.Notification.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -32,7 +32,10 @@ namespace WebApi.Controllers
         [HttpPost("send-notify")]
         public async Task<IActionResult> SendNotifyUser([FromBody] SendNotificationToUserCommand command)
         {
-            await _mediator.Send(command);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            await _mediator.Send(command.SenderId = userId);
             return Ok(new { success = true, message = "Notification sent." });
         }
     }

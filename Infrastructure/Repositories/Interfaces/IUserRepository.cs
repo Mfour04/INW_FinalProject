@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 
 namespace Infrastructure.Repositories.Interfaces
 {
@@ -9,7 +10,9 @@ namespace Infrastructure.Repositories.Interfaces
         Task<UserEntity> GetById(string userId);
         Task<UserEntity> GetByName(string userName);
         Task<UserEntity> UpdateUser(UserEntity entity);
+        Task<bool> UpdateUserRoleToAdminAsync(string userId);
         Task IncreaseCoinAsync(string userId, int amount);
         Task<bool> DecreaseCoinAsync(string userId, int amount);
+        Task<UserEntity?> GetFirstUserByRoleAsync(Role role);
     }
 }

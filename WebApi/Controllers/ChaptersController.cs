@@ -1,5 +1,4 @@
-﻿using Application.Features.Chapter.Command;
-using Application.Features.Chapter.Commands;
+﻿using Application.Features.Chapter.Commands;
 using Application.Features.Chapter.Queries;
 using Domain.Entities.System;
 using MediatR;

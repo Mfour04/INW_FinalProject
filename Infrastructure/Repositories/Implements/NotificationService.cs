@@ -1,4 +1,5 @@
-﻿using Infrastructure.Repositories.Interfaces;
+﻿using Domain.Enums;
+using Infrastructure.Repositories.Interfaces;
 using Infrastructure.SignalRHub;
 using Microsoft.AspNetCore.SignalR;
 using System;
@@ -18,7 +19,7 @@ namespace Infrastructure.Repositories.Implements
             _hubContext = hubContext;
         }
 
-        public async Task SendNotificationAsync(string userId, string message, string type)
+        public async Task SendNotificationAsync(string userId, string message, NotificationType type)
         {
             await _hubContext.Clients.User(userId).SendAsync("ReceiveNotification", new
             {

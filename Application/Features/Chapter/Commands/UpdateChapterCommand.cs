@@ -1,16 +1,10 @@
 ﻿using AutoMapper;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Microsoft.AspNetCore.Components.Forms;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Application.Features.Chapter.Command
+namespace Application.Features.Chapter.Commands
 {
     public class UpdateChapterCommand: IRequest<ApiResponse>
     {
