@@ -48,7 +48,7 @@ builder.Services.AddSingleton<PayOS>(sp =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHostedService<TransactionCleanupService>();
-
+builder.Services.AddHostedService<ScheduledChapterReleaseService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
