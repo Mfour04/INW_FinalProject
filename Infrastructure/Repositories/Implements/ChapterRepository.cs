@@ -160,23 +160,58 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var currentTicks = DateTime.UtcNow.Ticks;
+                // Mốc ngày hiện tại UTC
+                var todayUtc = DateTime.UtcNow.Date;
+
+                // Tính ticks đầu và cuối ngày UTC
+                long startTicks = todayUtc.Ticks;
+                long endTicks = todayUtc.AddDays(1).Ticks;
+
                 var filter = Builders<ChapterEntity>.Filter.And(
-                             Builders<ChapterEntity>.Filter.Eq(c => c.scheduled_at, currentTicks) &
-                             Builders<ChapterEntity>.Filter.Eq(c => c.is_public, false) &
-                             Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
+                    Builders<ChapterEntity>.Filter.Gte(c => c.scheduled_at, startTicks),
+                    Builders<ChapterEntity>.Filter.Lt(c => c.scheduled_at, endTicks),
+                    Builders<ChapterEntity>.Filter.Eq(c => c.is_public, false),
+                    Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
                 );
 
-                var update = Builders<ChapterEntity>.Update.Set(c => c.is_public, true);
-                var result = await _collection.UpdateManyAsync(filter, update);
+                var chaptersToRelease = await _collection.Find(filter).ToListAsync();
+                if (!chaptersToRelease.Any())
+                    return 0;
 
-                return (int)result.ModifiedCount;
+                int updatedCount = 0;
+
+                var novelChapterMap = new Dictionary<string, int>();
+
+                foreach (var chapter in chaptersToRelease.OrderBy(c => c.scheduled_at))
+                {
+                    if (!novelChapterMap.ContainsKey(chapter.novel_id))
+                    {
+                        var lastChapter = await _collection.Find(c =>
+                            c.novel_id == chapter.novel_id && c.is_public)
+                            .SortByDescending(c => c.chapter_number)
+                            .FirstOrDefaultAsync();
+
+                        novelChapterMap[chapter.novel_id] = (lastChapter?.chapter_number ?? 0);
+                    }
+
+                    novelChapterMap[chapter.novel_id]++;
+                    chapter.chapter_number = novelChapterMap[chapter.novel_id];
+                    chapter.is_public = true;
+                    chapter.is_lock = false;
+                    chapter.updated_at = DateTime.UtcNow.Ticks;
+
+                    await _collection.ReplaceOneAsync(c => c.id == chapter.id, chapter);
+                    updatedCount++;
+                }
+
+                return updatedCount;
             }
             catch
             {
-                throw new InternalServerException();
+                throw new InternalServerException("Error while releasing scheduled chapters.");
             }
         }
+
 
         public async Task RenumberChaptersAsync(string novelId)
         {
