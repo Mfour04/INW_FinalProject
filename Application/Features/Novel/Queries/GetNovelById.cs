@@ -47,17 +47,9 @@ namespace Application.Features.Novel.Queries
                 bool isGuest = string.IsNullOrEmpty(request.UserId);
                 bool isAuthor = !isGuest && novel.author_id == request.UserId;
                 bool hasPurchasedFull = !isGuest && await _purchaserRepository.HasPurchasedFullAsync(request.UserId, request.NovelId);
-                var purchasedChapterIds = !isGuest ? await _purchaserRepository.GetPurchasedChapterIdsAsync(request.UserId, request.NovelId) : new List<string>();
-                bool hasPurchasedAnyChapter = purchasedChapterIds.Any();
+                //var purchasedChapterIds = !isGuest ? await _purchaserRepository.GetPurchasedChapterIdsAsync(request.UserId, request.NovelId) : new List<string>();
+                //bool hasPurchasedAnyChapter = purchasedChapterIds.Any();
 
-                if (!isGuest)
-                {
-                    // Cập nhật trạng thái mua full nếu có chương mới
-                    await _purchaserRepository.ValidateFullPurchaseAsync(request.UserId, request.NovelId, novel.total_chapters);
-
-                    if (hasPurchasedFull)
-                        purchasedChapterIds = allChapterIds;
-                }
 
                 // Trả về lỗi nếu truyện chưa public, và người dùng không phải tác giả hoặc chưa mua full.
                 if (!novel.is_public && !isAuthor && !hasPurchasedFull)
@@ -79,7 +71,6 @@ namespace Application.Features.Novel.Queries
                         {
                             NovelInfo = novel,
                             AllChapters = allChapterIds,
-                            PurchasedChapterIds = purchasedChapterIds
                         }
                     };
                 }
@@ -98,7 +89,6 @@ namespace Application.Features.Novel.Queries
                                 {
                                     NovelInfo = novel,
                                     FreeChapters = freeChapterIds,
-                                    PurchasedChapterIds = purchasedChapterIds,
                                     Message = "Bạn chưa mua truyện này (đã hoàn thành). Chỉ xem được chương miễn phí."
                                 }
                             };
@@ -107,7 +97,7 @@ namespace Application.Features.Novel.Queries
                     // Nếu truyện đang ra và người dùng chưa mua chương nào → chỉ xem được chương miễn phí.
                     else if (novel.status == NovelStatus.Ongoing)
                     {
-                        if (!isAuthor && !hasPurchasedAnyChapter)
+                        if (!isAuthor)
                         {
                             return new ApiResponse
                             {
@@ -116,7 +106,6 @@ namespace Application.Features.Novel.Queries
                                 {
                                     NovelInfo = novel,
                                     FreeChapters = freeChapterIds,
-                                    PurchasedChapterIds = purchasedChapterIds,
                                 }
                             };
                         }
@@ -131,7 +120,6 @@ namespace Application.Features.Novel.Queries
                     {
                         NovelInfo = novel,
                         AllChapters = allChapterIds,
-                        PurchasedChapterIds = purchasedChapterIds
                     }
                 };
             }

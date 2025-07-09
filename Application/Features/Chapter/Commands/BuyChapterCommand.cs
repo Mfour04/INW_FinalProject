@@ -38,6 +38,9 @@ namespace Application.Features.Chapter.Commands
 
         public async Task<ApiResponse> Handle(BuyChapterCommand request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.ChapterId))
+                return Fail("Missing user or chapter ID.");
+
             var chapter = await _chapterRepo.GetByChapterIdAsync(request.ChapterId);
             if (chapter == null)
                 return Fail("Chapter not found.");
@@ -58,11 +61,29 @@ namespace Application.Features.Chapter.Commands
             if (!await _userRepo.DecreaseCoinAsync(request.UserId, request.CoinCost))
                 return Fail("Failed to deduct coins.");
 
-            await _purchaserRepo.AddChapterPurchaseAsync(request.UserId, novel.id, request.ChapterId);
-
             var nowTicks = DateTime.Now.Ticks;
 
-            var transaction = new TransactionEntity
+            var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, novel.id);
+
+            if (existing == null)
+            {
+                PurchaserEntity newPurchaser = new()
+                {
+                    id = SystemHelper.RandomId(),
+                    user_id = request.UserId,
+                    novel_id = novel.id,
+                    is_full = false,
+                    chapter_ids = new List<string> { request.ChapterId },
+                    created_at = nowTicks
+                };
+                await _purchaserRepo.CreateAsync(newPurchaser);
+            }
+            else
+            {
+                await _purchaserRepo.AddChapterAsync(request.UserId!, novel.id, request.ChapterId);
+            }
+
+            TransactionEntity transaction = new()
             {
                 id = SystemHelper.RandomId(),
                 user_id = request.UserId,
@@ -77,7 +98,6 @@ namespace Application.Features.Chapter.Commands
             };
             await _transactionRepo.AddAsync(transaction);
 
-            await _purchaserRepo.TryMarkFullAsync(request.UserId, novel.id, novel.total_chapters);
 
             return new ApiResponse
             {
