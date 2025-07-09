@@ -1,4 +1,7 @@
-﻿using Domain.Entities;
+﻿using Application.Features.Notification.Commands;
+using AutoMapper;
+using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -20,15 +23,17 @@ namespace Application.Features.Comment.Commands
         private readonly ICommentRepository _commentRepository;
         private readonly IChapterRepository _chapterRepository;
         private readonly INovelRepository _novelRepository;
-
+        private readonly IMediator _mediator;
         public CreateCommentCommandHandler(
             ICommentRepository commentRepository,
             IChapterRepository chapterRepository,
-            INovelRepository novelRepository)
+            INovelRepository novelRepository,
+            IMediator mediator)
         {
             _commentRepository = commentRepository;
             _chapterRepository = chapterRepository;
             _novelRepository = novelRepository;
+            _mediator = mediator;
         }
 
         public async Task<ApiResponse> Handle(CreateCommentCommand request, CancellationToken cancellationToken)
@@ -53,7 +58,7 @@ namespace Application.Features.Comment.Commands
                     return Fail("Chapter does not belong to the specified novel.");
             }
 
-            var comment = new CommentEntity
+            var createdComment = new CommentEntity
             {
                 id = SystemHelper.RandomId(),
                 novel_id = novel.id,
@@ -64,8 +69,31 @@ namespace Application.Features.Comment.Commands
                 created_at = DateTime.UtcNow.Ticks
             };
 
-            await _commentRepository.CreateCommentAsync(comment);
+            await _commentRepository.CreateCommentAsync(createdComment);
 
+            bool hasParent = !string.IsNullOrWhiteSpace(request.ParentCommentId);
+            bool hasChapter = !string.IsNullOrWhiteSpace(request.ChapterId);
+            bool hasNovel = !string.IsNullOrWhiteSpace(request.NovelId);
+
+            NotificationType notiType = (hasParent, hasChapter, hasNovel) switch
+            {
+                (false, false, true) => NotificationType.CommentNovelNotification,
+                (false, true, true) => NotificationType.CommentChapterNotification,
+                (true, false, true) => NotificationType.RelyCommentNovel,
+                (true, true, true) => NotificationType.RelyCommentChapter,
+                _ => throw new Exception("Invalid combination of comment context.")
+            };
+
+            var notiResponse = await _mediator.Send(new SendNotificationToUserCommand
+            {
+                SenderId = request.UserId,
+                NovelId = request.NovelId,
+                ChapterId = request.ChapterId,
+                CommentId = createdComment.id,
+                ParentCommentId = request.ParentCommentId,
+                Type = notiType
+            });
+            bool signalRSent = notiResponse.Success;
             if (!string.IsNullOrWhiteSpace(request.ChapterId))
             {
                 await _chapterRepository.IncrementCommentsAsync(request.ChapterId);
@@ -78,9 +106,17 @@ namespace Application.Features.Comment.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment created successfully",
-                Data = comment
-			};
+                Message = "Comment created successfully and SignalR sent.",
+                Data = new
+                {
+                    Comment = createdComment,
+                    SignalR = new
+                    {
+                        Sent = signalRSent,
+                        NotificationType = notiType.ToString()
+                    }
+                }
+            };
         }
 
         private ApiResponse Fail(string msg) => new()

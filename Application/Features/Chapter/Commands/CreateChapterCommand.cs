@@ -13,7 +13,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace Application.Features.Chapter.Command
+namespace Application.Features.Chapter.Commands
 {
     public class CreateChapterCommand : IRequest<ApiResponse>
     {

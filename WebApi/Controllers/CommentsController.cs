@@ -96,7 +96,7 @@ namespace WebApi.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("created")]
         public async Task<IActionResult> CreateComment([FromBody] CreateCommentCommand comment)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
