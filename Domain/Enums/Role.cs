@@ -4,6 +4,6 @@ namespace Domain.Enums
     {
         Reader,
         Author,
-        Admin,
+        Admin
     }
 }

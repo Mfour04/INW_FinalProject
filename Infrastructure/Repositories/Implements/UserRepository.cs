@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
@@ -126,6 +127,20 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task<bool> UpdateUserRoleToAdminAsync(string userId)
+        {
+            var filter = Builders<UserEntity>.Filter.Eq(u => u.id, userId);
+            var update = Builders<UserEntity>.Update.Set(nameof(UserEntity.role), Role.Admin);
+
+            var result = await _collection.UpdateOneAsync(filter, update);
+            return result.ModifiedCount > 0;
+        }
+        public async Task<UserEntity?> GetFirstUserByRoleAsync(Role role)
+        {
+            var filter = Builders<UserEntity>.Filter.Eq(nameof(UserEntity.role), role);
+            return await _collection.Find(filter).FirstOrDefaultAsync();
         }
 
         public async Task UpdateUserCoin(string userId, int coin, int blockedCoin)

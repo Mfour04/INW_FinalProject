@@ -1,4 +1,6 @@
 ﻿using Domain.Enums;
+using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
 
 namespace Domain.Entities
 {

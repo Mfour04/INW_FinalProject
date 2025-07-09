@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Application.Features.Notification.Commands;
+using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -32,8 +33,11 @@ namespace Application.Features.Report.Command
         private readonly IForumPostRepository _forumPostRepository;
         private readonly IForumCommentRepository _forumCommentRepository;
         private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
 
-        public CreateReponseCommandHandler(INovelRepository novelRepository, IChapterRepository chapterRepository, ICommentRepository commentRepository, IUserRepository userRepository, IReportRepository reportRepository, IForumPostRepository forumPostRepository, IForumCommentRepository forumCommentRepository, IMapper mapper)
+        public CreateReponseCommandHandler(INovelRepository novelRepository, IChapterRepository chapterRepository, ICommentRepository commentRepository
+            , IUserRepository userRepository, IReportRepository reportRepository, IForumPostRepository forumPostRepository
+            , IForumCommentRepository forumCommentRepository, IMapper mapper, IMediator mediator)
         {
             _novelRepository = novelRepository;
             _chapterRepository = chapterRepository;
@@ -43,6 +47,7 @@ namespace Application.Features.Report.Command
             _forumPostRepository = forumPostRepository;
             _forumCommentRepository = forumCommentRepository;
             _mapper = mapper;
+            _mediator = mediator;
         }
 
         public async Task<ApiResponse> Handle(CreateReportCommand request, CancellationToken cancellationToken)
@@ -125,11 +130,41 @@ namespace Application.Features.Report.Command
             await _reportRepository.CreateAsync(createRequest);
             var response = _mapper.Map<ReportResponse>(createRequest);
 
+            var admin = await _userRepository.GetFirstUserByRoleAsync(Role.Admin);
+            NotificationType notiType = request.Report.Type switch
+            {
+                ReportTypeStatus.ChapterReport => NotificationType.ChapterReportNotification,
+                ReportTypeStatus.NovelReport => NotificationType.NovelReportNofitication,
+                ReportTypeStatus.CommentReport => NotificationType.ReportComment,
+                ReportTypeStatus.UserReport => NotificationType.UserReport,
+                _ => NotificationType.UserReport
+            };
+
+
+            await _mediator.Send(new SendNotificationToUserCommand
+            {
+                UserId = admin.id,
+                SenderId = request.Report.UserId,
+                NovelId = request.Report.NovelId,
+                ChapterId = request.Report.ChapterId,
+                CommentId = request.Report.CommentId,
+                UserReportedId = request.Report.MemberId,
+                Type = notiType
+            });
+
             return new ApiResponse
             {
                 Success = true,
                 Message = "Report created successfully",
-                Data = response
+                Data = new
+                {
+                    Comment = response,
+                    SignalR = new
+                    {
+                        Sent = true,
+                        NotificationType = notiType.ToString(),
+                    }
+                }
             };
         }
 
@@ -148,6 +183,4 @@ namespace Application.Features.Report.Command
             };
         }
     }
-
-    
 }

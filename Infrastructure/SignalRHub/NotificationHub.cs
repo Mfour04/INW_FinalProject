@@ -4,9 +4,22 @@ namespace Infrastructure.SignalRHub
 {
     public class NotificationHub: Hub
     {
-        public async Task SendNotificationToUser(string userId, string message)
-        {
-            await Clients.User(userId).SendAsync("ReceiveNotification", message);
+        public async Task<bool> SendNotificationToUser(string userId, string message)
+        {         
+            try
+            {
+                await Clients.User(userId).SendAsync("ReceiveNotification", new
+                {
+                    Message = message,
+                    Type = ToString()
+                });
+                return true;
+            }
+            catch
+            {
+                // Log lỗi nếu cần
+                return false;
+            }
         }
     }
 }

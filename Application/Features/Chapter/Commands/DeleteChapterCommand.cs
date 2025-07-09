@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Features.Chapter.Command
+namespace Application.Features.Chapter.Commands
 {
     public class DeleteChapterCommand: IRequest<ApiResponse>
     {

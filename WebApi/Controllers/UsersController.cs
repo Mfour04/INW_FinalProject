@@ -92,9 +92,8 @@ namespace WebApi.Controllers
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             var role = identity?.FindFirst(ClaimTypes.Role)?.Value;
-            var email = identity?.FindFirst("Email")?.Value;
 
-            return Ok(new { role, email });
+            return Ok(new { role });
         }
 
         [Authorize]
@@ -235,6 +234,20 @@ namespace WebApi.Controllers
             });
 
             return Ok(result);
+        }
+
+        [HttpPut("update-to-admin")]
+        public async Task<IActionResult> UpdateUserToAdmin(string userId)
+        {
+            var result = await _mediator.Send(new UpdateUserToAdminCommand { UserId = userId });
+            return Ok(result);
+        }
+
+        [HttpGet("admin-id")]
+        public async Task<IActionResult> GetAdminId()
+        {
+            var response = await _mediator.Send(new GetAdminId());
+            return Ok(response);
         }
 
     }
