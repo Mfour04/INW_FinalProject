@@ -1,8 +1,12 @@
-﻿using Domain.Entities.System;
+﻿using AutoMapper;
+using Domain.Entities.System;
 using Domain.Enums;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Novel;
+using Shared.Contracts.Response.Tag;
 using Shared.Helpers;
 
 namespace Application.Features.Novel.Queries
@@ -22,15 +26,20 @@ namespace Application.Features.Novel.Queries
         private readonly INovelRepository _novelRepository;
         private readonly IChapterRepository _chapterRepository;
         private readonly IPurchaserRepository _purchaserRepository;
-
+        private readonly IMapper _mapper;
+        private readonly ITagRepository _tagRepository;
         public GetNovelByIdHandler(
             INovelRepository novelRepository,
             IChapterRepository chapterRepository,
-            IPurchaserRepository purchaserRepository)
+            IPurchaserRepository purchaserRepository,
+            IMapper mapper,
+            ITagRepository tagRepository)
         {
             _novelRepository = novelRepository;
             _chapterRepository = chapterRepository;
             _purchaserRepository = purchaserRepository;
+            _mapper = mapper;
+            _tagRepository = tagRepository;
         }
 
         public async Task<ApiResponse> Handle(GetNovelById request, CancellationToken cancellationToken)
@@ -46,6 +55,20 @@ namespace Application.Features.Novel.Queries
                         Message = "Novel not found"
                     };
                 }
+                var novelResponse = _mapper.Map<NovelResponse>(novel);
+
+                // ✅ Lấy danh sách tagId
+                var allTagIds = novel.tags.Distinct().ToList();
+                var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
+
+                // ✅ Map sang TagListResponse
+                novelResponse.Tags = allTags
+                    .Where(t => novel.tags.Contains(t.id))
+                    .Select(t => new TagListResponse
+                    {
+                        TagId = t.id,
+                        Name = t.name
+                    }).ToList();
                 var chapterCriteria = new ChapterFindCreterias
                 {
                     Page = request.Page,
@@ -95,7 +118,7 @@ namespace Application.Features.Novel.Queries
                         Success = true,
                         Data = new
                         {
-                            NovelInfo = novel,
+                            NovelInfo = novelResponse,
                             AllChapters = allChapterEntities,
                             PurchasedChapterIds = purchasedChapterIds,
                             TotalChapters = totalChapters,
@@ -116,7 +139,7 @@ namespace Application.Features.Novel.Queries
                                 Success = true,
                                 Data = new
                                 {
-                                    NovelInfo = novel,
+                                    NovelInfo = novelResponse,
                                     AllChapters = allChapterEntities,
                                     FreeChapters = freeChapterIds,
                                     PurchasedChapterIds = purchasedChapterIds,
@@ -137,7 +160,7 @@ namespace Application.Features.Novel.Queries
                                 Success = true,
                                 Data = new
                                 {
-                                    NovelInfo = novel,
+                                    NovelInfo = novelResponse,
                                     AllChapters = allChapterEntities,
                                     FreeChapters = freeChapterIds,
                                     TotalChapters = totalChapters,
@@ -155,7 +178,7 @@ namespace Application.Features.Novel.Queries
                     Success = true,
                     Data = new
                     {
-                        NovelInfo = novel,
+                        NovelInfo = novelResponse,
                         AllChapters = allChapterIds,
                         TotalChapters = totalChapters,
                         TotalPages = totalPages,
