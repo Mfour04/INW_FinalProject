@@ -55,7 +55,7 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<List<NovelEntity>> GetAllNovelAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
+        public async Task<(List<NovelEntity> Novels, int TotalCount)> GetAllNovelAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
         {
             try
             {
@@ -96,7 +96,7 @@ namespace Infrastructure.Repositories.Implements
                     else
                     {
                         // Không có tag phù hợp → trả về rỗng
-                        return new List<NovelEntity>();
+                        return (new List<NovelEntity>(), 0);
                     }
                 }
 
@@ -107,7 +107,7 @@ namespace Infrastructure.Repositories.Implements
 
                 var sortBuilder = Builders<NovelEntity>.Sort;
                 var sortDefinitions = new List<SortDefinition<NovelEntity>>();
-
+                var totalCount = await _collection.CountDocumentsAsync(filtered);
                 foreach (var criterion in sortCreterias)
                 {
                     SortDefinition<NovelEntity>? sortDef = criterion.Field switch
@@ -135,8 +135,8 @@ namespace Infrastructure.Repositories.Implements
                     var combinedSort = sortBuilder.Combine(sortDefinitions);
                     query = query.Sort(combinedSort);
                 }
-
-                return await query.ToListAsync();
+                var novels = await query.ToListAsync();
+                return (novels, (int)totalCount);
             }
             catch
             {

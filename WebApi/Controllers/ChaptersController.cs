@@ -43,7 +43,7 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("id")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetChapterByIdAsync(string id)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
