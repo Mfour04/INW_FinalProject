@@ -1,7 +1,9 @@
-﻿using Domain.Enums;
+﻿using Domain.Entities.System;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Helpers;
 
 namespace Application.Features.Novel.Queries
 {
@@ -9,6 +11,10 @@ namespace Application.Features.Novel.Queries
     {
         public string NovelId { get; set; }
         public string UserId { get; set; }
+        public int Page { get; set; } = 0;
+        public int Limit { get; set; } = int.MaxValue;
+        public string SortBy { get; set; } = "chapter_number:asc"; 
+        public int? ChapterNumber { get; set; }
     }
 
     public class GetNovelByIdHandler : IRequestHandler<GetNovelById, ApiResponse>
@@ -40,7 +46,19 @@ namespace Application.Features.Novel.Queries
                         Message = "Novel not found"
                     };
                 }
-                var allChapterIds = await _chapterRepository.GetChapterIdsByNovelIdAsync(request.NovelId);
+                var chapterCriteria = new ChapterFindCreterias
+                {
+                    Page = request.Page,
+                    Limit = request.Limit,
+                    ChapterNumber = request.ChapterNumber 
+                };
+
+                var sort = SystemHelper.ParseSortCriteria(request.SortBy);
+
+                var (allChapterEntities, totalChapters, totalPages) = await _chapterRepository.GetAllChapterIdsByNovelIdAsync(request.NovelId, chapterCriteria, sort);
+
+                var allChapterIds = allChapterEntities.Select(c => c.id).ToList();
+
                 var freeChapterIds = await _chapterRepository.GetFreeChapterIdsByNovelIdAsync(request.NovelId);
 
                 // Nếu không có user → xử lý như guest (ẩn chương mất phí nếu chưa mua)
@@ -78,8 +96,10 @@ namespace Application.Features.Novel.Queries
                         Data = new
                         {
                             NovelInfo = novel,
-                            AllChapters = allChapterIds,
-                            PurchasedChapterIds = purchasedChapterIds
+                            AllChapters = allChapterEntities,
+                            PurchasedChapterIds = purchasedChapterIds,
+                            TotalChapters = totalChapters,
+                            TotalPages = totalPages
                         }
                     };
                 }
@@ -97,8 +117,11 @@ namespace Application.Features.Novel.Queries
                                 Data = new
                                 {
                                     NovelInfo = novel,
+                                    AllChapters = allChapterEntities,
                                     FreeChapters = freeChapterIds,
                                     PurchasedChapterIds = purchasedChapterIds,
+                                    TotalChapters = totalChapters,
+                                    TotalPages = totalPages,
                                     Message = "Bạn chưa mua truyện này (đã hoàn thành). Chỉ xem được chương miễn phí."
                                 }
                             };
@@ -115,7 +138,10 @@ namespace Application.Features.Novel.Queries
                                 Data = new
                                 {
                                     NovelInfo = novel,
+                                    AllChapters = allChapterEntities,
                                     FreeChapters = freeChapterIds,
+                                    TotalChapters = totalChapters,
+                                    TotalPages = totalPages,
                                     PurchasedChapterIds = purchasedChapterIds,
                                 }
                             };
@@ -131,6 +157,8 @@ namespace Application.Features.Novel.Queries
                     {
                         NovelInfo = novel,
                         AllChapters = allChapterIds,
+                        TotalChapters = totalChapters,
+                        TotalPages = totalPages,
                         PurchasedChapterIds = purchasedChapterIds
                     }
                 };

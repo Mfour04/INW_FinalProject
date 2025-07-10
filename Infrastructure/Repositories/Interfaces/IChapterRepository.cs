@@ -23,5 +23,8 @@ namespace Infrastructure.Repositories.Interfaces
                 Task<List<ChapterEntity>> GetAllChapterByNovelId(string novelId);
                 Task<bool> IncrementCommentsAsync(string novelId);
                 Task<bool> DecrementCommentsAsync(string novelId);
-        }
+                Task<ChapterEntity?> GetPreviousChapterAsync(string novelId, int currentChapterNumber);
+                Task<ChapterEntity?> GetNextChapterAsync(string novelId, int currentChapterNumber);
+                Task<(List<ChapterEntity> Chapters, int TotalChapters, int TotalPages)> GetAllChapterIdsByNovelIdAsync(string novelId, ChapterFindCreterias creterias, List<SortCreterias> sortCreterias);
+    }
 }

@@ -24,32 +24,47 @@ namespace WebApi.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] string sortBy = "created_at:desc",
-            [FromQuery] int page = 0,
-            [FromQuery] int limit = 10,
-            [FromQuery] string searchTerm = "",
-            [FromQuery] string searchTagTerm = null)
-        {
-            var tagNames = SystemHelper.ParseTagNames(searchTagTerm);
+        //[HttpGet]
+        //public async Task<IActionResult> GetAll(
+        //    [FromQuery] string sortBy = "created_at:desc",
+        //    [FromQuery] int page = 0,
+        //    [FromQuery] int limit = 10,
+        //    [FromQuery] string searchTerm = "",
+        //    [FromQuery] string searchTagTerm = null)
+        //{
+        //    var tagNames = SystemHelper.ParseTagNames(searchTagTerm);
 
-            var query = new GetNovel
+        //    var query = new GetNovel
+        //    {
+        //        SortBy = sortBy,
+        //        Page = page,
+        //        Limit = limit,
+        //        SearchTerm = searchTerm,
+        //        SearchTagTerm = tagNames
+        //    };
+
+        //    var result = await _mediator.Send(query);
+
+        //    return Ok(result);
+        //}
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] GetNovel query)
+        {
+            // Nếu tag truyền dạng chuỗi "Fantasy,Romance", ta tách ra
+            if (query.SearchTagTerm?.Count == 1 && query.SearchTagTerm[0].Contains(','))
             {
-                SortBy = sortBy,
-                Page = page,
-                Limit = limit,
-                SearchTerm = searchTerm,
-                SearchTagTerm = tagNames
-            };
+                query.SearchTagTerm = SystemHelper.ParseTagNames(query.SearchTagTerm[0]);
+            }
 
             var result = await _mediator.Send(query);
-
             return Ok(result);
         }
 
+
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetNovelByIdAsync(string id)
+        public async Task<IActionResult> GetNovelByIdAsync(string id, [FromQuery] int page = 0, [FromQuery] int limit = 10
+            , [FromQuery] string sortBy = "chapter_number:asc", [FromQuery] int? chapterNumber = null)
         {
             string? userId = null;
             if (User.Identity != null && User.Identity.IsAuthenticated)
@@ -60,7 +75,11 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new GetNovelById
             {
                 NovelId = id,
-                UserId = userId
+                UserId = userId,
+                Page = page,
+                Limit = limit,
+                SortBy = sortBy,
+                ChapterNumber = chapterNumber
             });
 
             return Ok(result);

@@ -45,12 +45,24 @@ namespace Application.Features.Chapter.Queries
                 return new ApiResponse { Success = false, Message = "Novel not found" };
             }
 
+            var previousChapter = await _chapterRepository.GetPreviousChapterAsync(novelId, chapter.chapter_number ?? 0);
+            var nextChapter = await _chapterRepository.GetNextChapterAsync(novelId, chapter.chapter_number ?? 0);
+
             if (!chapter.is_paid)
             {
                 await HandleNovelViewAsync(request.UserId, novelId);
-                return new ApiResponse { Success = true, Data = chapter };
+                return new ApiResponse
+                {
+                    Success = true,
+                    Data = new
+                    {
+                        Chapter = chapter,
+                        PreviousChapterId = previousChapter?.id,
+                        NextChapterId = nextChapter?.id
+                    }
+                };
             }
-                
+
 
             if (chapter.is_paid)
             {
@@ -59,7 +71,16 @@ namespace Application.Features.Chapter.Queries
                 if ( hasFullOwnerShip || hasFullChapter)
                 {
                     await HandleNovelViewAsync(request.UserId, novelId);
-                    return new ApiResponse { Success = true, Data = chapter };
+                    return new ApiResponse
+                    {
+                        Success = true,
+                        Data = new
+                        {
+                            Chapter = chapter,
+                            PreviousChapterId = previousChapter?.id,
+                            NextChapterId = nextChapter?.id
+                        }
+                    };
                 }
                 else
                 {

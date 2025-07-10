@@ -367,5 +367,84 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<ChapterEntity?> GetPreviousChapterAsync(string novelId, int currentChapterNumber)
+        {
+            try
+            {
+                return await _collection.Find(x => x.novel_id == novelId && x.chapter_number < currentChapterNumber)
+                                        .SortByDescending(x => x.chapter_number)
+                                        .FirstOrDefaultAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<ChapterEntity?> GetNextChapterAsync(string novelId, int currentChapterNumber)
+        {
+            try
+            {
+                return await _collection.Find(x => x.novel_id == novelId && x.chapter_number > currentChapterNumber)
+                                        .SortBy(x => x.chapter_number)
+                                        .FirstOrDefaultAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<(List<ChapterEntity> Chapters, int TotalChapters, int TotalPages)> GetAllChapterIdsByNovelIdAsync(string novelId, ChapterFindCreterias creterias, List<SortCreterias> sortCreterias)
+        {
+            try
+            {
+                var builder = Builders<ChapterEntity>.Filter;
+                var filtered = builder.Eq(c => c.novel_id, novelId);
+
+                if (creterias.ChapterNumber.HasValue)
+                {
+                    filtered &= builder.Eq(c => c.chapter_number, creterias.ChapterNumber.Value);
+                }
+
+                var sortBuilder = Builders<ChapterEntity>.Sort;
+                var sortDefinitions = new List<SortDefinition<ChapterEntity>>();
+
+                foreach (var criterion in sortCreterias)
+                {
+                    SortDefinition<ChapterEntity>? sortDef = criterion.Field switch
+                    {
+                        "chapter_number" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.chapter_number)
+                            : sortBuilder.Ascending(x => x.chapter_number),
+                        _ => null
+                    };
+
+                    if (sortDef != null)
+                        sortDefinitions.Add(sortDef);
+                }
+
+                var query = _collection.Find(filtered);
+
+                if (sortDefinitions.Count > 0)
+                {
+                    var combinedSort = sortBuilder.Combine(sortDefinitions);
+                    query = query.Sort(combinedSort);
+                }
+                var totalChapters = (int)await _collection.CountDocumentsAsync(filtered);
+                var totalPages = (int)Math.Ceiling((double)totalChapters / creterias.Limit);
+                var result = await query
+                    .Skip(creterias.Page * creterias.Limit)
+                    .Limit(creterias.Limit)
+                    .ToListAsync(); // ✅ trả về List<ChapterEntity>
+
+                return (result, totalChapters, totalPages);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }
