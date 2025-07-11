@@ -19,7 +19,6 @@ namespace Domain.Entities
         public bool is_paid { get; set; }
         public bool is_completed { get; set; }
         [BsonRepresentation(BsonType.String)]
-        public PurchaseType purchase_type { get; set; }
         public int price { get; set; }
         public int total_chapters { get; set; }
         public int total_views { get; set; }

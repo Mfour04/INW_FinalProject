@@ -54,7 +54,11 @@ namespace Application.Features.Chapter.Commands
             if (await _purchaserRepo.HasPurchasedChapterAsync(request.UserId, novel.id, request.ChapterId))
                 return Fail("Chapter already purchased.");
 
-            var user = await _userRepo.GetById(request.UserId);
+			var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, novel.id);
+			if (existing?.is_full == true)
+				return Fail("You have already purchased the full novel.");
+
+			var user = await _userRepo.GetById(request.UserId);
             if (user == null || user.coin < request.CoinCost)
                 return Fail("Not enough coins.");
 
@@ -62,8 +66,6 @@ namespace Application.Features.Chapter.Commands
                 return Fail("Failed to deduct coins.");
 
             var nowTicks = DateTime.Now.Ticks;
-
-            var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, novel.id);
 
             if (existing == null)
             {
@@ -74,6 +76,7 @@ namespace Application.Features.Chapter.Commands
                     novel_id = novel.id,
                     is_full = false,
                     chapter_ids = new List<string> { request.ChapterId },
+                    chap_snapshot = 1,
                     created_at = nowTicks
                 };
                 await _purchaserRepo.CreateAsync(newPurchaser);

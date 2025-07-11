@@ -27,7 +27,6 @@ namespace Shared.Contracts.Response.Novel
         public bool? IsPaid { get; set; }
         [JsonConverter(typeof(JsonStringEnumConverter))]
         [BsonRepresentation(BsonType.String)]
-        public PurchaseType? PurchaseType { get; set; }
         public int? Price { get; set; }
     }
 }

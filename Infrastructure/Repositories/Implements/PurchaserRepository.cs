@@ -3,7 +3,6 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
-using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -51,26 +50,6 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
-
-        // /// <summary>
-        // /// Đếm số chương người dùng đã mua theo từng chương.
-        // /// </summary>
-        // public async Task<int> CountPurchasedChaptersAsync(string userId, string novelId)
-        // {
-        //     try
-        //     {
-        //         var filter = Builders<PurchaserEntity>.Filter.Eq(p => p.user_id, userId) &
-        //                      Builders<PurchaserEntity>.Filter.Eq(p => p.novel_id, novelId) &
-        //                      Builders<PurchaserEntity>.Filter.Eq(p => p.is_full, false);
-
-        //         var purchaser = await _collection.Find(filter).FirstOrDefaultAsync();
-        //         return purchaser?.chapter_ids?.Count ?? 0;
-        //     }
-        //     catch
-        //     {
-        //         throw new InternalServerException();
-        //     }
-        // }
 
         /// <summary>
         /// Kiểm tra người dùng đã mua một chương cụ thể chưa.
@@ -130,32 +109,9 @@ namespace Infrastructure.Repositories.Implements
                 );
 
                 var update = Builders<PurchaserEntity>.Update
-                    .AddToSet(x => x.chapter_ids, chapterId);
-
-                var result = await _collection.UpdateOneAsync(filter, update);
-                return result.ModifiedCount > 0;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        /// <summary>
-        /// Đánh dấu đã mua toàn bộ truyện và lưu số chương tại thời điểm mua
-        /// </summary>
-        public async Task<bool> SetFullPurchasedAsync(string userId, string novelId, int chapSnapshot)
-        {
-            try
-            {
-                var filter = Builders<PurchaserEntity>.Filter.And(
-                    Builders<PurchaserEntity>.Filter.Eq(x => x.user_id, userId),
-                    Builders<PurchaserEntity>.Filter.Eq(x => x.novel_id, novelId)
-                );
-
-                var update = Builders<PurchaserEntity>.Update
-                    .Set(x => x.is_full, true)
-                    .Set(x => x.chap_snapshot, chapSnapshot);
+                    .AddToSet(x => x.chapter_ids, chapterId)
+                    .Inc(x => x.chap_snapshot, 1)
+                    .Set(x => x.updated_at, DateTime.Now.Ticks);
 
                 var result = await _collection.UpdateOneAsync(filter, update);
                 return result.ModifiedCount > 0;
@@ -189,176 +145,35 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Cập nhật bản ghi Purchaser theo id
         /// </summary>
-        public async Task<bool> UpdateAsync(string id, PurchaserEntity updated)
+        public async Task<bool> UpdateAsync(string id, PurchaserEntity entity)
         {
             try
             {
                 var filter = Builders<PurchaserEntity>.Filter.Eq(p => p.id, id);
-                //dùng updateone
-                var result = await _collection.ReplaceOneAsync(filter, updated);
-                return result.IsAcknowledged && result.ModifiedCount > 0;
+
+                var purchaser = await _collection.Find(filter).FirstOrDefaultAsync();
+
+                var update = Builders<PurchaserEntity>.Update
+                    .Set(p => p.is_full, entity.is_full)
+                    .Set(p => p.chap_snapshot, entity.chap_snapshot)
+                    .Set(p => p.chapter_ids, entity.chapter_ids)
+                    .Set(p => p.updated_at, DateTime.Now.Ticks);
+
+                var updated = await _collection.FindOneAndUpdateAsync(
+                    filter,
+                    update,
+                    new FindOneAndUpdateOptions<PurchaserEntity>
+                    {
+                        ReturnDocument = ReturnDocument.After,
+                    }
+                 );
+
+                return updated != null;
             }
             catch
             {
                 throw new InternalServerException();
             }
         }
-
-        // /// <summary>
-        // /// Thêm chương đã mua vào danh sách chương của người dùng.
-        // /// </summary>
-        // public async Task AddChapterPurchaseAsync(string userId, string novelId, string chapterId)
-        // {
-        //     try
-        //     {
-        //         var filter = Builders<PurchaserEntity>.Filter.And(
-        //             Builders<PurchaserEntity>.Filter.Eq(p => p.user_id, userId),
-        //             Builders<PurchaserEntity>.Filter.Eq(p => p.novel_id, novelId),
-        //             Builders<PurchaserEntity>.Filter.Eq(p => p.is_full, false)
-        //         );
-
-        //         var existing = await _collection.Find(filter).FirstOrDefaultAsync();
-
-        //         if (existing == null)
-        //         {
-        //             PurchaserEntity newPurchase = new()
-        //             {
-        //                 id = SystemHelper.RandomId(),
-        //                 user_id = userId,
-        //                 novel_id = novelId,
-        //                 is_full = false,
-        //                 chapter_ids = new List<string> { chapterId },
-        //                 created_at = DateTime.Now.Ticks
-        //             };
-
-        //             await _collection.InsertOneAsync(newPurchase);
-        //         }
-        //         else
-        //         {
-        //             var update = Builders<PurchaserEntity>.Update
-        //                 .AddToSet(p => p.chapter_ids, chapterId)
-        //                 .Set(p => p.updated_at, DateTime.Now.Ticks);
-
-        //             await _collection.UpdateOneAsync(filter, update);
-        //         }
-        //     }
-        //     catch
-        //     {
-        //         throw new InternalServerException();
-        //     }
-        // }
-
-        // /// <summary>
-        // /// Thêm thông tin mua full truyện.
-        // /// </summary>
-        // public async Task AddFullNovelPurchaseAsync(PurchaserEntity entity)
-        // {
-        //     try
-        //     {
-        //         // Tìm bản ghi hiện tại đã mua lẻ chương (is_full = false)
-        //         var filter = Builders<PurchaserEntity>.Filter.Eq(p => p.user_id, entity.user_id) &
-        //                      Builders<PurchaserEntity>.Filter.Eq(p => p.novel_id, entity.novel_id) &
-        //                      Builders<PurchaserEntity>.Filter.Eq(p => p.is_full, false);
-
-        //         var existing = await _collection.Find(filter).FirstOrDefaultAsync();
-
-        //         if (existing != null)
-        //         {
-        //             // Cập nhật trạng thái lên mua toàn bộ truyện
-        //             var update = Builders<PurchaserEntity>.Update
-        //                 .Set(p => p.is_full, true)
-        //                 .Set(p => p.chapter_ids, entity.chapter_ids)
-        //                 .Set(p => p.full_chap_count, entity.full_chap_count)
-        //                 .Set(p => p.updated_at, DateTime.Now.Ticks);
-
-        //             await _collection.UpdateOneAsync(filter, update);
-        //         }
-        //         else
-        //         {
-        //             // Nếu chưa có bản ghi nào → insert mới
-        //             await _collection.InsertOneAsync(entity);
-        //         }
-        //     }
-        //     catch
-        //     {
-        //         throw new InternalServerException();
-        //     }
-        // }
-
-        // /// <summary>
-        // /// Cập nhật trạng thái mua của người dùng (is_full, full_chap_count).
-        // /// </summary>
-        // public async Task<bool> UpdatePurchaseStatusAsync(string id, bool isFull, int fullChapterCount)
-        // {
-        //     try
-        //     {
-        //         var filter = Builders<PurchaserEntity>.Filter.Eq(x => x.id, id);
-
-        //         var update = Builders<PurchaserEntity>.Update
-        //             .Set(x => x.is_full, isFull)
-        //             .Set(x => x.full_chap_count, fullChapterCount)
-        //             .Set(x => x.updated_at, DateTime.Now.Ticks);
-
-        //         var updated = await _collection.FindOneAndUpdateAsync(
-        //             filter,
-        //             update,
-        //             new FindOneAndUpdateOptions<PurchaserEntity> { ReturnDocument = ReturnDocument.After }
-        //         );
-
-        //         return updated != null;
-        //     }
-        //     catch
-        //     {
-        //         throw new InternalServerException();
-        //     }
-        // }
-
-        // /// <summary>
-        // /// Thử đánh dấu là đã mua full nếu đủ số chương.
-        // /// </summary>
-        // public async Task TryMarkFullAsync(string userId, string novelId, int totalChapters)
-        // {
-        //     try
-        //     {
-        //         var filter = Builders<PurchaserEntity>.Filter.Eq(p => p.user_id, userId) &
-        //                      Builders<PurchaserEntity>.Filter.Eq(p => p.novel_id, novelId) &
-        //                      Builders<PurchaserEntity>.Filter.Eq(p => p.is_full, false);
-
-        //         var purchaser = await _collection.Find(filter).FirstOrDefaultAsync();
-        //         if (purchaser == null || (purchaser.chapter_ids?.Count ?? 0) < totalChapters)
-        //             return;
-
-        //         await UpdatePurchaseStatusAsync(purchaser.id, true, totalChapters);
-        //     }
-        //     catch
-        //     {
-        //         throw new InternalServerException();
-        //     }
-        // }
-
-        // /// <summary>
-        // /// Nếu truyện đã thêm chương mới, cập nhật trạng thái mua full thành false.
-        // /// </summary>
-        // public async Task ValidateFullPurchaseAsync(string userId, string novelId, int currentTotalChapters)
-        // {
-        //     try
-        //     {
-        //         var filter = Builders<PurchaserEntity>.Filter.Eq(p => p.user_id, userId) &
-        //                      Builders<PurchaserEntity>.Filter.Eq(p => p.novel_id, novelId) &
-        //                      Builders<PurchaserEntity>.Filter.Eq(p => p.is_full, true);
-
-        //         var purchaser = await _collection.Find(filter).FirstOrDefaultAsync();
-        //         if (purchaser == null) return;
-
-        //         if (purchaser.full_chap_count < currentTotalChapters)
-        //         {
-        //             await UpdatePurchaseStatusAsync(purchaser.id, false, purchaser.full_chap_count);
-        //         }
-        //     }
-        //     catch
-        //     {
-        //         throw new InternalServerException();
-        //     }
-        // }
     }
 }
