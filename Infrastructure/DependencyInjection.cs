@@ -70,6 +70,7 @@ namespace Infrastructure
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IChapterHelperService, ChapterHelperService>();
+            services.AddScoped<ICacheService, CacheService>();
             return services;
         }
 

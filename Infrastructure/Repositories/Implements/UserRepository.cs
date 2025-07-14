@@ -5,6 +5,7 @@ using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
 using Shared.Helpers;
+using SharpCompress.Common;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -141,6 +142,36 @@ namespace Infrastructure.Repositories.Implements
         {
             var filter = Builders<UserEntity>.Filter.Eq(nameof(UserEntity.role), role);
             return await _collection.Find(filter).FirstOrDefaultAsync();
+        }
+
+        public async Task<UserEntity> GetUserNameByUserId(string userId)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(x => x.id, userId);
+                var projection = Builders<UserEntity>.Projection.Include(x => x.username);
+                var result = await _collection.Find(filter).Project<UserEntity>(projection).FirstOrDefaultAsync();
+
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<UserEntity>> GetUsersByIdsAsync(List<string> userIds)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.In(u => u.id, userIds);
+                var result = await _collection.Find(filter).ToListAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
 
         public async Task UpdateUserCoin(string userId, int coin, int blockedCoin)

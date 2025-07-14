@@ -228,7 +228,9 @@ namespace Infrastructure.Repositories.Implements
             {
                 var filter = Builders<ChapterEntity>.Filter.And(
                     Builders<ChapterEntity>.Filter.Eq(x => x.novel_id, novelId),
-                    Builders<ChapterEntity>.Filter.Eq(x => x.is_paid, false));
+                    Builders<ChapterEntity>.Filter.Eq(x => x.is_paid, false)
+                );
+
                 return await _collection.Find(filter).ToListAsync();
             }
             catch
@@ -306,8 +308,8 @@ namespace Infrastructure.Repositories.Implements
         }
 
         /// <summary>
-        /// Đánh lại số thứ tự chương sau khi chỉnh sửa<
-        /// /summary>
+        /// Đánh lại số thứ tự chương sau khi chỉnh sửa
+        /// </summary>
         public async Task RenumberAsync(string novelId)
         {
             try
@@ -402,29 +404,34 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var todayUtc = DateTime.UtcNow.Date;
-                long startTicks = todayUtc.Ticks;
-                long endTicks = todayUtc.AddDays(1).Ticks;
+                // Mốc ngày hiện tại UTC
+                var nowVN = DateTime.UtcNow.AddHours(7); // Giờ Việt Nam
+                var nowTicks = nowVN.Ticks;
 
                 var filter = Builders<ChapterEntity>.Filter.And(
-                    Builders<ChapterEntity>.Filter.Gte(c => c.scheduled_at, startTicks),
-                    Builders<ChapterEntity>.Filter.Lt(c => c.scheduled_at, endTicks),
+                    Builders<ChapterEntity>.Filter.Lte(c => c.scheduled_at, nowTicks),
                     Builders<ChapterEntity>.Filter.Eq(c => c.is_public, false),
-                    Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false));
+                    Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
+                );
 
                 var chaptersToRelease = await _collection.Find(filter).ToListAsync();
-                if (!chaptersToRelease.Any()) return 0;
+                if (!chaptersToRelease.Any())
+                    return 0;
 
                 int updatedCount = 0;
+
                 var novelChapterMap = new Dictionary<string, int>();
 
                 foreach (var chapter in chaptersToRelease.OrderBy(c => c.scheduled_at))
                 {
                     if (!novelChapterMap.ContainsKey(chapter.novel_id))
                     {
-                        var last = await _collection.Find(c => c.novel_id == chapter.novel_id && c.is_public)
-                            .SortByDescending(c => c.chapter_number).FirstOrDefaultAsync();
-                        novelChapterMap[chapter.novel_id] = (last?.chapter_number ?? 0);
+                        var lastChapter = await _collection.Find(c =>
+                            c.novel_id == chapter.novel_id && c.is_public)
+                            .SortByDescending(c => c.chapter_number)
+                            .FirstOrDefaultAsync();
+
+                        novelChapterMap[chapter.novel_id] = (lastChapter?.chapter_number ?? 0);
                     }
 
                     novelChapterMap[chapter.novel_id]++;
@@ -443,6 +450,14 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException("Error while releasing scheduled chapters.");
             }
+        }
+
+        public async Task IncreaseViewCountAsync(string chapterId)
+        {
+            var filter = Builders<ChapterEntity>.Filter.Eq(c => c.id, chapterId);
+            var update = Builders<ChapterEntity>.Update.Inc(c => c.total_chapter_views, 1);
+
+            await _collection.UpdateOneAsync(filter, update);
         }
     }
 }

@@ -17,6 +17,7 @@ namespace Shared.Contracts.Response.Novel
         public string Title { get; set; }
         public string Description { get; set; }
         public string AuthorId { get; set; }
+        public string AuthorName { get; set; }
         public string NovelImage { get; set; }
         public List<TagListResponse> Tags { get; set; } = new();
         [BsonRepresentation(BsonType.String)]

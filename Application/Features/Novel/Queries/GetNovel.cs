@@ -24,12 +24,13 @@ namespace Application.Features.Novel.Queries
         private readonly INovelRepository _novelRepository;
         private readonly IMapper _mapper;
         private readonly ITagRepository _tagRepository;
-
-        public GetNovelHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository)
+        private readonly IUserRepository _userRepository;
+        public GetNovelHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository, IUserRepository userRepository)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
             _tagRepository = tagRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<ApiResponse> Handle(GetNovel request, CancellationToken cancellationToken)
@@ -49,7 +50,7 @@ namespace Application.Features.Novel.Queries
             };
 
             var (novels, totalCount) = await _novelRepository.GetAllNovelAsync(findCriteria, sortBy);
-
+            
             // Fallback: nếu không có, thử fuzzy
             if ((novels == null || novels.Count == 0) && fuzzyTerms.Any())
             {
@@ -67,11 +68,19 @@ namespace Application.Features.Novel.Queries
             }
 
             var novelResponse = _mapper.Map<List<NovelResponse>>(novels);
+            var authorIds = novels.Select(n => n.author_id).Distinct().ToList();
+            var authors = await _userRepository.GetUsersByIdsAsync(authorIds);
             var allTagIds = novels.SelectMany(n => n.tags).Distinct().ToList();
             var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
 
             for (int i = 0; i < novels.Count; i++)
             {
+                var author = authors.FirstOrDefault(a => a.id == novels[i].author_id);
+                if (author != null)
+                {
+                    novelResponse[i].AuthorName = author.displayname; // hoặc author.FullName, tùy DB bạn lưu
+                }
+
                 var tags = novels[i].tags;
                 novelResponse[i].Tags = allTags
                     .Where(t => tags.Contains(t.id))

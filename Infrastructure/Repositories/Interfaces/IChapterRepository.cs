@@ -39,5 +39,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> IncrementCommentsAsync(string novelId);
         Task<bool> DecrementCommentsAsync(string novelId);
         Task<int> ReleaseScheduledAsync();
+        Task IncreaseViewCountAsync(string chapterId);
     }
 }
