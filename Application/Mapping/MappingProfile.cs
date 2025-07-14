@@ -77,6 +77,7 @@ namespace Application.Mapping
             CreateMap<ChapterEntity, CreateChapterResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.ChapterNumber, opt => opt.MapFrom(src => src.chapter_number))
+                .ForMember(dest => dest.ScheduleAt, opt => opt.MapFrom(src => src.scheduled_at))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
                 .ForMember(dest => dest.IsDraft, opt => opt.MapFrom(src => src.is_draft))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public));

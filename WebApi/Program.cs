@@ -8,8 +8,8 @@ using Microsoft.Extensions.Options;
 using Net.payOS;
 using Shared;
 
-var builder = WebApplication.CreateBuilder(args);
 
+var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -46,6 +46,7 @@ builder.Services.AddSingleton<PayOS>(sp =>
 	var config = sp.GetRequiredService<IOptions<PayOSConfig>>().Value;
 	return new PayOS(config.ClientId, config.ApiKey, config.ChecksumKey);
 });
+builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHostedService<TransactionCleanupService>();
 builder.Services.AddHostedService<ScheduledChapterReleaseService>();

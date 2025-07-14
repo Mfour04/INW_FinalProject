@@ -161,15 +161,10 @@ namespace Infrastructure.Repositories.Implements
             try
             {
                 // Mốc ngày hiện tại UTC
-                var todayUtc = DateTime.UtcNow.Date;
-
-                // Tính ticks đầu và cuối ngày UTC
-                long startTicks = todayUtc.Ticks;
-                long endTicks = todayUtc.AddDays(1).Ticks;
+                var nowTicks = DateTime.UtcNow.Ticks;
 
                 var filter = Builders<ChapterEntity>.Filter.And(
-                    Builders<ChapterEntity>.Filter.Gte(c => c.scheduled_at, startTicks),
-                    Builders<ChapterEntity>.Filter.Lt(c => c.scheduled_at, endTicks),
+                    Builders<ChapterEntity>.Filter.Lte(c => c.scheduled_at, nowTicks),
                     Builders<ChapterEntity>.Filter.Eq(c => c.is_public, false),
                     Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
                 );
@@ -445,6 +440,14 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task IncreaseViewCountAsync(string chapterId)
+        {
+            var filter = Builders<ChapterEntity>.Filter.Eq(c => c.id, chapterId);
+            var update = Builders<ChapterEntity>.Update.Inc(c => c.total_chapter_views, 1);
+
+            await _collection.UpdateOneAsync(filter, update);
         }
     }
 }

@@ -28,18 +28,21 @@ namespace Application.Features.Novel.Queries
         private readonly IPurchaserRepository _purchaserRepository;
         private readonly IMapper _mapper;
         private readonly ITagRepository _tagRepository;
+        private readonly IUserRepository _userRepository;
         public GetNovelByIdHandler(
             INovelRepository novelRepository,
             IChapterRepository chapterRepository,
             IPurchaserRepository purchaserRepository,
             IMapper mapper,
-            ITagRepository tagRepository)
+            ITagRepository tagRepository,
+            IUserRepository userRepository)
         {
             _novelRepository = novelRepository;
             _chapterRepository = chapterRepository;
             _purchaserRepository = purchaserRepository;
             _mapper = mapper;
             _tagRepository = tagRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<ApiResponse> Handle(GetNovelById request, CancellationToken cancellationToken)
@@ -56,6 +59,14 @@ namespace Application.Features.Novel.Queries
                     };
                 }
                 var novelResponse = _mapper.Map<NovelResponse>(novel);
+
+                var authors = await _userRepository.GetUsersByIdsAsync(new List<string> { novel.author_id });
+                var author = authors.FirstOrDefault(a => a.id == novel.author_id);
+                if (author != null)
+                {
+                    novelResponse.AuthorName = author.displayname; // hoặc FullName nếu bạn dùng
+                }
+
 
                 // ✅ Lấy danh sách tagId
                 var allTagIds = novel.tags.Distinct().ToList();
@@ -179,7 +190,7 @@ namespace Application.Features.Novel.Queries
                     Data = new
                     {
                         NovelInfo = novelResponse,
-                        AllChapters = allChapterIds,
+                        AllChapters = allChapterEntities,
                         TotalChapters = totalChapters,
                         TotalPages = totalPages,
                         PurchasedChapterIds = purchasedChapterIds

@@ -23,8 +23,8 @@ namespace Application.Services
                     var nowUtc = DateTime.UtcNow;
                     var nextUtcMidnight = nowUtc.Date.AddDays(1);
                     var delay = nextUtcMidnight - nowUtc;
+
                     if (delay < TimeSpan.Zero) delay = TimeSpan.Zero;
-                    await Task.Delay(delay, stoppingToken);
 
                     Console.WriteLine($"[ChapterRelease] Waiting until {nextUtcMidnight:yyyy-MM-dd HH:mm:ss} UTC to release chapters...");
 
@@ -42,8 +42,6 @@ namespace Application.Services
                     Console.WriteLine($"[ChapterRelease] Error: {ex.Message}");
                 }
 
-                // Chờ 1 phút trước khi tiếp tục vòng lặp kế tiếp
-                // Tránh vòng lặp chạy ngay nếu delay bị bỏ qua do exception
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
         }
