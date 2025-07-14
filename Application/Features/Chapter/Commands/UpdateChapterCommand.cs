@@ -32,7 +32,7 @@ namespace Application.Features.Chapter.Commands
         }
         public async Task<ApiResponse> Handle(UpdateChapterCommand request, CancellationToken cancellationToken)
         {
-            var chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+            var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             if (chapter == null)
                 return new ApiResponse { Success = false, Message = "Chapter not found" };
 
@@ -54,10 +54,10 @@ namespace Application.Features.Chapter.Commands
             // Nếu từ bản nháp chuyển thành public và chưa có chapter_number
             if (wasDraftBefore && request.IsPublic && chapter.chapter_number == null)
             {
-                    var lastChapter = await _chapterRepository.GetLastPublishedChapterAsync(chapter.novel_id);
+                    var lastChapter = await _chapterRepository.GetLastPublishedAsync(chapter.novel_id);
                     chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
             }
-            await _chapterRepository.UpdateChapterAsync(chapter);
+            await _chapterRepository.UpdateAsync(chapter);
 
             // Nếu chương này là public và không phải bản nháp → luôn cập nhật total_chapters
             if (chapter.is_public && !chapter.is_draft)
@@ -66,7 +66,7 @@ namespace Application.Features.Chapter.Commands
                 await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
 
                 // Nếu đây là chương public đầu tiên, thì public luôn cả novel
-                var publicChapters = await _chapterRepository.GetPublishedChapterByNovelIdAsync(chapter.novel_id);
+                var publicChapters = await _chapterRepository.GetPublishedByNovelIdAsync(chapter.novel_id);
                 if (publicChapters.Count == 1)
                 {
                     var novel = await _novelRepository.GetByNovelIdAsync(chapter.novel_id);

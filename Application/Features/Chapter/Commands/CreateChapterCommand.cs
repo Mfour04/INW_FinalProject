@@ -88,7 +88,7 @@ namespace Application.Features.Chapter.Commands
                 chapter.is_public = false;
                 chapter.is_lock = true;
                 // is_public = false (chưa được public cho đến khi background job xử lý)
-                await _chapterRepository.CreateChapterAsync(chapter);
+                await _chapterRepository.CreateAsync(chapter);
             }
             // 🟩 Trường hợp 2: Xuất bản ngay
             else if (!isDraft && isPublic)
@@ -96,13 +96,13 @@ namespace Application.Features.Chapter.Commands
                 chapter.is_draft = false;
                 chapter.is_public = true;
 
-                var lastChapter = await _chapterRepository.GetLastPublishedChapterAsync(chapter.novel_id);
+                var lastChapter = await _chapterRepository.GetLastPublishedAsync(chapter.novel_id);
                 chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
 
-                await _chapterRepository.CreateChapterAsync(chapter);
+                await _chapterRepository.CreateAsync(chapter);
                 await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
 
-                var publicChapters = await _chapterRepository.GetPublishedChapterByNovelIdAsync(chapter.novel_id);
+                var publicChapters = await _chapterRepository.GetPublishedByNovelIdAsync(chapter.novel_id);
                 if (publicChapters.Count == 1 && !novel.is_public)
                 {
                     novel.is_public = true;
@@ -114,7 +114,7 @@ namespace Application.Features.Chapter.Commands
             {
                 chapter.is_draft = true;
                 chapter.is_public = false;
-                await _chapterRepository.CreateChapterAsync(chapter);
+                await _chapterRepository.CreateAsync(chapter);
             }
 
             var response = _mapper.Map<CreateChapterResponse>(chapter);

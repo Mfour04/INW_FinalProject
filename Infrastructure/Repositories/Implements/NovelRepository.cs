@@ -189,7 +189,7 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                int totalChapters = await _chapterRepository.GetTotalPublicChaptersAsync(novelId);
+                int totalChapters = await _chapterRepository.CountPublishedAsync(novelId);
 
                 var update = Builders<NovelEntity>.Update.Set(n => n.total_chapters, totalChapters);
                 await _collection.UpdateOneAsync(

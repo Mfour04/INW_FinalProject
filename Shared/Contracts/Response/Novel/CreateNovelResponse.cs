@@ -20,7 +20,6 @@ namespace Shared.Contracts.Response.Novel
         public bool IsPaid { get; set; }
         public bool IsLock { get; set; }
         [BsonRepresentation(BsonType.String)]
-        public PurchaseType PurchaseType { get; set; }
         public int Price { get; set; }
         public int TotalChapters { get; set; }
         public int TotalViews { get; set; }

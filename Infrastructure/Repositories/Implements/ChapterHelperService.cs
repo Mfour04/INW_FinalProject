@@ -1,9 +1,4 @@
 ﻿using Infrastructure.Repositories.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -21,7 +16,7 @@ namespace Infrastructure.Repositories.Implements
 
         public async Task<string> GetChapterAuthorIdAsync(string chapterId)
         {
-            var chapter = await _chapterRepository.GetByChapterIdAsync(chapterId);
+            var chapter = await _chapterRepository.GetByIdAsync(chapterId);
             if (chapter == null) return null;
 
             var novel = await _novelRepository.GetByNovelIdAsync(chapter.novel_id);

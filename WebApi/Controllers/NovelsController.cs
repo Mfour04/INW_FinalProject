@@ -1,5 +1,4 @@
-﻿using Application.Features.Chapter.Queries;
-using Application.Features.Novel.Commands;
+﻿using Application.Features.Novel.Commands;
 using Application.Features.Novel.Queries;
 using Domain.Entities.System;
 using MediatR;
@@ -75,8 +74,8 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new GetNovelById
             {
                 NovelId = id,
-                UserId = userId,
-                Page = page,
+				UserId = userId,
+				Page = page,
                 Limit = limit,
                 SortBy = sortBy,
                 ChapterNumber = chapterNumber

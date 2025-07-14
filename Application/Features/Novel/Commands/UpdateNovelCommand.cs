@@ -74,7 +74,6 @@ namespace Application.Features.Novel.Commands
             {
                 novel.tags = request.Tags;
             }
-            novel.purchase_type = request.PurchaseType ?? novel.purchase_type;
             novel.updated_at = DateTime.UtcNow.Ticks;
 
             await _novelRepository.UpdateNovelAsync(novel);

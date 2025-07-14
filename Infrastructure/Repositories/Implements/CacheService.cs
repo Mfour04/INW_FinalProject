@@ -1,6 +1,5 @@
 ﻿using Infrastructure.Repositories.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
-using StackExchange.Redis;
 
 namespace Infrastructure.Repositories.Implements
 {

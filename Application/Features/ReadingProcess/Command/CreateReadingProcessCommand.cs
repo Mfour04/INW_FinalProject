@@ -5,12 +5,7 @@ using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.ReadingProcess;
 using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Application.Features.ReadingProcess.Command
 {
@@ -65,7 +60,7 @@ namespace Application.Features.ReadingProcess.Command
             }
             if (request.ReadingProcess.ChapterId != null)
             {
-                var chapter = await _chapterRepository.GetByChapterIdAsync(request.ReadingProcess.ChapterId);
+                var chapter = await _chapterRepository.GetByIdAsync(request.ReadingProcess.ChapterId);
                 if (chapter == null)
                 {
                     return new ApiResponse

@@ -17,8 +17,9 @@ namespace Domain.Entities
         public bool is_verified { get; set; }
         public bool is_banned { get; set; }
         public int coin { get; set; }
+        public int block_coin { get; set; }
         public int novel_follow_count { get; set; }
-        public List<string> badge_id { get; set; } = new(); 
+        public List<string> badge_id { get; set; } = new();
         public long last_login { get; set; }
     }
 }

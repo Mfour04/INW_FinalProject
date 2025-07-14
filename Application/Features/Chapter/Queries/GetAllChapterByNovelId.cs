@@ -1,13 +1,6 @@
-﻿using Domain.Entities;
-using Infrastructure.Repositories.Implements;
-using Infrastructure.Repositories.Interfaces;
+﻿using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Chapter.Queries
 {
@@ -50,7 +43,7 @@ namespace Application.Features.Chapter.Queries
                 };
             }
 
-            var allChapters = await _chapterRepository.GetAllChapterByNovelId(request.NovelId);
+            var allChapters = await _chapterRepository.GetAllByNovelIdAsync(request.NovelId);
 
             return new ApiResponse
             {

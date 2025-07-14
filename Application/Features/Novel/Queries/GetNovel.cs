@@ -7,7 +7,6 @@ using Shared.Contracts.Response;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Tag;
 using Shared.Helpers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Features.Novel.Queries
 {

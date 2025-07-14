@@ -72,7 +72,7 @@ namespace Application.Features.Notification.Commands
 
                 if (!string.IsNullOrWhiteSpace(request.ChapterId))
                 {
-                    chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+                    chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
                     if (chapter == null)
                         return new ApiResponse
                         {

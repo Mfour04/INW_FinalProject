@@ -1,15 +1,8 @@
 ﻿using Domain.Entities;
-using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using MongoDB.Bson;
 using Shared.Contracts.Response;
 using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Chapter.Queries
 {
@@ -39,7 +32,7 @@ namespace Application.Features.Chapter.Queries
 
         public async Task<ApiResponse> Handle(GetChapterById request, CancellationToken cancellationToken)
         {
-            var chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+            var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             if (chapter == null)
                 return new ApiResponse { Success = false, Message = "Chapter not found" };
 
@@ -47,8 +40,8 @@ namespace Application.Features.Chapter.Queries
             if (novel == null)
                 return new ApiResponse { Success = false, Message = "Novel not found" };
 
-            var previousChapter = await _chapterRepository.GetPreviousChapterAsync(novel.id, chapter.chapter_number ?? 0);
-            var nextChapter = await _chapterRepository.GetNextChapterAsync(novel.id, chapter.chapter_number ?? 0);
+            var previousChapter = await _chapterRepository.GetPreviousAsync(novel.id, chapter.chapter_number ?? 0);
+            var nextChapter = await _chapterRepository.GetNextAsync(novel.id, chapter.chapter_number ?? 0);
 
             var viewerId = !string.IsNullOrEmpty(request.UserId) ? request.UserId : request.IpAddress;
             bool shouldReloadChapter = false;
@@ -81,7 +74,7 @@ namespace Application.Features.Chapter.Queries
 
             if (shouldReloadChapter)
             {
-                chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+                chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             }
 
             return new ApiResponse

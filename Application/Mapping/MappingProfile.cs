@@ -50,7 +50,6 @@ namespace Application.Mapping
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
-                .ForMember(dest => dest.PurchaseType, opt => opt.MapFrom(src => src.purchase_type))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price));
 
             CreateMap<NovelEntity, UpdateNovelResponse>()
@@ -63,7 +62,6 @@ namespace Application.Mapping
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
-                .ForMember(dest => dest.PurchaseType, opt => opt.MapFrom(src => src.purchase_type))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price));
             //Chapter
             CreateMap<ChapterEntity, ChapterResponse>()

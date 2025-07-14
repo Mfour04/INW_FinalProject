@@ -1,7 +1,6 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Domain.Entities.System;
 using Domain.Enums;
-using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -17,7 +16,7 @@ namespace Application.Features.Novel.Queries
         public string UserId { get; set; }
         public int Page { get; set; } = 0;
         public int Limit { get; set; } = int.MaxValue;
-        public string SortBy { get; set; } = "chapter_number:asc"; 
+        public string SortBy { get; set; } = "chapter_number:asc";
         public int? ChapterNumber { get; set; }
     }
 
@@ -49,7 +48,7 @@ namespace Application.Features.Novel.Queries
         {
             try
             {
-                var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);         
+                var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
                 if (novel == null)
                 {
                     return new ApiResponse
@@ -58,6 +57,7 @@ namespace Application.Features.Novel.Queries
                         Message = "Novel not found"
                     };
                 }
+
                 var novelResponse = _mapper.Map<NovelResponse>(novel);
 
                 var authors = await _userRepository.GetUsersByIdsAsync(new List<string> { novel.author_id });
@@ -80,36 +80,30 @@ namespace Application.Features.Novel.Queries
                         TagId = t.id,
                         Name = t.name
                     }).ToList();
+
                 var chapterCriteria = new ChapterFindCreterias
                 {
                     Page = request.Page,
                     Limit = request.Limit,
-                    ChapterNumber = request.ChapterNumber 
+                    ChapterNumber = request.ChapterNumber
                 };
 
                 var sort = SystemHelper.ParseSortCriteria(request.SortBy);
 
-                var (allChapterEntities, totalChapters, totalPages) = await _chapterRepository.GetAllChapterIdsByNovelIdAsync(request.NovelId, chapterCriteria, sort);
-
+                var (allChapterEntities, totalChapters, totalPages) = await _chapterRepository.GetPagedByNovelIdAsync(request.NovelId, chapterCriteria, sort);
                 var allChapterIds = allChapterEntities.Select(c => c.id).ToList();
 
-                var freeChapterIds = await _chapterRepository.GetFreeChapterIdsByNovelIdAsync(request.NovelId);
+               // Lọc các chương miễn phí
+                var freeChapterIds = allChapterEntities
+                    .Where(c => !c.is_paid)
+                    .Select(c => c.id)
+                    .ToList();
 
-                // Nếu không có user → xử lý như guest (ẩn chương mất phí nếu chưa mua)
+                // Kiểm tra người dùng (guest, tác giả, đã mua truyện, v.v.)
                 bool isGuest = string.IsNullOrEmpty(request.UserId);
                 bool isAuthor = !isGuest && novel.author_id == request.UserId;
                 bool hasPurchasedFull = !isGuest && await _purchaserRepository.HasPurchasedFullAsync(request.UserId, request.NovelId);
-                var purchasedChapterIds = !isGuest ? await _purchaserRepository.GetPurchasedChapterIdsAsync(request.UserId, request.NovelId) : new List<string>();
-                bool hasPurchasedAnyChapter = purchasedChapterIds.Any();
-
-                if (!isGuest)
-                {
-                    // Cập nhật trạng thái mua full nếu có chương mới
-                    await _purchaserRepository.ValidateFullPurchaseAsync(request.UserId, request.NovelId, novel.total_chapters);
-
-                    if (hasPurchasedFull)
-                        purchasedChapterIds = allChapterIds;
-                }
+                var purchasedChapterIds = hasPurchasedFull ? allChapterIds : await _purchaserRepository.GetPurchasedChaptersAsync(request.UserId, request.NovelId);
 
                 // Trả về lỗi nếu truyện chưa public, và người dùng không phải tác giả hoặc chưa mua full.
                 if (!novel.is_public && !isAuthor && !hasPurchasedFull)
@@ -121,7 +115,7 @@ namespace Application.Features.Novel.Queries
                     };
                 }
 
-                // Trả về toàn bộ truyện và chương nếu truyện miễn phí và đã công khai.
+                // Trường hợp truyện miễn phí và đã công khai
                 if (!novel.is_paid && novel.is_public)
                 {
                     return new ApiResponse
@@ -133,11 +127,27 @@ namespace Application.Features.Novel.Queries
                             AllChapters = allChapterEntities,
                             PurchasedChapterIds = purchasedChapterIds,
                             TotalChapters = totalChapters,
-                            TotalPages = totalPages
+                            TotalPages = totalPages,
+                            FreeChapters = freeChapterIds
                         }
                     };
                 }
 
+                // Nếu người dùng đã mua toàn bộ truyện hoặc là tác giả, trả về tất cả chương
+                if (hasPurchasedFull || isAuthor)
+                {
+                    return new ApiResponse
+                    {
+                        Success = true,
+                        Data = new
+                        {
+                            NovelInfo = novel,
+                            AllChapters = allChapterIds
+                        }
+                    };
+                }
+
+                // Nếu người dùng chưa mua toàn bộ, chỉ trả về các chương đã mua và miễn phí
                 if (novel.is_paid)
                 {
                     // Nếu truyện đã hoàn thành và người dùng chưa mua full → chỉ xem được chương miễn phí.
@@ -164,7 +174,7 @@ namespace Application.Features.Novel.Queries
                     // Nếu truyện đang ra và người dùng chưa mua chương nào → chỉ xem được chương miễn phí.
                     else if (novel.status == NovelStatus.Ongoing)
                     {
-                        if (!isAuthor && !hasPurchasedAnyChapter)
+                        if (!isAuthor && !purchasedChapterIds.Any())
                         {
                             return new ApiResponse
                             {
@@ -191,9 +201,11 @@ namespace Application.Features.Novel.Queries
                     {
                         NovelInfo = novelResponse,
                         AllChapters = allChapterEntities,
+                        PurchasedChapterIds = purchasedChapterIds,
                         TotalChapters = totalChapters,
                         TotalPages = totalPages,
-                        PurchasedChapterIds = purchasedChapterIds
+                        FreeChapters = freeChapterIds,
+                        Message = "Bạn chưa mua toàn bộ truyện, chỉ xem được các chương đã mua và miễn phí."
                     }
                 };
             }
