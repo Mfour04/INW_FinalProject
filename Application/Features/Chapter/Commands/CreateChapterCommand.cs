@@ -48,7 +48,7 @@ namespace Application.Features.Chapter.Commands
             var isDraft = request.IsDraft ?? true;
             var isPublic = request.IsPublic ?? false;
             var today = DateTime.UtcNow.Date;
-            var scheduleAt = request.ScheduleAt.HasValue && request.ScheduleAt.Value > 0 ? request.ScheduleAt.Value : nowTicks;
+            var scheduleAt = request.ScheduleAt.GetValueOrDefault(DateTime.UtcNow.Ticks);
             var isScheduled = !isDraft && !isPublic && scheduleAt > nowTicks;
             var hasSchedule = !isDraft && !isPublic && scheduleAt > 0;
             if (hasSchedule)
