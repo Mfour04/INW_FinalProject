@@ -7,7 +7,7 @@ using Infrastructure.SignalRHub;
 using Microsoft.Extensions.Options;
 using Net.payOS;
 using Shared;
-using StackExchange.Redis;
+
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
