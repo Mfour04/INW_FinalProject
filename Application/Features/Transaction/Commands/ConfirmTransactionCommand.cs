@@ -1,6 +1,7 @@
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
+using Shared.Helpers;
 
 namespace Application.Features.Transaction.Commands
 {
@@ -28,7 +29,7 @@ namespace Application.Features.Transaction.Commands
             if (transaction == null || transaction.status == PaymentStatus.Completed)
                 return;
 
-            transaction.completed_at = DateTime.Now.Ticks;
+            transaction.completed_at = TimeHelper.NowTicks;
 
             await _transactionRepo.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);
 

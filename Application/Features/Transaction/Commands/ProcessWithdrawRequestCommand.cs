@@ -2,6 +2,7 @@ using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Helpers;
 
 namespace Application.Features.Transaction.Commands
 {
@@ -46,7 +47,7 @@ namespace Application.Features.Transaction.Commands
                 user.block_coin -= transaction.amount;
 
                 transaction.status = PaymentStatus.Completed;
-                transaction.completed_at = DateTime.Now.Ticks;
+                transaction.completed_at = TimeHelper.NowTicks;
 
                 await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
                 await _transactionRepository.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);
@@ -64,7 +65,7 @@ namespace Application.Features.Transaction.Commands
                 user.block_coin -= transaction.amount;
 
                 transaction.status = PaymentStatus.Rejected;
-                transaction.updated_at = DateTime.Now.Ticks;
+                transaction.updated_at = TimeHelper.NowTicks;
 
                 await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
                 await _transactionRepository.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);

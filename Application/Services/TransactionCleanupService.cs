@@ -3,6 +3,7 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Shared.Helpers;
 
 namespace Application.Services
 {
@@ -25,7 +26,7 @@ namespace Application.Services
                     var repo = scope.ServiceProvider.GetRequiredService<ITransactionRepository>();
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
 
-                    var now = DateTime.Now;
+                    var now = TimeHelper.NowVN;
                     var expiredTicks = now.Ticks - TimeSpan.FromMinutes(15).Ticks;
 
                     var expiredTransactions = await repo.GetExpiredPendingTransactionsAsync(expiredTicks);

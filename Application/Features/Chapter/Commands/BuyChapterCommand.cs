@@ -65,8 +65,6 @@ namespace Application.Features.Chapter.Commands
             if (!await _userRepo.DecreaseCoinAsync(request.UserId, request.CoinCost))
                 return Fail("Failed to deduct coins.");
 
-            var nowTicks = DateTime.Now.Ticks;
-
             if (existing == null)
             {
                 PurchaserEntity newPurchaser = new()
@@ -77,7 +75,7 @@ namespace Application.Features.Chapter.Commands
                     is_full = false,
                     chapter_ids = new List<string> { request.ChapterId },
                     chap_snapshot = 1,
-                    created_at = nowTicks
+                    created_at = TimeHelper.NowTicks
                 };
                 await _purchaserRepo.CreateAsync(newPurchaser);
             }
@@ -96,8 +94,8 @@ namespace Application.Features.Chapter.Commands
                 amount = request.CoinCost,
                 payment_method = "Coin",
                 status = PaymentStatus.Completed,
-                created_at = nowTicks,
-                completed_at = nowTicks
+                created_at = TimeHelper.NowTicks,
+                completed_at = TimeHelper.NowTicks
             };
             await _transactionRepo.AddAsync(transaction);
 

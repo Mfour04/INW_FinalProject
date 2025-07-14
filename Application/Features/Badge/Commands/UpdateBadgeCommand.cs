@@ -1,6 +1,7 @@
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Helpers;
 
 namespace Application.Features.Badge.Commands
 {
@@ -33,7 +34,7 @@ namespace Application.Features.Badge.Commands
 
             badge.name = request.Name;
             badge.required_count = request.RequiredCount;
-            badge.updated_at = DateTime.Now.Ticks;
+            badge.updated_at = TimeHelper.NowTicks;
 
             var success = await _badgeRepo.UpdateAsync(request.Id, badge);
             if (!success)

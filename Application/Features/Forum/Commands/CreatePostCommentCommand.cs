@@ -2,6 +2,7 @@ using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Helpers;
 
 namespace Application.Features.Forum.Commands
 {
@@ -58,7 +59,7 @@ namespace Application.Features.Forum.Commands
                 parent_comment_id = request.ParentCommentId,
                 like_count = 0,
                 reply_count = 0,
-                created_at = DateTime.Now.Ticks
+                created_at = TimeHelper.NowTicks
             };
 
             await _postCommentRepo.CreateAsync(comment);

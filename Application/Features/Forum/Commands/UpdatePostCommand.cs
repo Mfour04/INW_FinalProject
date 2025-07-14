@@ -1,6 +1,7 @@
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Helpers;
 
 namespace Application.Features.Forum.Commands
 {
@@ -33,7 +34,7 @@ namespace Application.Features.Forum.Commands
                 return Fail("You are not allowed to edit this post.");
 
             post.content = request.Content;
-            post.updated_at = DateTime.Now.Ticks;
+            post.updated_at = TimeHelper.NowTicks;
 
             var success = await _postRepo.UpdateAsync(request.Id, post);
             if (!success)

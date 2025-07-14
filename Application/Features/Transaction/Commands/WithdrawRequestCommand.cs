@@ -53,7 +53,7 @@ namespace Application.Features.Transaction.Commands
                 completed_at = 0,
                 bank_account_name = request.BankAccountName,
                 bank_account_number = request.BankAccountNumber,
-                created_at = DateTime.Now.Ticks,
+                created_at = TimeHelper.NowTicks,
                 updated_at = 0
             };
 

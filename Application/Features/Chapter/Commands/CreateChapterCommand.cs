@@ -6,12 +6,6 @@ using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
 using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Application.Features.Chapter.Commands
 {
