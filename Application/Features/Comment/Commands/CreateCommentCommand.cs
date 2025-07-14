@@ -65,7 +65,7 @@ namespace Application.Features.Comment.Commands
                 user_id = request.UserId,
                 content = request.Content,
                 parent_comment_id = request.ParentCommentId,
-                created_at = DateTime.UtcNow.Ticks
+                created_at = TimeHelper.NowTicks
             };
 
             await _commentRepository.CreateCommentAsync(createdComment);

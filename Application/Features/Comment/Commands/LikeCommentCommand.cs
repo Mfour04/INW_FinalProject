@@ -52,7 +52,7 @@ namespace Application.Features.Comment.Commands
                 comment_id = request.CommentId,
                 user_id = request.UserId,
                 type = commentType,
-                like_at = DateTime.Now.Ticks
+                like_at = TimeHelper.NowTicks
             };
 
             await _commentLikeRepo.LikeCommentAsync(like);

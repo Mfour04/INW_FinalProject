@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.Extensions.Configuration;
 using Net.payOS;
 using Net.payOS.Types;
+using Shared.Helpers;
 
 namespace Application.Features.Transaction.Commands
 {
@@ -56,7 +57,7 @@ namespace Application.Features.Transaction.Commands
                 amount = request.CoinAmount,
                 payment_method = "PayOS",
                 status = PaymentStatus.Pending,
-                created_at = DateTime.Now.Ticks
+                created_at = TimeHelper.NowTicks
             };
 
             await _transactionRepo.AddAsync(transaction);

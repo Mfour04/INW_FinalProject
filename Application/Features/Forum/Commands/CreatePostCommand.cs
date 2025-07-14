@@ -35,7 +35,7 @@ namespace Application.Features.Forum.Commands
                 img_urls = request.ImgUrls ?? new List<string>(),
                 like_count = 0,
                 comment_count = 0,
-                created_at = DateTime.Now.Ticks
+                created_at = TimeHelper.NowTicks
             };
 
             await _postRepo.CreateAsync(newPost);

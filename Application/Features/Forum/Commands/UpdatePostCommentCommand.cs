@@ -1,6 +1,7 @@
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Helpers;
 
 namespace Application.Features.Forum.Commands
 {
@@ -33,7 +34,7 @@ namespace Application.Features.Forum.Commands
                 return Fail("You are not allowed to edit this comment.");
 
             comment.content = request.Content;
-            comment.updated_at = DateTime.Now.Ticks;
+            comment.updated_at = TimeHelper.NowTicks;
 
             var success = await _commentRepo.UpdateAsync(request.Id, comment);
             if (!success)

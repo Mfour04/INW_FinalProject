@@ -49,7 +49,7 @@ namespace Application.Features.Badge.Commands
                         badge_id = badge.id,
                         current_value = 0,
                         is_completed = false,
-                        created_at = DateTime.Now.Ticks
+                        created_at = TimeHelper.NowTicks
                     });
                 }
             }

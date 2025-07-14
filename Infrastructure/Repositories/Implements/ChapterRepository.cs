@@ -4,6 +4,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -404,12 +405,10 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                // Mốc ngày hiện tại UTC
-                var nowVN = DateTime.UtcNow.AddHours(7); // Giờ Việt Nam
-                var nowTicks = nowVN.Ticks;
-
+                //Cover cho trường hợp ticks của chapter trong db không đúng 00:00
                 var filter = Builders<ChapterEntity>.Filter.And(
-                    Builders<ChapterEntity>.Filter.Lte(c => c.scheduled_at, nowTicks),
+                    Builders<ChapterEntity>.Filter.Gte(c => c.scheduled_at, TimeHelper.StartOfTodayTicksVN),
+                    Builders<ChapterEntity>.Filter.Lte(c => c.scheduled_at, TimeHelper.EndOfTodayTicksVN),
                     Builders<ChapterEntity>.Filter.Eq(c => c.is_public, false),
                     Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false)
                 );
@@ -421,13 +420,14 @@ namespace Infrastructure.Repositories.Implements
                 int updatedCount = 0;
 
                 var novelChapterMap = new Dictionary<string, int>();
+                var updates = new List<WriteModel<ChapterEntity>>();
 
                 foreach (var chapter in chaptersToRelease.OrderBy(c => c.scheduled_at))
                 {
                     if (!novelChapterMap.ContainsKey(chapter.novel_id))
                     {
                         var lastChapter = await _collection.Find(c =>
-                            c.novel_id == chapter.novel_id && c.is_public)
+                                c.novel_id == chapter.novel_id && c.is_public)
                             .SortByDescending(c => c.chapter_number)
                             .FirstOrDefaultAsync();
 
@@ -438,17 +438,22 @@ namespace Infrastructure.Repositories.Implements
                     chapter.chapter_number = novelChapterMap[chapter.novel_id];
                     chapter.is_public = true;
                     chapter.is_lock = false;
-                    chapter.updated_at = DateTime.UtcNow.Ticks;
+                    chapter.updated_at = TimeHelper.NowTicks;
 
-                    await _collection.ReplaceOneAsync(c => c.id == chapter.id, chapter);
-                    updatedCount++;
+                    updates.Add(new ReplaceOneModel<ChapterEntity>(
+                        Builders<ChapterEntity>.Filter.Eq(c => c.id, chapter.id),
+                        chapter
+                    ));
                 }
 
-                return updatedCount;
+                if (updates.Any())
+                    await _collection.BulkWriteAsync(updates);
+
+                return updates.Count;
             }
             catch
             {
-                throw new InternalServerException("Error while releasing scheduled chapters.");
+                throw new InternalServerException();
             }
         }
 

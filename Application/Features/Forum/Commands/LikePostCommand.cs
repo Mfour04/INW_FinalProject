@@ -43,7 +43,7 @@ namespace Application.Features.Forum.Commands
                 id = SystemHelper.RandomId(),
                 post_id = request.PostId,
                 user_id = request.UserId,
-                like_at = DateTime.Now.Ticks
+                like_at = TimeHelper.NowTicks
             };
 
             await _postLikeRepo.LikePostAsync(like);
