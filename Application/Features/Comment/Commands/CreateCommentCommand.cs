@@ -1,5 +1,4 @@
 ﻿using Application.Features.Notification.Commands;
-using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -50,7 +49,7 @@ namespace Application.Features.Comment.Commands
 
             if (!string.IsNullOrWhiteSpace(request.ChapterId))
             {
-                var chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+                var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
                 if (chapter == null)
                     return Fail("Chapter not found.");
 

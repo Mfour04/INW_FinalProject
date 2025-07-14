@@ -1,11 +1,6 @@
 ﻿using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Chapter.Commands
 {
@@ -23,7 +18,7 @@ namespace Application.Features.Chapter.Commands
         }
         public async Task<ApiResponse> Handle(DeleteChapterCommand request, CancellationToken cancellationToken)
         {
-            var chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+            var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             if (chapter == null)
             {
                 return new ApiResponse
@@ -32,10 +27,10 @@ namespace Application.Features.Chapter.Commands
                     Message = "Chapter not found"
                 };
             }
-            var deleted= await _chapterRepository.DeleteChapterAsync(request.ChapterId);
+            var deleted= await _chapterRepository.DeleteAsync(request.ChapterId);
             if (chapter.is_public && !chapter.is_draft)
             {
-                await _chapterRepository.RenumberChaptersAsync(chapter.novel_id);
+                await _chapterRepository.RenumberAsync(chapter.novel_id);
                 await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
             }
             return new ApiResponse

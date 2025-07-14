@@ -63,7 +63,7 @@ namespace Application.Features.Novel.Commands
             if (user.coin < request.CoinCost)
                 return Fail("Insufficient coins.");
 
-            var chapterIds = await _chapterRepo.GetChapterIdsByNovelIdAsync(request.NovelId);
+            var chapterIds = await _chapterRepo.GetIdsByNovelIdAsync(request.NovelId);
             var nowTicks = DateTime.Now.Ticks;
 
             TransactionEntity transaction = new()

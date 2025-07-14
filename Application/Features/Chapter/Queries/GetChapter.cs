@@ -4,7 +4,6 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
-using Shared.Helpers;
 
 namespace Application.Features.Chapter.Queries
 {
@@ -30,7 +29,7 @@ namespace Application.Features.Chapter.Queries
             findCreterias.Limit = request.Limit;
             findCreterias.Page = request.Page;
 
-            var chapter = await _chapterRepository.GetAllChapterAsync(findCreterias);
+            var chapter = await _chapterRepository.GetAllAsync(findCreterias);
             if (chapter == null || chapter.Count == 0)
                 return new ApiResponse { Success = false, Message = "Chapter not found" };
             var chapterResponse = _mapper.Map<List<ChapterResponse>>(chapter);

@@ -47,7 +47,7 @@ namespace Application.Features.Comment.Queries
             List<CommentEntity> comments;
             if (!string.IsNullOrEmpty(request.ChapterId) && !string.IsNullOrEmpty(request.NovelId))
             {
-                var chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+                var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
                 if (chapter == null || chapter.novel_id != request.NovelId)
                 {
                     return new ApiResponse

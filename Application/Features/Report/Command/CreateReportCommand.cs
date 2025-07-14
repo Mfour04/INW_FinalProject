@@ -4,16 +4,10 @@ using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Microsoft.IdentityModel.Tokens;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Report;
 using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Application.Features.Report.Command
 {
@@ -72,7 +66,7 @@ namespace Application.Features.Report.Command
             }
             else if (request.Report.Type == ReportTypeStatus.ChapterReport)
             {
-                var chapter = await _chapterRepository.GetByChapterIdAsync(request.Report.ChapterId);
+                var chapter = await _chapterRepository.GetByIdAsync(request.Report.ChapterId);
                 if (chapter == null)
                 {
                     return new ApiResponse { Success = false, Message = "Chapter not found" };

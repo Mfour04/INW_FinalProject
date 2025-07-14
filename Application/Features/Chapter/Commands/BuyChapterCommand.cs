@@ -41,7 +41,7 @@ namespace Application.Features.Chapter.Commands
             if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.ChapterId))
                 return Fail("Missing user or chapter ID.");
 
-            var chapter = await _chapterRepo.GetByChapterIdAsync(request.ChapterId);
+            var chapter = await _chapterRepo.GetByIdAsync(request.ChapterId);
             if (chapter == null)
                 return Fail("Chapter not found.");
             if (!chapter.is_paid)

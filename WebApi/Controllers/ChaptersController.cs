@@ -43,7 +43,7 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("id")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetChapterByIdAsync(string id)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -65,12 +65,6 @@ namespace WebApi.Controllers
         public async Task<IActionResult> DeleteChapter(string id)
         {
             var result = await _mediator.Send(new DeleteChapterCommand { ChapterId = id });
-            return Ok(result);
-        }
-        [HttpPost("release-chapter")]
-        public async Task<IActionResult> ReleaseChapter()
-        {
-            var result = await _mediator.Send(new ScheduleChapterReleaseCommand());
             return Ok(result);
         }
         

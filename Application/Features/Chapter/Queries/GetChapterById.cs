@@ -1,15 +1,8 @@
 ﻿using Domain.Entities;
-using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using MongoDB.Bson;
 using Shared.Contracts.Response;
 using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Chapter.Queries
 {
@@ -34,7 +27,7 @@ namespace Application.Features.Chapter.Queries
 
         public async Task<ApiResponse> Handle(GetChapterById request, CancellationToken cancellationToken)
         {
-            var chapter = await _chapterRepository.GetByChapterIdAsync(request.ChapterId);
+            var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             if (chapter == null)
                 return new ApiResponse { Success = false, Message = "Chapter not found" };
 
@@ -45,12 +38,24 @@ namespace Application.Features.Chapter.Queries
                 return new ApiResponse { Success = false, Message = "Novel not found" };
             }
 
+            var previousChapter = await _chapterRepository.GetPreviousAsync(novelId, chapter.chapter_number ?? 0);
+            var nextChapter = await _chapterRepository.GetNextAsync(novelId, chapter.chapter_number ?? 0);
+
             if (!chapter.is_paid)
             {
                 await HandleNovelViewAsync(request.UserId, novelId);
-                return new ApiResponse { Success = true, Data = chapter };
+                return new ApiResponse
+                {
+                    Success = true,
+                    Data = new
+                    {
+                        Chapter = chapter,
+                        PreviousChapterId = previousChapter?.id,
+                        NextChapterId = nextChapter?.id
+                    }
+                };
             }
-                
+
 
             if (chapter.is_paid)
             {
@@ -59,7 +64,16 @@ namespace Application.Features.Chapter.Queries
                 if ( hasFullOwnerShip || hasFullChapter)
                 {
                     await HandleNovelViewAsync(request.UserId, novelId);
-                    return new ApiResponse { Success = true, Data = chapter };
+                    return new ApiResponse
+                    {
+                        Success = true,
+                        Data = new
+                        {
+                            Chapter = chapter,
+                            PreviousChapterId = previousChapter?.id,
+                            NextChapterId = nextChapter?.id
+                        }
+                    };
                 }
                 else
                 {
