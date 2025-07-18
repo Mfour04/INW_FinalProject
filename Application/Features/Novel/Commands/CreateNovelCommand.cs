@@ -17,6 +17,7 @@ namespace Application.Features.Novel.Commands
         public string Description { get; set; }
         public string AuthorId { get; set; }
         public IFormFile? NovelImage { get; set; }
+        public IFormFile? NovelBanner { get; set; }
         public List<string> Tags { get; set; } = new();
         public NovelStatus Status { get; set; }
         public bool? IsPublic { get; set; }
@@ -56,7 +57,7 @@ namespace Application.Features.Novel.Commands
             }
 
             var novelImage = await _cloudDinaryService.UploadImagesAsync(request.NovelImage);
-
+            var novelBanner = await _cloudDinaryService.UploadImagesAsync(request.NovelBanner);
             var novel = new NovelEntity
             {
                 id = SystemHelper.RandomId(),
@@ -65,6 +66,7 @@ namespace Application.Features.Novel.Commands
                 description = request.Description,
                 author_id = author.id,
                 novel_image = novelImage,
+                novel_banner = novelBanner,
                 tags = validTagIds,
                 status = request.Status,
                 is_lock = false,
@@ -76,14 +78,15 @@ namespace Application.Features.Novel.Commands
                 followers = 0,
                 rating_avg = 0,
                 rating_count = 0,
-                created_at = DateTime.UtcNow.Ticks,
-                updated_at = DateTime.UtcNow.Ticks
+                created_at = TimeHelper.NowTicks,
+                updated_at = TimeHelper.NowTicks
             };
 
             await _novelRepository.CreateNovelAsync(novel);
             var tags = await _tagRepository.GetTagsByIdsAsync(validTagIds);
             var response = _mapper.Map<CreateNovelResponse>(novel);
-
+            response.AuthorId = novel.author_id;
+            response.AuthorName = author.displayname;
             response.Tags = tags.Select(t => new TagListResponse
             {
                 TagId = t.id,
@@ -99,3 +102,4 @@ namespace Application.Features.Novel.Commands
         }
     }
 }
+    

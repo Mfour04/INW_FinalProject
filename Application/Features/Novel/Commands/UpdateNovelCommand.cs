@@ -10,6 +10,7 @@ using Shared.Contracts.Response;
 using Shared.Contracts.Response.Novel;
 using System.Text.Json.Serialization;
 using Shared.Contracts.Response.Tag;
+using Shared.Helpers;
 
 namespace Application.Features.Novel.Commands
 {
@@ -19,6 +20,7 @@ namespace Application.Features.Novel.Commands
         public string Title { get; set; }
         public string Description { get; set; }
         public IFormFile? NovelImage { get; set; }
+        public IFormFile? NovelBanner { get; set; }
         public NovelStatus? Status { get; set; }
         public bool? IsPublic { get; set; }
         public bool? IsLock { get; set; }
@@ -65,6 +67,10 @@ namespace Application.Features.Novel.Commands
                 var novelImageUpdate = await _cloudDinaryService.UploadImagesAsync(request.NovelImage);
                 novel.novel_image = novelImageUpdate;
             }
+            if (request.NovelBanner != null)
+            {
+                novel.novel_banner = await _cloudDinaryService.UploadImagesAsync(request.NovelBanner);
+            }
             novel.status = request.Status ?? novel.status;
             novel.is_public = request.IsPublic ?? novel.is_public;
             novel.is_lock = request.IsLock ?? novel.is_lock;
@@ -74,7 +80,7 @@ namespace Application.Features.Novel.Commands
             {
                 novel.tags = request.Tags;
             }
-            novel.updated_at = DateTime.UtcNow.Ticks;
+            novel.updated_at = TimeHelper.NowTicks;
 
             await _novelRepository.UpdateNovelAsync(novel);
             List<TagEntity> tagEntities = new();

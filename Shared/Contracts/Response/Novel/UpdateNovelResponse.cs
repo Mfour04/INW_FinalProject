@@ -17,7 +17,10 @@ namespace Shared.Contracts.Response.Novel
         public string NovelId { get; set; }
         public string Title { get; set; }
         public string? Description { get; set; }
+        public string AuthorId { get; set; }
+        public string AuthorName { get; set; }
         public string NovelImage { get; set; }
+        public string NovelBanner { get; set; }
         public List<TagListResponse>? Tags { get; set; } = new();
         [JsonConverter(typeof(JsonStringEnumConverter))]
         [BsonRepresentation(BsonType.String)]
@@ -25,8 +28,8 @@ namespace Shared.Contracts.Response.Novel
         public bool? IsPublic { get; set; }
         public bool? IsLock { get; set; }
         public bool? IsPaid { get; set; }
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        [BsonRepresentation(BsonType.String)]
         public int? Price { get; set; }
+        public long CreateAt { get; set; }
+        public long UpdateAt { get; set; }
     }
 }

@@ -40,7 +40,7 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                entity.updated_at = DateTime.UtcNow.Ticks;
+                entity.updated_at = TimeHelper.NowTicks;
                 var filter = Builders<ChapterEntity>.Filter.Eq(x => x.id, entity.id);
                 await _collection.ReplaceOneAsync(filter, entity);
                 return entity;
@@ -463,6 +463,36 @@ namespace Infrastructure.Repositories.Implements
             var update = Builders<ChapterEntity>.Update.Inc(c => c.total_chapter_views, 1);
 
             await _collection.UpdateOneAsync(filter, update);
+        }
+
+        public async Task UpdateHideChapterStatus(string chapterId, bool isPublic)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(x => x.id, chapterId);
+                var updatehide = Builders<ChapterEntity>.Update.Set(x => x.is_public, isPublic);
+                await _collection.UpdateOneAsync(filter, updatehide);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task UpdateLockChapterStatus(string chapterId, bool isLocked)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(x => x.id, chapterId);
+                var updateLock = Builders<ChapterEntity>.Update.Combine(
+                                 Builders<ChapterEntity>.Update.Set(x => x.is_lock, isLocked),
+                                 Builders<ChapterEntity>.Update.Set(x => x.is_public, !isLocked));
+                await _collection.UpdateOneAsync(filter, updateLock);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
     }
 }

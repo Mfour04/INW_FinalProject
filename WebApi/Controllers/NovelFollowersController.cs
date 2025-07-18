@@ -6,6 +6,8 @@ using Application.Features.Tag.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -20,14 +22,22 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("created")]
-        public async Task<IActionResult> CreateTag([FromBody] CreateNovelFollowerCommand command)
+        public async Task<IActionResult> CreateNovelFollower([FromBody] CreateNovelFollowerCommand command)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "You should be login first."
+                });
+            command.UserId = userId;
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTag(string id)
+        public async Task<IActionResult> DeleteNovelFollower(string id)
         {
             var result = await _mediator.Send(new DeleteNovelFollowerCommand { NovelFollowerId = id });
             return Ok(result);

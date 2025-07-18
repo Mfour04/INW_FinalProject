@@ -1,6 +1,9 @@
-﻿using Infrastructure.Repositories.Interfaces;
+﻿using AutoMapper;
+using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Chapter;
+using Shared.Contracts.Response.Notification;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +19,11 @@ namespace Application.Features.Notification.Queries
     public class GetNotificationByUserIdHandler : IRequestHandler<GetNotificationByUserId, ApiResponse>
     {
         private readonly INotificationRepository _notificationRepository;
-        public GetNotificationByUserIdHandler(INotificationRepository notificationRepository)
+        private readonly IMapper _mapper;
+        public GetNotificationByUserIdHandler(INotificationRepository notificationRepository, IMapper mapper)
         {
             _notificationRepository = notificationRepository;
+            _mapper = mapper;
         }
         public async Task<ApiResponse> Handle(GetNotificationByUserId request, CancellationToken cancellationToken)
         {
@@ -31,11 +36,12 @@ namespace Application.Features.Notification.Queries
                     Message = "UserId not found"
                 };
             }
+            var notificationUserResponse = _mapper.Map<List<NotificationReponse>>(notificationUser);
             return new ApiResponse
             {
                 Success = true,
                 Message = "Get Notification By UserId Successfully",
-                Data = notificationUser
+                Data = notificationUserResponse
             };
         }
     }

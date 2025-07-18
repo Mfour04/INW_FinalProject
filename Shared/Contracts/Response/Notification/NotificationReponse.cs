@@ -9,9 +9,12 @@ namespace Shared.Contracts.Response.Notification
 {
     public class NotificationReponse
     {
-        public string userId { get; set; }
+        public string NotificationId { get; set; }
+        public string UserId { get; set; }
         public NotificationType Type { get; set; }
         public string Message { get; set; }
-        public bool isRead { get; set; }
+        public bool IsRead { get; set; }
+        public long CreateAt { get; set; }
+        public long UpdateAt { get; set; }
     }
 }
