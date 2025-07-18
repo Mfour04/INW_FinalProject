@@ -4,7 +4,8 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
- 
+using Shared.Helpers;
+
 namespace Infrastructure.Repositories.Implements
 {
     public class CommentRepository : ICommentRepository
@@ -44,7 +45,7 @@ namespace Infrastructure.Repositories.Implements
                     .Find(filtered)
                     .Skip(findCreterias.Page * findCreterias.Limit)
                     .Limit(findCreterias.Limit);
-                
+
                 return await query.ToListAsync();
             }
             catch
@@ -73,7 +74,7 @@ namespace Infrastructure.Repositories.Implements
                 entity.updated_at = DateTime.UtcNow.Ticks;
                 var filter = Builders<CommentEntity>.Filter.Eq(x => x.id, entity.id);
                 var result = await _collection.ReplaceOneAsync(filter, entity);
-                return entity;  
+                return entity;
             }
             catch
             {
@@ -145,6 +146,61 @@ namespace Infrastructure.Repositories.Implements
                     .SortByDescending(x => x.created_at)
                     .ToListAsync();
                 return await result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> IsDuplicateCommentAsync(string userId, string novelId, string? chapterId, string content, int withinMinutes)
+        {
+            try
+            {
+                var hash = SystemHelper.ComputeSha256(content.Trim().ToLower());
+                var since = TimeHelper.NowVN.AddMinutes(-withinMinutes).Ticks;
+
+				var filterBuilder = Builders<CommentEntity>.Filter;
+                var filters = new List<FilterDefinition<CommentEntity>>
+                    {
+                        filterBuilder.Eq(x => x.user_id, userId),
+                        filterBuilder.Eq(x => x.novel_id, novelId),
+                        filterBuilder.Eq(x => x.content_hash, hash),
+                        filterBuilder.Gte(x => x.created_at, since)
+                    };
+
+                if (!string.IsNullOrEmpty(chapterId))
+                {
+                    filters.Add(filterBuilder.Eq(x => x.chapter_id, chapterId));
+                }
+                else
+                {
+                    filters.Add(filterBuilder.Eq(x => x.chapter_id, null));
+                }
+
+                var filter = filterBuilder.And(filters);
+
+                return await _collection.Find(filter).AnyAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> IsSpammingTooFrequentlyAsync(string userId, int limit, int withinMinutes)
+        {
+            try
+            {
+                var since = TimeHelper.NowVN.AddMinutes(-withinMinutes).Ticks;
+
+				var filter = Builders<CommentEntity>.Filter.And(
+                    Builders<CommentEntity>.Filter.Eq(x => x.user_id, userId),
+                    Builders<CommentEntity>.Filter.Gte(x => x.created_at, since)
+                );
+
+                var count = await _collection.CountDocumentsAsync(filter);
+                return count >= limit;
             }
             catch
             {

@@ -1,24 +1,28 @@
+using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Forum;
 using Shared.Helpers;
 
 namespace Application.Features.Forum.Commands
 {
     public class CreatePostCommand : IRequest<ApiResponse>
     {
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public string Content { get; set; }
         public List<string>? ImgUrls { get; set; } = new();
     }
 
     public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, ApiResponse>
     {
+        private readonly IMapper _mapper;
         private readonly IForumPostRepository _postRepo;
 
-        public CreatePostCommandHandler(IForumPostRepository postRepo)
+        public CreatePostCommandHandler(IMapper mapper, IForumPostRepository postRepo)
         {
+            _mapper = mapper;
             _postRepo = postRepo;
         }
 
@@ -39,12 +43,13 @@ namespace Application.Features.Forum.Commands
             };
 
             await _postRepo.CreateAsync(newPost);
+            var response = _mapper.Map<CreatePostResponse>(newPost);
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Post created successfully.",
-                Data = newPost
+                Data = response
             };
         }
     }

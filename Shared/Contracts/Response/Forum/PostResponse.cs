@@ -9,13 +9,13 @@ namespace Shared.Contracts.Response.Forum
         public int CommentCount { get; set; }
         public long CreatedAt { get; set; }
         public long UpdatedAt { get; set; }
-        public ForumPostAuthorResponse Author { get; set; }
-    }
+        public PostAuthorResponse Author { get; set; }
 
-    public class ForumPostAuthorResponse
-    {
-        public string Id { get; set; }
-        public string Username { get; set; }
-        public string Avatar { get; set; }
+        public class PostAuthorResponse
+        {
+            public string Id { get; set; }
+            public string Username { get; set; }
+            public string Avatar { get; set; }
+        }
     }
 }

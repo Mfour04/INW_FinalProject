@@ -8,8 +8,8 @@ namespace Application.Features.Forum.Commands
 {
     public class LikePostCommand : IRequest<ApiResponse>
     {
-        public string? PostId { get; set; }
-        public string? UserId { get; set; }
+        public string PostId { get; set; }
+        public string UserId { get; set; }
     }
 
     public class LikePostCommandHandler : IRequestHandler<LikePostCommand, ApiResponse>
@@ -53,7 +53,6 @@ namespace Application.Features.Forum.Commands
             {
                 Success = true,
                 Message = "Like successfully.",
-                Data = like
             };
         }
 

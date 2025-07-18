@@ -58,6 +58,7 @@ namespace Infrastructure
             services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
             services.AddScoped<IPurchaserRepository, PurchaserRepository>();
+            services.AddScoped<IUserFollowRepository, UserFollowRepository>();
 
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<ICloudDinaryService, CloudDinaryService>();

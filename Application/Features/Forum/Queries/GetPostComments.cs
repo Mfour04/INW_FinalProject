@@ -5,6 +5,7 @@ using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Forum;
 using Shared.Helpers;
+using static Shared.Contracts.Response.Forum.PostCommentResponse;
 
 namespace Application.Features.Forum.Queries
 {
@@ -53,21 +54,28 @@ namespace Application.Features.Forum.Queries
                 };
             }
 
+            var userIds = postCommentList.Select(c => c.user_id).Distinct().ToList();
+            var users = await _userRepo.GetUsersByIdsAsync(userIds);
+            var userDict = users.ToDictionary(u => u.id);
+
             var response = new List<PostCommentResponse>();
 
             foreach (var comment in postCommentList)
             {
                 var mapped = _mapper.Map<PostCommentResponse>(comment);
 
-                var user = await _userRepo.GetById(comment.user_id);
-                if (user != null)
+                if (userDict.TryGetValue(comment.user_id, out var user))
                 {
-                    mapped.Author = new ForumPostCommentAuthorResponse
+                    mapped.Author = new PostCommentAuthorResponse
                     {
                         Id = user.id,
                         Username = user.username,
                         Avatar = user.avata_url
                     };
+                }
+                else
+                {
+                    mapped.Author = new PostCommentAuthorResponse(); 
                 }
 
                 response.Add(mapped);

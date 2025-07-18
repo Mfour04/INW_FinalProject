@@ -104,6 +104,10 @@ namespace Application.Mapping
                 .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.comment_count))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.Author, opt => opt.Ignore());
+            CreateMap<ForumPostEntity, CreatePostResponse>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.ImgUrls, opt => opt.MapFrom(src => src.img_urls))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at));
             CreateMap<ForumCommentEntity, PostCommentResponse>()
                 .ForMember(dest => dest.PostId, opt => opt.MapFrom(src => src.post_id))
                 .ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.parent_comment_id))
@@ -111,6 +115,11 @@ namespace Application.Mapping
                 .ForMember(dest => dest.ReplyCount, opt => opt.MapFrom(src => src.reply_count))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.Author, opt => opt.Ignore());
+            CreateMap<ForumCommentEntity, CreatePostCommentResponse>()
+                .ForMember(dest => dest.PostId, opt => opt.MapFrom(src => src.post_id))
+                .ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.parent_comment_id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at));
 
             //Comment
             CreateMap<CommentEntity, CommentResponse>()

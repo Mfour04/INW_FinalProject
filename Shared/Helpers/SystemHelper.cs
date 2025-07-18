@@ -1,6 +1,6 @@
 using Domain.Entities.System;
 using System.Globalization;
-using System.Net.NetworkInformation;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Shared.Helpers
@@ -68,7 +68,7 @@ namespace Shared.Helpers
                     Field = parts[0].Trim(),
                     IsDescending = parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase),
                 })
-                .ToList();  
+                .ToList();
         }
 
         public static List<string> ParseTagNames(string? raw)
@@ -81,6 +81,13 @@ namespace Shared.Helpers
                 .Select(tag => tag.Trim())
                 .Where(tag => !string.IsNullOrWhiteSpace(tag))
                 .ToList();
+        }
+
+        public static string ComputeSha256(string raw)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(raw));
+            return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
         }
     }
 }
