@@ -1,7 +1,9 @@
 ﻿using Domain.Entities;
+using Domain.Entities.System;
 using Domain.Enums;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Exceptions;
 using Shared.Helpers;
@@ -246,6 +248,88 @@ namespace Infrastructure.Repositories.Implements
                 var update = Builders<UserEntity>.Update.Inc(x => x.following_count, value);
                 var result = await _collection.UpdateOneAsync(x => x.id == userId, update);
                 return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<(List<UserEntity> Users, int TotalCount)> GetAllUserAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
+        {
+            try
+            {
+                var builder = Builders<UserEntity>.Filter;
+                var filtered = builder.Empty;
+                var isExact = true;
+                if (creterias.SearchTerm != null && creterias.SearchTerm.Count > 0)
+                {
+                    if (creterias.SearchTerm.Count == 1)
+                    {
+                        var keyword = creterias.SearchTerm[0];
+
+                        // ✅ THAY builder.Eq thành Regex để chứa từ đó (fuzzy nhẹ)
+                        filtered &= builder.Regex(
+                            x => x.displayname_unsigned,
+                            new BsonRegularExpression(keyword, "i")
+                        );
+                    }
+                    else
+                    {
+                        // Fuzzy match: tất cả từ phải khớp
+                        var regexFilters = creterias.SearchTerm.Select(term =>
+                            builder.Regex(x => x.displayname_unsigned, new BsonRegularExpression(term, "i"))
+                        );
+                        filtered &= builder.And(regexFilters);
+                    }
+                }
+
+                var query = _collection
+                    .Find(filtered)
+                    .Skip(creterias.Page * creterias.Limit)
+                    .Limit(creterias.Limit);
+
+                var sortBuilder = Builders<UserEntity>.Sort;
+                var sortDefinitions = new List<SortDefinition<UserEntity>>();
+                var totalCount = await _collection.CountDocumentsAsync(filtered);
+                foreach (var criterion in sortCreterias)
+                {
+                    SortDefinition<UserEntity>? sortDef = criterion.Field switch
+                    {
+                        "created_at" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.created_at)
+                            : sortBuilder.Ascending(x => x.created_at),
+                        "displayname_normalized" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.displayname_normalized)
+                            : sortBuilder.Ascending(x => x.displayname_normalized),
+                        _ => null
+                    };
+
+                    if (sortDef != null)
+                        sortDefinitions.Add(sortDef);
+                }
+
+                if (sortDefinitions.Count >= 1)
+                {
+                    var combinedSort = sortBuilder.Combine(sortDefinitions);
+                    query = query.Sort(combinedSort);
+                }
+                var novels = await query.ToListAsync();
+                return (novels, (int)totalCount);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task UpdateLockvsUnLockUser(string userId, bool isbanned)
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq(x => x.id, userId);
+                var updatelockUser = Builders<UserEntity>.Update.Set(x => x.is_banned, isbanned);
+                await _collection.UpdateOneAsync(filter, updatelockUser);
             }
             catch
             {

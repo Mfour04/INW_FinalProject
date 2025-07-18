@@ -149,15 +149,31 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpPut("hide/{novelId}")]
+        [HttpPut("update-hide-novel/{novelId}")]
         [Authorize]
-        public async Task<IActionResult> HideNovel(string novelId)
+        public async Task<IActionResult> HideNovel(string novelId, [FromQuery] bool isPublic)
         {
-            var result = await _mediator.Send(new HideNovelCommand
+            var result = await _mediator.Send(new UpdateHideNovelCommand
             {
-                NovelId = novelId
+                NovelId = novelId,
+                IsPublic = isPublic
             });
 
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPut("update-lock-novel/{novelId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> LockNovel(string novelId, [FromQuery] bool isLocked)
+        {
+            var result = await _mediator.Send(new UpdateLockNovelCommand
+            {
+                NovelId = novelId,
+                isLocked = isLocked
+            });
             if (!result.Success)
                 return BadRequest(result);
 

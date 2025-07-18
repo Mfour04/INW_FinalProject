@@ -33,6 +33,7 @@ namespace Application.Features.User.Feature
             if(user == null)
                 return new ApiResponse { Success = false, Message = "User not found." };
             user.displayname = request.DisplayName;
+            user.displayname_unsigned = SystemHelper.RemoveDiacritics(request.DisplayName);
             user.displayname_normalized = SystemHelper.RemoveDiacritics(request.DisplayName);
             user.bio = request.Bio;
             user.updated_at = DateTime.UtcNow.Ticks;

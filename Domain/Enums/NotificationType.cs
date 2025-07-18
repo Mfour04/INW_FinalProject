@@ -17,6 +17,7 @@ namespace Domain.Enums
         LikeNovelComment,
         LikeChapterComment,
         ReportComment,
-        UserReport
+        UserReport,
+        NovelFollow
     }
 }

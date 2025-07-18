@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Entities.System;
 using Domain.Enums;
 
 namespace Infrastructure.Repositories.Interfaces
@@ -7,6 +8,7 @@ namespace Infrastructure.Repositories.Interfaces
     {
         Task<UserEntity> CreateUser(UserEntity entity);
         Task<UserEntity> UpdateUser(UserEntity entity);
+        Task UpdateLockvsUnLockUser(string userId, bool isbanned);
         Task<UserEntity> GetById(string userId);
         Task<UserEntity> GetByEmail(string email);
         Task<UserEntity> GetByName(string userName);
@@ -15,6 +17,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task IncreaseCoinAsync(string userId, int amount);
         Task<bool> DecreaseCoinAsync(string userId, int amount);
         Task<bool> UpdateUserRoleToAdminAsync(string userId);
+        Task<(List<UserEntity> Users, int TotalCount)> GetAllUserAsync(FindCreterias creterias, List<SortCreterias> sortCreterias);
         Task<UserEntity?> GetFirstUserByRoleAsync(Role role);
         Task<List<UserEntity>> GetUsersByIdsAsync(List<string> userIds);
         Task<bool> IncrementFollowerCountAsync(string userId, int value);

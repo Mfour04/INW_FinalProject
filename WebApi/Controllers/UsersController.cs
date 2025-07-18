@@ -1,10 +1,12 @@
 ﻿using Application.Auth.Commands;
+using Application.Features.Novel.Queries;
 using Application.Features.User.Feature;
 using Application.Features.User.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Contracts.Response.User;
+using Shared.Helpers;
 using Shared.SystemHelpers.TokenGenerate;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -146,7 +148,7 @@ namespace WebApi.Controllers
             }
         }
 
-        [HttpPut("update-user")]
+        [HttpPut("update-user-profile")]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateUserProfileCommand command)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -241,5 +243,11 @@ namespace WebApi.Controllers
             return Ok(response);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] GetAllUser query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
     }
 }

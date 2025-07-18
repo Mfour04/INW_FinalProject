@@ -10,5 +10,6 @@ namespace Infrastructure.Repositories.Interfaces
     {
         string? UserId { get; }
         string? Role { get; }
+        bool IsAdmin();
     }
 }

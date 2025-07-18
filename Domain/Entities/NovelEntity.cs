@@ -11,6 +11,7 @@ namespace Domain.Entities
         public string description { get; set; }
         public string author_id { get; set; }
         public string novel_image { get; set; }
+        public string novel_banner { get; set; }
         public List<string> tags { get; set; } = new();
         [BsonRepresentation(BsonType.String)]
         public NovelStatus status { get; set; }
@@ -18,7 +19,6 @@ namespace Domain.Entities
         public bool is_lock { get; set; }
         public bool is_paid { get; set; }
         public bool is_completed { get; set; }
-        [BsonRepresentation(BsonType.String)]
         public int price { get; set; }
         public int total_chapters { get; set; }
         public int total_views { get; set; }
