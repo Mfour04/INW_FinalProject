@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Entities.System;
 using Domain.Enums;
 
 namespace Infrastructure.Repositories.Interfaces
@@ -6,6 +7,8 @@ namespace Infrastructure.Repositories.Interfaces
     public interface IUserRepository
     {
         Task<UserEntity> CreateUser(UserEntity entity);
+        Task<(List<UserEntity> Users, int TotalCount)> GetAllUserAsync(FindCreterias creterias, List<SortCreterias> sortCreterias);
+        Task UpdateLockvsUnLockUser(string userId, bool isbanned);
         Task<UserEntity> GetByEmail(string email);
         Task<UserEntity> GetById(string userId);
         Task<UserEntity> GetUserNameByUserId(string userId);

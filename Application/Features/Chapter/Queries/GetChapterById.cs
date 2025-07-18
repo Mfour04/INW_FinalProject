@@ -1,7 +1,9 @@
-﻿using Domain.Entities;
+﻿using AutoMapper;
+using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Chapter;
 using Shared.Helpers;
 
 namespace Application.Features.Chapter.Queries
@@ -19,15 +21,17 @@ namespace Application.Features.Chapter.Queries
         private readonly INovelRepository _novelRepository;
         private readonly INovelViewTrackingRepository _viewTrackingRepository;
         private readonly IChapterHelperService _chapterHelperService;
+        private readonly IMapper _mapper;
         public GetChapterByIdHandler(IChapterRepository chapterRepository, IPurchaserRepository purchaserRepository, 
             INovelRepository novelRepository, INovelViewTrackingRepository viewTrackingRepository,
-            IChapterHelperService chapterHelperService)
+            IChapterHelperService chapterHelperService, IMapper mapper)
         {
             _chapterRepository = chapterRepository;
             _purchaserRepository = purchaserRepository;
             _novelRepository = novelRepository;
             _viewTrackingRepository = viewTrackingRepository;
             _chapterHelperService = chapterHelperService;
+            _mapper = mapper;
         }
 
         public async Task<ApiResponse> Handle(GetChapterById request, CancellationToken cancellationToken)
@@ -77,12 +81,13 @@ namespace Application.Features.Chapter.Queries
                 chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             }
 
+            var chapterResponse = _mapper.Map<ChapterResponse>(chapter);
             return new ApiResponse
             {
                 Success = true,
                 Data = new
                 {
-                    Chapter = chapter,
+                    Chapter = chapterResponse,
                     PreviousChapterId = previousChapter?.id,
                     NextChapterId = nextChapter?.id
                 }
@@ -101,8 +106,8 @@ namespace Application.Features.Chapter.Queries
                     id = SystemHelper.RandomId(),
                     user_id = userId,
                     novel_id = novelId,
-                    created_at = DateTime.UtcNow.Ticks,
-                    updated_at = DateTime.UtcNow.Ticks
+                    created_at = TimeHelper.NowTicks,
+                    updated_at = TimeHelper.NowTicks
                 };
                 await _viewTrackingRepository.CreateViewTrackingAsync(newTracking);
                 await _novelRepository.IncreaseTotalViewAsync(novelId);
@@ -112,7 +117,7 @@ namespace Application.Features.Chapter.Queries
                 var lastViewDate = new DateTime(tracking.updated_at).Date;
                 if (lastViewDate < today)
                 {
-                    tracking.updated_at = DateTime.UtcNow.Ticks;
+                    tracking.updated_at = TimeHelper.NowTicks;
                     await _viewTrackingRepository.UpdateViewTrackingAsync(tracking);
                     await _novelRepository.IncreaseTotalViewAsync(novelId);
                 }

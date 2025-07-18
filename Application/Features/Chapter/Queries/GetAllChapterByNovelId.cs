@@ -1,6 +1,8 @@
-﻿using Infrastructure.Repositories.Interfaces;
+﻿using AutoMapper;
+using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Chapter;
 
 namespace Application.Features.Chapter.Queries
 {
@@ -13,11 +15,13 @@ namespace Application.Features.Chapter.Queries
     {
         private readonly INovelRepository _novelRepository;
         private readonly IChapterRepository _chapterRepository;
-
-        public GetAllChapterByNovelIdHandler(INovelRepository novelRepository, IChapterRepository chapterRepository, IPurchaserRepository purchaserRepository)
+        private readonly IMapper _mapper;
+        public GetAllChapterByNovelIdHandler(INovelRepository novelRepository, IChapterRepository chapterRepository
+            , IPurchaserRepository purchaserRepository, IMapper mapper)
         {
             _novelRepository = novelRepository;
             _chapterRepository = chapterRepository;
+            _mapper = mapper;
         }
 
         public async Task<ApiResponse> Handle(GetAllChapterByNovelId request, CancellationToken cancellationToken)
@@ -44,12 +48,12 @@ namespace Application.Features.Chapter.Queries
             }
 
             var allChapters = await _chapterRepository.GetAllByNovelIdAsync(request.NovelId);
-
+            var chapterResponse = _mapper.Map<List<ChapterResponse>>(allChapters);
             return new ApiResponse
             {
                 Success = true,
                 Message = "Chapters retrieved with user permissions.",
-                Data = allChapters
+                Data = chapterResponse
             };
         }
     }

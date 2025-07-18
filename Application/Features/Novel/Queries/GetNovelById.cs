@@ -4,6 +4,7 @@ using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Chapter;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Tag;
 using Shared.Helpers;
@@ -92,8 +93,8 @@ namespace Application.Features.Novel.Queries
 
                 var (allChapterEntities, totalChapters, totalPages) = await _chapterRepository.GetPagedByNovelIdAsync(request.NovelId, chapterCriteria, sort);
                 var allChapterIds = allChapterEntities.Select(c => c.id).ToList();
-
-               // Lọc các chương miễn phí
+                var chapterResponse = _mapper.Map<List<ChapterResponse>>(allChapterEntities);
+                // Lọc các chương miễn phí
                 var freeChapterIds = allChapterEntities
                     .Where(c => !c.is_paid)
                     .Select(c => c.id)
@@ -124,7 +125,7 @@ namespace Application.Features.Novel.Queries
                         Data = new
                         {
                             NovelInfo = novelResponse,
-                            AllChapters = allChapterEntities,
+                            AllChapters = chapterResponse,
                             PurchasedChapterIds = purchasedChapterIds,
                             TotalChapters = totalChapters,
                             TotalPages = totalPages,
@@ -141,8 +142,8 @@ namespace Application.Features.Novel.Queries
                         Success = true,
                         Data = new
                         {
-                            NovelInfo = novel,
-                            AllChapters = allChapterIds
+                            NovelInfo = novelResponse,
+                            AllChapters = chapterResponse
                         }
                     };
                 }
@@ -161,7 +162,7 @@ namespace Application.Features.Novel.Queries
                                 Data = new
                                 {
                                     NovelInfo = novelResponse,
-                                    AllChapters = allChapterEntities,
+                                    AllChapters = chapterResponse,
                                     FreeChapters = freeChapterIds,
                                     PurchasedChapterIds = purchasedChapterIds,
                                     TotalChapters = totalChapters,
@@ -182,7 +183,7 @@ namespace Application.Features.Novel.Queries
                                 Data = new
                                 {
                                     NovelInfo = novelResponse,
-                                    AllChapters = allChapterEntities,
+                                    AllChapters = chapterResponse,
                                     FreeChapters = freeChapterIds,
                                     TotalChapters = totalChapters,
                                     TotalPages = totalPages,
@@ -200,7 +201,7 @@ namespace Application.Features.Novel.Queries
                     Data = new
                     {
                         NovelInfo = novelResponse,
-                        AllChapters = allChapterEntities,
+                        AllChapters = chapterResponse,
                         PurchasedChapterIds = purchasedChapterIds,
                         TotalChapters = totalChapters,
                         TotalPages = totalPages,

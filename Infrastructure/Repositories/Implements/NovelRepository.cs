@@ -222,7 +222,7 @@ namespace Infrastructure.Repositories.Implements
                 var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
                 var updateLock = Builders<NovelEntity>.Update.Combine(
                                  Builders<NovelEntity>.Update.Set(x => x.is_lock, isLocked),
-                                 Builders<NovelEntity>.Update.Set(x => x.is_public, false));
+                                 Builders<NovelEntity>.Update.Set(x => x.is_public, !isLocked));
                 await _collection.UpdateOneAsync(filter, updateLock);
             }
             catch
@@ -254,6 +254,20 @@ namespace Infrastructure.Repositories.Implements
                 var result = await _collection.UpdateOneAsync(x => x.id == novelId, update);
 
                 return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task UpdateHideNovelAsync(string novelId, bool isPublic)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
+                var updatehide = Builders<NovelEntity>.Update.Set(x => x.is_public, isPublic);
+                await _collection.UpdateOneAsync(filter, updatehide);
             }
             catch
             {

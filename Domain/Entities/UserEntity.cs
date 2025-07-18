@@ -8,6 +8,7 @@ namespace Domain.Entities
     {
         public string username { get; set; }
         public string displayname { get; set; }
+        public string displayname_unsigned { get; set; }
         public string displayname_normalized { get; set; }
         public string email { get; set; }
         public string password { get; set; }
