@@ -9,7 +9,7 @@ namespace Application.Services
     public class ScheduledChapterReleaseService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly bool IsTestMode = true;
+        private readonly bool IsTestMode = false;
 
         public ScheduledChapterReleaseService(IServiceProvider serviceProvider)
         {

@@ -116,8 +116,6 @@ namespace WebApi.Controllers
             return Ok(result.Data);
         }
 
-
-
         // Đăng xuất người dùng
         [HttpPost("logout")]
         public IActionResult Logout()
@@ -221,18 +219,11 @@ namespace WebApi.Controllers
         [HttpGet("coin")]
         public async Task<IActionResult> GetUserCoin()
         {
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            // if (string.IsNullOrEmpty(userId))
-            //     return Unauthorized(new ApiResponse
-            //     {
-            //         Success = false,
-            //         Message = "User not authenticated."
-            //     });
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var result = await _mediator.Send(new GetUserCoin
             {
-                UserId = "user_002"
+                UserId = userId
             });
 
             return Ok(result);

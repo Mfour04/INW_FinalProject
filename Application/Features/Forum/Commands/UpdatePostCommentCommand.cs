@@ -8,7 +8,7 @@ namespace Application.Features.Forum.Commands
     public class UpdatePostCommentCommand : IRequest<ApiResponse>
     {
         public string? Id { get; set; }
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public string Content { get; set; }
     }
 
@@ -44,7 +44,6 @@ namespace Application.Features.Forum.Commands
             {
                 Success = true,
                 Message = "Comment updated successfully.",
-                Data = comment
             };
         }
 

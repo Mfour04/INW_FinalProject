@@ -1,8 +1,10 @@
-﻿using Application.Features.Notification.Commands;
+﻿using Application.Features.Comment.Validators;
+using Application.Features.Notification.Commands;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using Shared.Contracts.Response;
 using Shared.Helpers;
 
@@ -23,7 +25,9 @@ namespace Application.Features.Comment.Commands
         private readonly IChapterRepository _chapterRepository;
         private readonly INovelRepository _novelRepository;
         private readonly IMediator _mediator;
-        public CreateCommentCommandHandler(
+        private readonly CommentSpamGuard _spamGuard;
+        
+         public CreateCommentCommandHandler(
             ICommentRepository commentRepository,
             IChapterRepository chapterRepository,
             INovelRepository novelRepository,
@@ -33,8 +37,9 @@ namespace Application.Features.Comment.Commands
             _chapterRepository = chapterRepository;
             _novelRepository = novelRepository;
             _mediator = mediator;
+            _spamGuard = new CommentSpamGuard(commentRepository);
         }
-
+        
         public async Task<ApiResponse> Handle(CreateCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.NovelId))
@@ -57,6 +62,9 @@ namespace Application.Features.Comment.Commands
                     return Fail("Chapter does not belong to the specified novel.");
             }
 
+            var spamCheck = await _spamGuard.CheckSpamAsync(request.UserId!, request.NovelId, request.ChapterId, request.Content);
+            if (spamCheck != null) return spamCheck;
+
             var createdComment = new CommentEntity
             {
                 id = SystemHelper.RandomId(),
@@ -64,7 +72,8 @@ namespace Application.Features.Comment.Commands
                 chapter_id = request.ChapterId,
                 user_id = request.UserId,
                 content = request.Content,
-                parent_comment_id = request.ParentCommentId,
+				content_hash = SystemHelper.ComputeSha256(request.Content.Trim().ToLower()),
+				parent_comment_id = request.ParentCommentId,
                 created_at = TimeHelper.NowTicks
             };
 
@@ -101,7 +110,7 @@ namespace Application.Features.Comment.Commands
             {
                 await _novelRepository.IncrementCommentsAsync(request.NovelId);
             }
-            
+
             return new ApiResponse
             {
                 Success = true,

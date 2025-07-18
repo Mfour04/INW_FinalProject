@@ -1,7 +1,9 @@
+using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Forum;
 using Shared.Helpers;
 
 namespace Application.Features.Forum.Commands
@@ -16,13 +18,16 @@ namespace Application.Features.Forum.Commands
 
     public class CreatePostCommentCommandHandler : IRequestHandler<CreatePostCommentCommand, ApiResponse>
     {
+        private readonly IMapper _mapper;
         private readonly IForumCommentRepository _postCommentRepo;
         private readonly IForumPostRepository _postRepo;
 
         public CreatePostCommentCommandHandler(
+            IMapper mapper,
             IForumCommentRepository postCommentRepo,
             IForumPostRepository postRepo)
         {
+            _mapper = mapper;
             _postCommentRepo = postCommentRepo;
             _postRepo = postRepo;
         }
@@ -52,7 +57,7 @@ namespace Application.Features.Forum.Commands
 
             ForumCommentEntity comment = new()
             {
-                id = Shared.Helpers.SystemHelper.RandomId(),
+                id = SystemHelper.RandomId(),
                 post_id = request.PostId,
                 user_id = request.UserId,
                 content = request.Content,
@@ -63,6 +68,8 @@ namespace Application.Features.Forum.Commands
             };
 
             await _postCommentRepo.CreateAsync(comment);
+
+            var response = _mapper.Map<CreatePostCommentResponse>(comment);
 
             if (!string.IsNullOrEmpty(comment.post_id))
             {
@@ -75,7 +82,7 @@ namespace Application.Features.Forum.Commands
                 Message = string.IsNullOrEmpty(request.ParentCommentId)
                     ? "Comment created successfully."
                     : "Reply created successfully.",
-                Data = comment
+                Data = response
             };
         }
 
