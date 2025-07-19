@@ -44,14 +44,22 @@ namespace Application.Features.NovelFollower.Commands
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy novel này" };
-
+            var existingFollow = await _novelFollowRepository.GetByUserAndNovelIdAsync(request.UserId, request.NovelId);
+            if (existingFollow != null)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "User đã follow novel này rồi"
+                };
+            }
             var novelfollower = new NovelFollowerEntity
             {
                 id = SystemHelper.RandomId(),
                 novel_id = novel.id,
                 user_id = user.id,
                 username = user.displayname,
-                followed_at = DateTime.UtcNow.Ticks
+                followed_at = TimeHelper.NowTicks
             };
 
             await _novelFollowRepository.CreateNovelFollowAsync(novelfollower);
