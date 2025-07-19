@@ -14,6 +14,7 @@ using Shared.Contracts.Response.Report;
 using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.Transaction;
 using Shared.Contracts.Response.User;
+using Shared.Contracts.Response.UserFollow;
 
 namespace Application.Mapping
 {

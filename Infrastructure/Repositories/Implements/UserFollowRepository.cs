@@ -12,8 +12,8 @@ namespace Infrastructure.Repositories.Implements
 
         public UserFollowRepository(MongoDBHelper mongoDBHelper)
         {
-            mongoDBHelper.CreateCollectionIfNotExistsAsync("user_follows").Wait();
-            _collection = mongoDBHelper.GetCollection<UserFollowEntity>("user_follows");
+            mongoDBHelper.CreateCollectionIfNotExistsAsync("user_follow").Wait();
+            _collection = mongoDBHelper.GetCollection<UserFollowEntity>("user_follow");
         }
 
         /// <summary>
@@ -35,11 +35,11 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Bỏ follow giữa 2 người dùng
         /// </summary>
-        public async Task<bool> UnfollowAsync(string followerId, string followingId)
+        public async Task<bool> UnfollowAsync(string actorId, string targetId)
         {
             try
             {
-                var result = await _collection.DeleteOneAsync(x => x.follower_id == followerId && x.following_id == followingId);
+                var result = await _collection.DeleteOneAsync(x => x.actor_id == actorId && x.target_id == targetId);
                 return result.DeletedCount > 0;
             }
             catch
@@ -51,11 +51,11 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Kiểm tra xem một người dùng có đang theo dõi người dùng khác hay không
         /// </summary>
-        public async Task<bool> IsFollowingAsync(string followerId, string followingId)
+        public async Task<bool> IsFollowingAsync(string actorId, string targetId)
         {
             try
             {
-                var count = await _collection.CountDocumentsAsync(x => x.follower_id == followerId && x.following_id == followingId);
+                var count = await _collection.CountDocumentsAsync(x => x.actor_id == actorId && x.target_id == targetId);
                 return count > 0;
             }
             catch
@@ -65,13 +65,18 @@ namespace Infrastructure.Repositories.Implements
         }
 
         /// <summary>
-        /// Lấy danh sách người mà user đang follow
+        /// Lấy danh sách ID của người mà user đang follow
         /// </summary>
-        public async Task<List<UserFollowEntity>> GetFollowingAsync(string followerId)
+        public async Task<List<string>> GetFollowingIdsOfUserAsync(string userId)
         {
             try
             {
-                return await _collection.Find(x => x.follower_id == followerId).ToListAsync();
+                var filter = Builders<UserFollowEntity>.Filter.Eq(x => x.actor_id, userId);
+                var result = await _collection.Find(filter)
+                    .Project(x => x.target_id)
+                    .ToListAsync();
+
+                return result;
             }
             catch
             {
@@ -82,11 +87,16 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Lấy danh sách người đang follow user
         /// </summary>
-        public async Task<List<UserFollowEntity>> GetFollowersAsync(string followingId)
+        public async Task<List<string>> GetFollowerIdsOfUserAsync(string userId)
         {
             try
             {
-                return await _collection.Find(x => x.following_id == followingId).ToListAsync();
+                var filter = Builders<UserFollowEntity>.Filter.Eq(x => x.target_id, userId);
+                var result = await _collection.Find(filter)
+                    .Project(x => x.actor_id)
+                    .ToListAsync();
+
+                return result;
             }
             catch
             {

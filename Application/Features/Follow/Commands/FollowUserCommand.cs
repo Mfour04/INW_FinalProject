@@ -31,8 +31,8 @@ namespace Application.Features.Follow.Commands
             UserFollowEntity follow = new()
             {
                 id = SystemHelper.RandomId(),
-                follower_id = request.FollowerId,
-                following_id = request.FollowingId,
+                actor_id = request.FollowerId,
+                target_id = request.FollowingId,
                 followed_at = TimeHelper.NowTicks
             };
 
