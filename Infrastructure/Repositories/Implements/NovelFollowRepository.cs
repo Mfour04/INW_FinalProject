@@ -2,7 +2,6 @@
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
-using Org.BouncyCastle.Crypto;
 using Shared.Exceptions;
 
 namespace Infrastructure.Repositories.Implements
@@ -68,7 +67,19 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<IEnumerable<NovelFollowerEntity>> GetByNovelIdAsync(string novelId)
+        public async Task<List<NovelFollowerEntity>> GetFollowedNovelsByUserIdAsync(string userId)
+        {
+            try
+            {
+                return await _collection.Find(x => x.user_id == userId).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<NovelFollowerEntity>> GetFollowersByNovelIdAsync(string novelId)
         {
             try
             {
@@ -78,6 +89,21 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task<NovelFollowerEntity?> GetByUserAndNovelIdAsync(string userId, string novelId)
+        {
+            try
+            {
+                return await _collection
+                .Find(x => x.user_id == userId && x.novel_id == novelId)
+                .FirstOrDefaultAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+            
         }
 
         public async Task<NovelFollowerEntity> UpdateNovelFollowAsync(NovelFollowerEntity entity)

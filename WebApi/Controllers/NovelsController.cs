@@ -172,7 +172,7 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new UpdateLockNovelCommand
             {
                 NovelId = novelId,
-                isLocked = isLocked
+                IsLocked = isLocked
             });
             if (!result.Success)
                 return BadRequest(result);

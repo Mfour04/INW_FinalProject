@@ -12,7 +12,7 @@ namespace Application.Features.Chapter.Commands
     public class UpdateHideChapterStatusCommand: IRequest<ApiResponse>
     {
         public string ChapterId { get; set; }
-        public bool isPublic { get; set; }
+        public bool IsPublic { get; set; }
     }
     public class UpdateHideChapterStatusHandler : IRequestHandler<UpdateHideChapterStatusCommand, ApiResponse>
     {
@@ -46,7 +46,7 @@ namespace Application.Features.Chapter.Commands
             }
             if (novel.author_id == null)
             {
-                return new ApiResponse { Success = false, Message = "Chapter or related novel not found" };
+                return new ApiResponse { Success = false, Message = "Novel author not found" };
             }
 
             // Kiểm tra quyền
@@ -55,9 +55,9 @@ namespace Application.Features.Chapter.Commands
                 return new ApiResponse { Success = false, Message = "You do not have permission to update this chapter" };
             }
 
-            await _chapterRepository.UpdateHideChapterStatus(request.ChapterId, request.isPublic);
+            await _chapterRepository.UpdateHideChapterStatus(request.ChapterId, request.IsPublic);
 
-            var action = request.isPublic ? "unhidden" : "hidden";
+            var action = request.IsPublic ? "unhidden" : "hidden";
             return new ApiResponse
             {
                 Success = true,

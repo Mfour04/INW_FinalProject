@@ -246,12 +246,39 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.username))
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.followed_at));
 
-            CreateMap<NovelFollowerEntity, CreateNovelFollowReponse>()
-                .ForMember(dest => dest.NovelFollowId, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
-                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.username))
-                .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.followed_at));
+            CreateMap<(NovelFollowerEntity follow, UserEntity user), CreateNovelFollowReponse>()
+                .ForMember(dest => dest.NovelFollowId, opt => opt.MapFrom(src => src.follow.id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.follow.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.follow.novel_id))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.follow.username))
+                .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.user.displayname))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.user.avata_url))
+                .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
+
+            CreateMap<(NovelFollowerEntity follow, UserEntity user), NovelFollowerUserInfoResponse>()
+               .ForMember(dest => dest.FollowerId, opt => opt.MapFrom(src => src.follow.id))
+               .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user.id))
+               .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.user.username))
+               .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.user.displayname))
+               .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.user.avata_url))
+               .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
+
+            // 2. Map từ NovelFollowerEntity + NovelEntity + UserEntity → UserFollowingNovelInfoResponse
+            CreateMap<(NovelFollowerEntity follow, NovelEntity novel, UserEntity author), UserFollowingNovelInfoResponse>()
+                .ForMember(dest => dest.FollowId, opt => opt.MapFrom(src => src.follow.id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel.id))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.novel.title))
+                .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel.novel_image))
+                .ForMember(dest => dest.NovelBanner, opt => opt.MapFrom(src => src.novel.novel_banner))
+                .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author.id))
+                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.author.displayname))
+                .ForMember(dest => dest.IsCompleted, opt => opt.MapFrom(src => src.novel.is_completed))
+                .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.novel.is_paid))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.novel.price))
+                .ForMember(dest => dest.RatingAvg, opt => opt.MapFrom(src => src.novel.rating_avg))
+                .ForMember(dest => dest.Followers, opt => opt.MapFrom(src => src.novel.followers))
+                .ForMember(dest => dest.TotalChapters, opt => opt.MapFrom(src => src.novel.total_chapters))
+                .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
             //Transaction
             CreateMap<TransactionEntity, TransactionResponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))

@@ -7,7 +7,7 @@ namespace Application.Features.Novel.Commands
     public class UpdateLockNovelCommand: IRequest<ApiResponse>
     {
         public string NovelId { get; set; }
-        public bool isLocked { get; set; }
+        public bool IsLocked { get; set; }
     }
     public class UpdateLockNovelHandler : IRequestHandler<UpdateLockNovelCommand, ApiResponse>
     {
@@ -35,8 +35,8 @@ namespace Application.Features.Novel.Commands
             {
                 return new ApiResponse { Success = false, Message = "Novel not found" };
             }
-            await _novelRepository.UpdateLockStatusAsync(request.NovelId, request.isLocked);
-            var action = request.isLocked ? "locked" : "unlocked";
+            await _novelRepository.UpdateLockStatusAsync(request.NovelId, request.IsLocked);
+            var action = request.IsLocked ? "locked" : "unlocked";
             return new ApiResponse
             {
                 Success = true,

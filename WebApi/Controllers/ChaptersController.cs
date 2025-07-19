@@ -2,6 +2,7 @@
 using Application.Features.Chapter.Queries;
 using Domain.Entities.System;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Contracts.Response;
 using System.Security.Claims;
@@ -87,6 +88,37 @@ namespace WebApi.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var result = await _mediator.Send(new GetAllChapterByNovelId { NovelId = novelId, UserId = userId });
+
+            return Ok(result);
+        }
+
+        [HttpPut("update-hide-chapter/{chapterId}")]
+        [Authorize]
+        public async Task<IActionResult> HidevsUnhideChapter(string chapterId, [FromQuery] bool isPublic)
+        {
+            var result = await _mediator.Send(new UpdateHideChapterStatusCommand
+            {
+                ChapterId = chapterId,
+                IsPublic = isPublic
+            });
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPut("update-lock-chapter/{chapterId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> LockvsUnlockChapter(string chapterId, [FromQuery] bool isLocked)
+        {
+            var result = await _mediator.Send(new UpdateLockChapterStatusCommand
+            {
+                ChapterId = chapterId,
+                IsLocked = isLocked
+            });
+            if (!result.Success)
+                return BadRequest(result);
 
             return Ok(result);
         }
