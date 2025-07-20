@@ -10,7 +10,7 @@ namespace Application.Auth.Commands
 {
     public class RegisterCommand : IRequest<ApiResponse>
     {
-        public string Username { get; set; }
+        public string UserName { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
     }
@@ -41,8 +41,8 @@ namespace Application.Auth.Commands
             var newUser = new UserEntity
             {
                 id = SystemHelper.RandomId(),
-                username = request.Username,
-                displayname = request.Username,
+                username = request.UserName,
+                displayname = request.UserName,
                 email = request.Email,
                 password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 role = Role.Reader,
