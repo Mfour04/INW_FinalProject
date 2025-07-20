@@ -69,7 +69,7 @@ namespace Application.Features.Novel.Commands
             TransactionEntity transaction = new()
             {
                 id = SystemHelper.RandomId(),
-                user_id = request.UserId,
+                requester_id = request.UserId,
                 novel_id = request.NovelId,
                 type = PaymentType.BuyNovel,
                 amount = request.CoinCost,

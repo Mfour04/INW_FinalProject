@@ -32,7 +32,7 @@ namespace Application.Features.Transaction.Commands
             if (transaction == null)
                 return Fail("Transaction not found.");
 
-            if (transaction.user_id != request.UserId)
+            if (transaction.requester_id != request.UserId)
                 return Fail("Permission denied.");
 
             if (transaction.type != PaymentType.WithdrawCoin)

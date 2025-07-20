@@ -7,7 +7,7 @@ namespace Application.Features.Follow.Queries
 {
     public class GetFollowers : IRequest<ApiResponse>
     {
-        public string? UserId { get; set; }
+        public string? Username { get; set; }
     }
 
     public class GetFollowersHandler : IRequestHandler<GetFollowers, ApiResponse>
@@ -23,14 +23,22 @@ namespace Application.Features.Follow.Queries
 
         public async Task<ApiResponse> Handle(GetFollowers request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(request.UserId))
+            if (string.IsNullOrWhiteSpace(request.Username))
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "UserId is required."
+                    Message = "Username is required."
                 };
 
-            var followerIds = await _followRepo.GetFollowerIdsOfUserAsync(request.UserId);
+            var user = await _userRepo.GetByName(request.Username);
+            if (user == null)
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "User not found."
+                };
+
+            var followerIds = await _followRepo.GetFollowerIdsOfUserAsync(user.id);
 
             if (followerIds == null || !followerIds.Any())
                 return new ApiResponse
@@ -46,14 +54,14 @@ namespace Application.Features.Follow.Queries
 
             foreach (var id in followerIds)
             {
-                if (userDict.TryGetValue(id, out var user))
+                if (userDict.TryGetValue(id, out var followerUser))
                 {
                     response.Add(new UserFollowResponse
                     {
-                        Id = user.id,
-                        UserName = user.username,
-                        DisplayName = user.displayname,
-                        Avatar = user.avata_url
+                        Id = followerUser.id,
+                        UserName = followerUser.username,
+                        DisplayName = followerUser.displayname,
+                        Avatar = followerUser.avata_url
                     });
                 }
             }

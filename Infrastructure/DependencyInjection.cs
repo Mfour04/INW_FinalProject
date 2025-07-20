@@ -57,7 +57,8 @@ namespace Infrastructure
             services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
             services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
-            services.AddScoped<IPurchaserRepository, PurchaserRepository>();
+			services.AddScoped<ITransactionLogRepository, TransactionLogRepository>();
+			services.AddScoped<IPurchaserRepository, PurchaserRepository>();
             services.AddScoped<IUserFollowRepository, UserFollowRepository>();
 
             services.AddScoped<ICommentRepository, CommentRepository>();

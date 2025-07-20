@@ -13,51 +13,25 @@ namespace WebApi.Controllers
     {
         private readonly IMediator _mediator;
         private string currentUserId =>
-                   User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                   ?? throw new UnauthorizedAccessException("User ID not found in token");
-
-        public UserFollowController(IMediator mediator)
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? throw new UnauthorizedAccessException("User ID not found in token");
+            
+		public UserFollowController(IMediator mediator)
         {
             _mediator = mediator;
         }
 
-        [HttpGet("{userId}/followers")]
-        public async Task<IActionResult> GetFollowers(string userId)
+        [HttpGet("{username}/followers")]
+        public async Task<IActionResult> GetFollowers(string username)
         {
-            var result = await _mediator.Send(new GetFollowers { UserId = userId });
+            var result = await _mediator.Send(new GetFollowers { Username = username });
             return Ok(result);
         }
 
-        [HttpGet("{userId}/following")]
-        public async Task<IActionResult> GetFollowing(string userId)
+        [HttpGet("{username}/following")]
+        public async Task<IActionResult> GetFollowing(string username)
         {
-            var result = await _mediator.Send(new GetFollowing { UserId = userId });
-            return Ok(result);
-        }
-
-        [HttpGet("me/followers")]
-        [Authorize]
-        public async Task<IActionResult> GetMyFollowers()
-        {
-            GetFollowers query = new()
-            {
-                UserId = currentUserId,
-            };
-
-            var result = await _mediator.Send(query);
-            return Ok(result);
-        }
-
-        [HttpGet("me/following")]
-        [Authorize]
-        public async Task<IActionResult> GetMyFollowing()
-        {
-            GetFollowing query = new()
-            {
-                UserId = currentUserId,
-            };
-
-            var result = await _mediator.Send(query);
+            var result = await _mediator.Send(new GetFollowing { Username = username });
             return Ok(result);
         }
 
@@ -89,7 +63,7 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("me/followers/{followerId}")]
+        [HttpDelete("followers/{followerId}")]
         [Authorize]
         public async Task<IActionResult> RemoveFollower(string followerId)
         {

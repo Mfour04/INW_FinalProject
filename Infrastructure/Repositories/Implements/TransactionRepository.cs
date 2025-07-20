@@ -14,8 +14,8 @@ namespace Infrastructure.Repositories.Implements
 
         public TransactionRepository(MongoDBHelper mongoDBHelper)
         {
-            mongoDBHelper.CreateCollectionIfNotExistsAsync("transactions").Wait();
-            _collection = mongoDBHelper.GetCollection<TransactionEntity>("transactions");
+            mongoDBHelper.CreateCollectionIfNotExistsAsync("transaction").Wait();
+            _collection = mongoDBHelper.GetCollection<TransactionEntity>("transaction");
         }
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace Infrastructure.Repositories.Implements
             try
             {
                 var builder = Builders<TransactionEntity>.Filter;
-                var filter = builder.Eq(t => t.user_id, userId);
+                var filter = builder.Eq(t => t.requester_id, userId);
 
                 if (type.HasValue)
                 {

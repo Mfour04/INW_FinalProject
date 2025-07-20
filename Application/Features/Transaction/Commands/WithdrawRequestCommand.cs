@@ -45,7 +45,7 @@ namespace Application.Features.Transaction.Commands
             TransactionEntity transaction = new()
             {
                 id = SystemHelper.RandomId(),
-                user_id = request.UserId,
+                requester_id = request.UserId,
                 amount = request.CoinAmount,
                 type = PaymentType.WithdrawCoin,
                 payment_method = request.PaymentMethod,
