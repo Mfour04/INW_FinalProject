@@ -15,7 +15,7 @@ namespace Shared.Contracts.Response.User
         public string Email { get; set; }
         public string AvatarUrl { get; set; }
         public string Bio { get; set; }
-        public Role Role { get; set; } 
+        public string Role { get; set; } 
         public bool isVerified { get; set; }
         public bool isBanned { get; set; }
         public int Coin { get; set; }

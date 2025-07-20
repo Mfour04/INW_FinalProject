@@ -9,6 +9,6 @@ namespace Infrastructure.Repositories.Interfaces
 {
     public interface ICloudDinaryService
     {
-        Task<string> UploadImagesAsync(IFormFile file);
+        Task<string?> UploadImagesAsync(IFormFile? file);
     }
 }

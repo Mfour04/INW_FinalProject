@@ -27,11 +27,11 @@ namespace Infrastructure.Repositories.Implements
 
         }
 
-        public async Task<string> UploadImagesAsync(IFormFile file)
+        public async Task<string?> UploadImagesAsync(IFormFile? file)
         {
             if (file == null || file.Length == 0)
             {
-                throw new ArgumentException("File is empty");
+                return null;
             }
 
             var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
