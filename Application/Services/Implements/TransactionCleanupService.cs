@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shared.Helpers;
 
-namespace Application.Services
+namespace Application.Services.Implements
 {
     public class TransactionCleanupService : BackgroundService
     {

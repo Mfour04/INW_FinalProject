@@ -1,14 +1,9 @@
-﻿using Domain.Enums;
-using Infrastructure.Repositories.Interfaces;
+﻿using Application.Services.Interfaces;
+using Domain.Enums;
 using Infrastructure.SignalRHub;
 using Microsoft.AspNetCore.SignalR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Infrastructure.Repositories.Implements
+namespace Application.Services.Implements
 {
     public class NotificationService : INotificationService
     {

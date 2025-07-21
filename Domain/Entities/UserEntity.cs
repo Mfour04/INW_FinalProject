@@ -12,7 +12,7 @@ namespace Domain.Entities
         public string password { get; set; }
         public string avata_url { get; set; }
         public string bio { get; set; }
-        public Role role { get; set; } // reader, author, admin
+        public Role role { get; set; } 
         public bool is_verified { get; set; }
         public bool is_banned { get; set; }
         public int coin { get; set; }

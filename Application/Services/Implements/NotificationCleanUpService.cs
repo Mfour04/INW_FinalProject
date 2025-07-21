@@ -2,8 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-
-namespace Infrastructure.Repositories.Implements
+namespace Application.Services.Implements
 {
     public class NotificationCleanUpService : BackgroundService
     {

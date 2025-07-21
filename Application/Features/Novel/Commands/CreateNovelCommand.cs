@@ -8,6 +8,7 @@ using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Tag;
 using Shared.Helpers;
 using Microsoft.AspNetCore.Http;
+using Application.Services.Interfaces;
 
 namespace Application.Features.Novel.Commands
 {

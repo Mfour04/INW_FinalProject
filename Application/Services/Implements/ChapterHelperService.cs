@@ -1,6 +1,7 @@
-﻿using Infrastructure.Repositories.Interfaces;
+﻿using Application.Services.Interfaces;
+using Infrastructure.Repositories.Interfaces;
 
-namespace Infrastructure.Repositories.Implements
+namespace Application.Services.Implements
 {
     public class ChapterHelperService: IChapterHelperService
     {

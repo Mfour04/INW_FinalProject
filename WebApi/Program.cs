@@ -1,6 +1,6 @@
 using Application;
 using Application.Mapping;
-using Application.Services;
+using Application.Services.Implements;
 using Infrastructure;
 using Infrastructure.InwContext;
 using Infrastructure.SignalRHub;
@@ -20,7 +20,7 @@ builder.Services.Configure<MongoSetting>(
     builder.Configuration.GetSection("MongoDB"));
 
 builder.Services.AddInfrastructure(builder.Configuration);
-//builder.Services.AddApplication();
+builder.Services.AddApplication(builder.Configuration);
 
 builder.Services.AddMediatR(config =>
 {

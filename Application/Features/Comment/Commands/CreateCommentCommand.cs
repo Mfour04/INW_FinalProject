@@ -4,7 +4,6 @@ using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
-using Microsoft.Extensions.Configuration.UserSecrets;
 using Shared.Contracts.Response;
 using Shared.Helpers;
 

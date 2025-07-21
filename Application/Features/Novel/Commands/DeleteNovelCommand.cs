@@ -1,12 +1,7 @@
-﻿using AutoMapper;
+﻿using Application.Services.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Novel.Commands
 {

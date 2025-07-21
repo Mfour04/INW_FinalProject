@@ -2,8 +2,8 @@ namespace Domain.Enums
 {
     public enum Role
     {
-        Reader,
-        Author,
-        Admin
+        User,
+        Admin,
+        System
     }
 }
