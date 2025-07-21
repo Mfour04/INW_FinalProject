@@ -1,10 +1,7 @@
-﻿using Domain.Entities;
-using Infrastructure.Common;
+﻿using Application.Services.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using Shared.Helpers;
-using System;
 
 namespace Application.Features.Novel.Commands
 {

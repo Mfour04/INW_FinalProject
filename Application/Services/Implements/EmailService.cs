@@ -1,10 +1,10 @@
-﻿using Domain.Entities.System;
-using Infrastructure.Repositories.Interfaces;
+﻿using Application.Services.Interfaces;
+using Domain.Entities.System;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace Infrastructure.Repositories.Implements
+namespace Application.Services.Implements
 {
     public class EmailService: IEmailService
     {

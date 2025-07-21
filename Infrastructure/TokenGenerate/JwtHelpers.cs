@@ -1,14 +1,9 @@
-﻿using Domain.Entities;
-using Infrastructure.Common;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
+using Shared.Helpers;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Shared.SystemHelpers.TokenGenerate
 {
@@ -16,11 +11,9 @@ namespace Shared.SystemHelpers.TokenGenerate
     {
         private string securekey = "This is a secure key with more than 32 characters!";
         private readonly JwtSettings _jwtSettings;
-        private readonly IDateTimeProvider _datetimeProvider;
 
-        public JwtHelpers(IDateTimeProvider dateTimeProvider, IOptions<JwtSettings> jwtOptions)
+        public JwtHelpers(IOptions<JwtSettings> jwtOptions)
         {
-            _datetimeProvider = dateTimeProvider;
             _jwtSettings = jwtOptions.Value;
         }
 
@@ -40,7 +33,7 @@ namespace Shared.SystemHelpers.TokenGenerate
                 _jwtSettings.Issuer,
                 _jwtSettings.Audience,
                 claims: claims,
-                expires: _datetimeProvider.UtcNow.AddMinutes(_jwtSettings.TokenExpirationInMinutes),
+                expires: TimeHelper.NowVN.AddMinutes(_jwtSettings.TokenExpirationInMinutes),
                 signingCredentials: creds
                 );
 
@@ -71,7 +64,7 @@ namespace Shared.SystemHelpers.TokenGenerate
             var refreshToken = new JwtSecurityToken(
                 _jwtSettings.Issuer,
                 _jwtSettings.Audience,
-                expires: _datetimeProvider.UtcNow.AddMinutes(
+                expires: TimeHelper.NowVN.AddMinutes(
                     _jwtSettings.RefreshTokenExpirationInMinutes
                 ),
                 claims: claims,
@@ -131,7 +124,7 @@ namespace Shared.SystemHelpers.TokenGenerate
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
                 claims: claims,
-                expires: _datetimeProvider.UtcNow.AddMinutes(expirationMinutes),
+                expires: TimeHelper.NowVN.AddMinutes(expirationMinutes),
                 signingCredentials: creds
             );
             return new JwtSecurityTokenHandler().WriteToken(token);

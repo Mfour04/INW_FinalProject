@@ -1,13 +1,11 @@
-﻿using CloudinaryDotNet;
+﻿using Application.Services.Interfaces;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Domain.Entities.System;
-using Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
-
-namespace Infrastructure.Repositories.Implements
+namespace Application.Services.Implements
 {
     public class CloudDinaryService : ICloudDinaryService
     {

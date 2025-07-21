@@ -87,7 +87,7 @@ namespace Application.Features.Chapter.Commands
             TransactionEntity transaction = new()
             {
                 id = SystemHelper.RandomId(),
-                user_id = request.UserId,
+                requester_id = request.UserId,
                 novel_id = novel.id,
                 chapter_id = request.ChapterId,
                 type = PaymentType.BuyChapter,

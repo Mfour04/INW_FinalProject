@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Application.Services.Interfaces;
+using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;

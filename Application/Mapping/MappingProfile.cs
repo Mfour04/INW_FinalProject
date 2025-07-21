@@ -14,7 +14,6 @@ using Shared.Contracts.Response.Report;
 using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.Transaction;
 using Shared.Contracts.Response.User;
-using Shared.Contracts.Response.UserFollow;
 
 namespace Application.Mapping
 {
@@ -284,20 +283,8 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Followers, opt => opt.MapFrom(src => src.novel.followers))
                 .ForMember(dest => dest.TotalChapters, opt => opt.MapFrom(src => src.novel.total_chapters))
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
-            //Transaction
-            CreateMap<TransactionEntity, TransactionResponse>()
-                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
-                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
-                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id))
-                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.payment_method))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.updated_at))
-                .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => src.completed_at));
-            CreateMap<TransactionEntity, UserTransactionResponse>()
-                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
-                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id))
-                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.payment_method))
-                .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => src.completed_at));
+
+
             //Notification
             CreateMap<NotificationEntity, NotificationReponse>()
                 .ForMember(dest => dest.NotificationId, opt => opt.MapFrom(src => src.id))

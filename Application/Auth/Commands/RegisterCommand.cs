@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.Services.Interfaces;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -45,7 +46,7 @@ namespace Application.Auth.Commands
                 displayname = request.UserName,
                 email = request.Email,
                 password = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                role = Role.Reader,
+                role = Role.User,
                 is_verified = false,
                 created_at = DateTime.Now.Ticks,
                 updated_at = DateTime.Now.Ticks

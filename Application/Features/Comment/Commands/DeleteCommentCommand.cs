@@ -7,6 +7,8 @@ namespace Application.Features.Comment.Commands
     public class DeleteCommentCommand : IRequest<ApiResponse>
     {
         public string CommentId { get; set; }
+        public string? UserId { get; set; }
+        public bool IsAdmin { get; set; }
     }
 
     public class DeleteCommentCommandHandler : IRequestHandler<DeleteCommentCommand, ApiResponse>

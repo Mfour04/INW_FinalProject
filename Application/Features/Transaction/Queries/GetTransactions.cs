@@ -20,19 +20,23 @@ namespace Application.Features.Transaction.Queries
     public class GetTransactionsHandler : IRequestHandler<GetTransactions, ApiResponse>
     {
         private readonly ITransactionRepository _transactionRepo;
+        private readonly ITransactionLogRepository _logRepo;
         private readonly IMapper _mapper;
 
-        public GetTransactionsHandler(ITransactionRepository transactionRepo, IMapper mapper)
+        public GetTransactionsHandler(ITransactionRepository transactionRepo, ITransactionLogRepository logRepo, IMapper mapper)
         {
             _transactionRepo = transactionRepo;
+            _logRepo = logRepo;
             _mapper = mapper;
         }
 
         public async Task<ApiResponse> Handle(GetTransactions request, CancellationToken cancellationToken)
         {
-            FindCreterias findCreterias = new();
-            findCreterias.Limit = request.Limit;
-            findCreterias.Page = request.Page;
+            FindCreterias findCreterias = new()
+            {
+                Limit = request.Limit,
+                Page = request.Page
+            };
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
@@ -40,12 +44,69 @@ namespace Application.Features.Transaction.Queries
             if (transactions == null || transactions.Count == 0)
                 return new ApiResponse { Success = false, Message = "No transaction found." };
 
-            var response = _mapper.Map<List<TransactionResponse>>(transactions);
+            var responseList = new List<object>();
+            var withdrawIds = new List<string>();
+
+            foreach (var tx in transactions)
+            {
+                object mapped;
+
+                switch (tx.type)
+                {
+                    case PaymentType.TopUp:
+                        mapped = _mapper.Map<AdminTopUpTransactionResponse>(tx);
+                        break;
+
+                    case PaymentType.WithdrawCoin:
+                        var withdraw = _mapper.Map<AdminWithdrawTransactionResponse>(tx);
+                        withdrawIds.Add(tx.id);
+                        mapped = withdraw;
+                        break;
+
+                    case PaymentType.BuyNovel:
+                        mapped = _mapper.Map<AdminBuyNovelTransactionResponse>(tx);
+                        break;
+
+                    case PaymentType.BuyChapter:
+                        mapped = _mapper.Map<AdminBuyChapterTransactionResponse>(tx);
+                        break;
+
+                    default:
+                        continue;
+                }
+
+                responseList.Add(mapped);
+            }
+
+            if (withdrawIds.Count > 0)
+            {
+                var logs = await _logRepo.GetLogsByTransactionIdsAsync(withdrawIds);
+                var logDict = logs.ToDictionary(
+                    x => x.transaction_id,
+                    x => new
+                    {
+                        x.message,
+                        x.action_by_id,
+                        x.action_type
+                    });
+
+                foreach (var item in responseList)
+                {
+                    if (item is AdminWithdrawTransactionResponse withdraw &&
+                        logDict.TryGetValue(withdraw.Id, out var log))
+                    {
+                        withdraw.Message = log.message;
+                        withdraw.ActionById = log.action_by_id;
+                        withdraw.ActionType = log.action_type;
+                    }
+                }
+            }
+
             return new ApiResponse
             {
                 Success = true,
-                Message = "Retrieved all transaction successfully.",
-                Data = response
+                Message = "Retrieved admin transaction list successfully.",
+                Data = responseList
             };
         }
     }

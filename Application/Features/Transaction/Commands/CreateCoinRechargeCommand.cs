@@ -52,7 +52,7 @@ namespace Application.Features.Transaction.Commands
             var transaction = new TransactionEntity
             {
                 id = orderCode.ToString(),
-                user_id = request.UserId,
+                requester_id = request.UserId,
                 type = PaymentType.TopUp,
                 amount = request.CoinAmount,
                 payment_method = "PayOS",

@@ -1,3 +1,4 @@
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -9,20 +10,25 @@ namespace Application.Features.Transaction.Commands
     public class ProcessWithdrawRequestCommand : IRequest<ApiResponse>
     {
         public string TransactionId { get; set; }
+        public string? ApproverId { get; set; }
         public bool IsApproved { get; set; }
+        public string? Message { get; set; }
     }
 
     public class ProcessWithdrawRequestCommandCommandHandler : IRequestHandler<ProcessWithdrawRequestCommand, ApiResponse>
     {
         private readonly ITransactionRepository _transactionRepository;
+        private readonly ITransactionLogRepository _logRepository;
         private readonly IUserRepository _userRepository;
 
         public ProcessWithdrawRequestCommandCommandHandler(
             ITransactionRepository transactionRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            ITransactionLogRepository logRepository)
         {
             _transactionRepository = transactionRepository;
             _userRepository = userRepository;
+            _logRepository = logRepository;
         }
 
         public async Task<ApiResponse> Handle(ProcessWithdrawRequestCommand request, CancellationToken cancellationToken)
@@ -38,7 +44,10 @@ namespace Application.Features.Transaction.Commands
             if (transaction.status != PaymentStatus.Pending)
                 return Fail("Transaction already processed.");
 
-            var user = await _userRepository.GetById(transaction.user_id);
+            var user = await _userRepository.GetById(transaction.requester_id);
+
+            if (!request.IsApproved && string.IsNullOrWhiteSpace(request.Message))
+                return Fail("Rejection reason is required.");
 
             if (request.IsApproved)
             {
@@ -51,13 +60,6 @@ namespace Application.Features.Transaction.Commands
 
                 await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
                 await _transactionRepository.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);
-
-                return new ApiResponse
-                {
-                    Success = true,
-                    Message = "Withdraw approved and coin deducted successfully.",
-                    Data = transaction
-                };
             }
             else
             {
@@ -69,14 +71,28 @@ namespace Application.Features.Transaction.Commands
 
                 await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
                 await _transactionRepository.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);
-
-                return new ApiResponse
-                {
-                    Success = true,
-                    Message = "Withdraw denied and coin unblocked successfully.",
-                    Data = transaction
-                };
             }
+
+            TransactionLogEntity log = new()
+            {
+                id = SystemHelper.RandomId(),
+                transaction_id = transaction.id,
+                action_by_id = request.ApproverId,
+                action_type = request.IsApproved ? "approve" : "reject",
+                message = request.IsApproved ? "Approved by admin." : request.Message,
+                created_at = TimeHelper.NowTicks
+            };
+
+            await _logRepository.AddAsync(log);
+
+            return new ApiResponse
+            {
+                Success = true,
+                Message = request.IsApproved
+                ? "Withdraw approved and coin deducted successfully."
+                : "Withdraw denied and coin unblocked successfully.",
+                Data = transaction
+            };
         }
 
         private ApiResponse Fail(string message) => new()

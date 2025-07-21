@@ -35,7 +35,7 @@ namespace Application.Features.Transaction.Commands
 
             if (transaction.type == PaymentType.TopUp)
             {
-                await _userRepo.IncreaseCoinAsync(transaction.user_id, transaction.amount);
+                await _userRepo.IncreaseCoinAsync(transaction.requester_id, transaction.amount);
             }
         }
     }

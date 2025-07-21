@@ -1,4 +1,5 @@
-﻿using Infrastructure.Repositories.Interfaces;
+﻿using Application.Services.Interfaces;
+using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 

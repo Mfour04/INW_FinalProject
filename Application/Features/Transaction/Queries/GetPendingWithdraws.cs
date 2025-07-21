@@ -28,9 +28,11 @@ namespace Application.Features.Transaction.Queries
 
         public async Task<ApiResponse> Handle(GetPendingWithdraws request, CancellationToken cancellationToken)
         {
-            FindCreterias findCreterias = new();
-            findCreterias.Limit = request.Limit;
-            findCreterias.Page = request.Page;
+            FindCreterias findCreterias = new()
+            {
+                Limit = request.Limit,
+                Page = request.Page
+            };
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
@@ -38,7 +40,10 @@ namespace Application.Features.Transaction.Queries
             if (transactions == null || transactions.Count == 0)
                 return new ApiResponse { Success = false, Message = "No request found." };
 
-            var response = _mapper.Map<List<TransactionResponse>>(transactions);
+            var response = transactions
+                .Select(tx => _mapper.Map<AdminWithdrawTransactionResponse>(tx))
+                .ToList();
+
             return new ApiResponse
             {
                 Success = true,

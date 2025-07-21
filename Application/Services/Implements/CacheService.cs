@@ -1,7 +1,7 @@
-﻿using Infrastructure.Repositories.Interfaces;
+﻿using Application.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Infrastructure.Repositories.Implements
+namespace Application.Services.Implements
 {
     public class CacheService : ICacheService
     {

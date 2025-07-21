@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.Services.Interfaces;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
