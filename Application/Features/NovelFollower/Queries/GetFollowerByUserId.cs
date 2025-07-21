@@ -27,10 +27,20 @@ namespace Application.Features.NovelFollower.Queries
         public async Task<ApiResponse> Handle(GetFollowerByUserId request, CancellationToken cancellationToken)
         {
             var follows = await _followerRepository.GetFollowedNovelsByUserIdAsync(request.UserId);
+            if (follows == null || follows.Count == 0)
+                return new ApiResponse { Success = false, Message = "No followed novels found for this user" };
+
+            // Kiểm tra xem người dùng có tồn tại không
+            var user = await _userRepository.GetById(request.UserId);
+            if (user == null)
+                return new ApiResponse { Success = false, Message = "User not found" };
 
             var result = new GetUserFollowedNovelsResponse
             {
                 UserId = request.UserId,
+                UserName = user.username,
+                DisplayName = user.displayname,
+                AvatarUrl = user.avata_url,
                 TotalFollowing = follows.Count,
                 FollowedNovels = new()
             };
