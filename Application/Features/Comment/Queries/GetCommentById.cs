@@ -8,23 +8,25 @@ namespace Application.Features.Comment.Queries
 {
     public class GetCommentById : IRequest<ApiResponse>
     {
-        public string CommentId { get; set; }
+        public string? CommentId { get; set; }
     }
 
     public class GetCommentByIdHandler : IRequestHandler<GetCommentById, ApiResponse>
     {
-        private readonly ICommentRepository _commentRepository;
+        private readonly ICommentRepository _commentRepo;
+        private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
 
-        public GetCommentByIdHandler(ICommentRepository commentRepository, IMapper mapper)
+        public GetCommentByIdHandler(ICommentRepository commentRepo, IUserRepository userRepo, IMapper mapper)
         {
-            _commentRepository = commentRepository;
+            _commentRepo = commentRepo;
+            _userRepo = userRepo;
             _mapper = mapper;
         }
 
         public async Task<ApiResponse> Handle(GetCommentById request, CancellationToken cancellationToken)
         {
-            var comment = await _commentRepository.GetCommentByIdAsync(request.CommentId);
+            var comment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (comment == null)
             {
                 return new ApiResponse
@@ -33,13 +35,26 @@ namespace Application.Features.Comment.Queries
                     Message = "Comment not found."
                 };
             }
-            var commentResponse = _mapper.Map<CommentResponse>(comment);
+
+            var response = _mapper.Map<CommentResponse>(comment);
+
+            var replyCountMap = await _commentRepo.CountRepliesPerCommentAsync(new List<string> { comment.id });
+            response.ReplyCount = replyCountMap.TryGetValue(comment.id, out var count) ? count : 0;
+
+            var user = await _userRepo.GetById(comment.user_id);
+            response.Author = new BaseCommentResponse.UserInfo
+            {
+                Id = user.id,
+                UserName = user.username,
+                DisplayName = user.displayname,
+                Avatar = user.avata_url
+            };
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Comment retrieved successfully.",
-                Data = commentResponse
+                Data = response
             };
         }
     }

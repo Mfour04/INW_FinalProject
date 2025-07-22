@@ -1,4 +1,5 @@
-﻿using Infrastructure.Repositories.Interfaces;
+﻿using Application.Services.Interfaces;
+using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 
@@ -7,54 +8,56 @@ namespace Application.Features.Comment.Commands
     public class DeleteCommentCommand : IRequest<ApiResponse>
     {
         public string CommentId { get; set; }
-        public string? UserId { get; set; }
-        public bool IsAdmin { get; set; }
     }
 
     public class DeleteCommentCommandHandler : IRequestHandler<DeleteCommentCommand, ApiResponse>
     {
-        private readonly ICommentRepository _commentRepository;
-        private readonly INovelRepository _novelRepository;
-        private readonly IChapterRepository _chapterRepository;
+        private readonly ICommentRepository _commentRepo;
+        private readonly INovelRepository _novelRepo;
+        private readonly IChapterRepository _chapterRepo;
+        private readonly ICurrentUserService _currentUser;
 
         public DeleteCommentCommandHandler(
-            ICommentRepository commentRepository,
-            INovelRepository novelRepository,
-            IChapterRepository chapterRepository)
+            ICommentRepository commentRepo,
+            INovelRepository novelRepo,
+            IChapterRepository chapterRepo,
+            ICurrentUserService currentUser)
         {
-            _commentRepository = commentRepository;
-            _novelRepository = novelRepository;
-            _chapterRepository = chapterRepository;
+            _commentRepo = commentRepo;
+            _novelRepo = novelRepo;
+            _chapterRepo = chapterRepo;
+            _currentUser = currentUser;
         }
 
         public async Task<ApiResponse> Handle(DeleteCommentCommand request, CancellationToken cancellationToken)
         {
-            var existComment = await _commentRepository.GetCommentByIdAsync(request.CommentId);
+            var existComment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (existComment == null)
-            {
                 return Fail("Comment not found.");
-            }
 
-            var deleted = await _commentRepository.DeleteCommentAsync(request.CommentId);
+            if (!_currentUser.IsAdmin() && _currentUser.UserId != existComment.user_id)
+                return Fail("You are not authorized to delete this comment.");
+
+            var deleted = await _commentRepo.DeleteAsync(request.CommentId);
             if (!deleted)
             {
                 return Fail("Failed to delete comment.");
             }
 
+            if (string.IsNullOrWhiteSpace(existComment.parent_comment_id))
+            {
+                await _commentRepo.DeleteRepliesByParentIdAsync(existComment.id);
+            }
+
             if (!string.IsNullOrWhiteSpace(existComment.chapter_id))
-            {
-                await _chapterRepository.DecrementCommentsAsync(existComment.chapter_id);
-            }
+                await _chapterRepo.DecrementCommentsAsync(existComment.chapter_id);
             else if (!string.IsNullOrWhiteSpace(existComment.novel_id))
-            {
-                await _novelRepository.DecrementCommentsAsync(existComment.novel_id);
-            }
+                await _novelRepo.DecrementCommentsAsync(existComment.novel_id);
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment Deleted Successfully",
-                Data = deleted
+                Message = "Comment Deleted Successfully"
             };
         }
 

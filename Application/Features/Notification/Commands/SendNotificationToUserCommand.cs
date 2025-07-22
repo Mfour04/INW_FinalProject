@@ -84,7 +84,7 @@ namespace Application.Features.Notification.Commands
 
                 if (!string.IsNullOrWhiteSpace(request.CommentId))
                 {
-                    comment = await _commentRepository.GetCommentByIdAsync(request.CommentId);
+                    comment = await _commentRepository.GetByIdAsync(request.CommentId);
                     if (comment == null)
                         return new ApiResponse
                         {
@@ -94,7 +94,7 @@ namespace Application.Features.Notification.Commands
                 }
                 if (!string.IsNullOrWhiteSpace(request.ParentCommentId))
                 {
-                    replycomment = await _commentRepository.GetCommentByIdAsync(request.ParentCommentId);
+                    replycomment = await _commentRepository.GetByIdAsync(request.ParentCommentId);
                     if (replycomment == null)
                         return new ApiResponse
                         {

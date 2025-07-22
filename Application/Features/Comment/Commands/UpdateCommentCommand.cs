@@ -3,12 +3,15 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Comment;
+using Shared.Helpers;
 
 namespace Application.Features.Comment.Commands
 {
     public class UpdateCommentCommand : IRequest<ApiResponse>
     {
-        public UpdateCommentResponse UpdateComment { get; set; }
+        public string? CommentId { get; set; }
+        public string? UserId { get; set; }
+        public string Content { get; set; }
     }
 
     public class UpdateCommentHandler : IRequestHandler<UpdateCommentCommand, ApiResponse>
@@ -23,12 +26,18 @@ namespace Application.Features.Comment.Commands
         }
         public async Task<ApiResponse> Handle(UpdateCommentCommand request, CancellationToken cancellationToken)
         {
-            var input = request.UpdateComment;
-            var comment = await _commentRepository.GetCommentByIdAsync(input.CommentId);
+            var comment = await _commentRepository.GetByIdAsync(request.CommentId!);
             if (comment == null)
-                return new ApiResponse { Success = false, Message = "Comment not found" };
-            comment.content = input.Content ?? comment.content;
-            await _commentRepository.UpdateCommentAsync(comment);
+                return new ApiResponse { Success = false, Message = "Comment not found." };
+
+            if (comment.user_id != request.UserId)
+                return new ApiResponse { Success = false, Message = "You are not authorized to update this comment." };
+
+            comment.content = request.Content;
+            comment.updated_at = TimeHelper.NowTicks;
+
+            await _commentRepository.UpdateAsync(comment);
+
             var response = _mapper.Map<UpdateCommentResponse>(comment);
 
             return new ApiResponse

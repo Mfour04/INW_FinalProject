@@ -1,10 +1,12 @@
-﻿using Application.Features.Comment.Validators;
-using Application.Features.Notification.Commands;
+﻿using Application.Features.Notification.Commands;
+using Application.Services.Interfaces;
+using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Comment;
 using Shared.Helpers;
 
 namespace Application.Features.Comment.Commands
@@ -12,7 +14,7 @@ namespace Application.Features.Comment.Commands
     public class CreateCommentCommand : IRequest<ApiResponse>
     {
         public string? UserId { get; set; }
-        public string NovelId { get; set; }
+        public string? NovelId { get; set; }
         public string? ChapterId { get; set; }
         public string Content { get; set; }
         public string? ParentCommentId { get; set; }
@@ -20,69 +22,95 @@ namespace Application.Features.Comment.Commands
 
     public class CreateCommentCommandHandler : IRequestHandler<CreateCommentCommand, ApiResponse>
     {
-        private readonly ICommentRepository _commentRepository;
-        private readonly IChapterRepository _chapterRepository;
-        private readonly INovelRepository _novelRepository;
+        private readonly ICommentRepository _commentRepo;
+        private readonly IChapterRepository _chapterRepo;
+        private readonly INovelRepository _novelRepo;
+        private readonly IUserRepository _userRepo;
+        private readonly IMapper _mapper;
         private readonly IMediator _mediator;
-        private readonly CommentSpamGuard _spamGuard;
-        
-         public CreateCommentCommandHandler(
-            ICommentRepository commentRepository,
-            IChapterRepository chapterRepository,
-            INovelRepository novelRepository,
-            IMediator mediator)
+        private readonly ICommentSpamGuard _spamGuard;
+
+        public CreateCommentCommandHandler(
+            ICommentRepository commentRepo,
+            IChapterRepository chapterRepo,
+            INovelRepository novelRepo,
+            IUserRepository userRepo,
+            IMapper mapper,
+            IMediator mediator,
+            ICommentSpamGuard spamGuard)
         {
-            _commentRepository = commentRepository;
-            _chapterRepository = chapterRepository;
-            _novelRepository = novelRepository;
+            _commentRepo = commentRepo;
+            _chapterRepo = chapterRepo;
+            _novelRepo = novelRepo;
+            _userRepo = userRepo;
+            _mapper = mapper;
             _mediator = mediator;
-            _spamGuard = new CommentSpamGuard(commentRepository);
+            _spamGuard = spamGuard;
         }
-        
+
         public async Task<ApiResponse> Handle(CreateCommentCommand request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(request.NovelId))
-                return Fail("NovelId is required.");
-
             if (string.IsNullOrWhiteSpace(request.Content))
                 return Fail("Content is required.");
 
-            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
-            if (novel == null)
-                return Fail("Novel not found.");
+            bool isReply = !string.IsNullOrWhiteSpace(request.ParentCommentId);
 
-            if (!string.IsNullOrWhiteSpace(request.ChapterId))
+            // Nếu là reply comment
+            if (isReply)
             {
-                var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
-                if (chapter == null)
-                    return Fail("Chapter not found.");
+                var parentComment = await _commentRepo.GetByIdAsync(request.ParentCommentId);
+                if (parentComment == null)
+                    return Fail("Parent comment not found.");
 
-                if (chapter.novel_id != novel.id)
-                    return Fail("Chapter does not belong to the specified novel.");
+                request.NovelId = parentComment.novel_id;
+                request.ChapterId = parentComment.chapter_id;
+            }
+            else
+            {
+                // Nếu là comment gốc yêu cầu NovelId hoặc ChapterId
+                if (string.IsNullOrWhiteSpace(request.NovelId) && string.IsNullOrWhiteSpace(request.ChapterId))
+                    return Fail("Either NovelId or ChapterId must be provided.");
+
+                if (!string.IsNullOrWhiteSpace(request.ChapterId))
+                {
+                    var chapter = await _chapterRepo.GetByIdAsync(request.ChapterId);
+                    if (chapter == null)
+                        return Fail("Chapter not found.");
+
+                    var foundNovel = await _novelRepo.GetByNovelIdAsync(chapter.novel_id);
+                    if (foundNovel == null)
+                        return Fail("Novel not found.");
+
+                    request.NovelId = foundNovel.id;
+                }
+
+                var novel = await _novelRepo.GetByNovelIdAsync(request.NovelId);
+                if (novel == null)
+                    return Fail("Novel not found.");
             }
 
-            var spamCheck = await _spamGuard.CheckSpamAsync(request.UserId!, request.NovelId, request.ChapterId, request.Content);
-            if (spamCheck != null) return spamCheck;
+            bool isChapter = !string.IsNullOrWhiteSpace(request.ChapterId);
+            bool isNovel = !string.IsNullOrWhiteSpace(request.NovelId);
 
-            var createdComment = new CommentEntity
+            var spamResult = await _spamGuard.CheckSpamAsync(request.UserId!, request.NovelId, request.ChapterId, request.Content);
+            if (spamResult != null)
+                return spamResult;
+
+            CommentEntity comment = new()
             {
                 id = SystemHelper.RandomId(),
-                novel_id = novel.id,
+                novel_id = request.NovelId,
                 chapter_id = request.ChapterId,
                 user_id = request.UserId,
                 content = request.Content,
-				content_hash = SystemHelper.ComputeSha256(request.Content.Trim().ToLower()),
-				parent_comment_id = request.ParentCommentId,
+                content_hash = SystemHelper.ComputeSha256(request.Content.Trim().ToLower()),
+                parent_comment_id = request.ParentCommentId,
                 created_at = TimeHelper.NowTicks
             };
 
-            await _commentRepository.CreateCommentAsync(createdComment);
+            await _commentRepo.CreateAsync(comment);
 
-            bool hasParent = !string.IsNullOrWhiteSpace(request.ParentCommentId);
-            bool hasChapter = !string.IsNullOrWhiteSpace(request.ChapterId);
-            bool hasNovel = !string.IsNullOrWhiteSpace(request.NovelId);
-
-            NotificationType notiType = (hasParent, hasChapter, hasNovel) switch
+            NotificationType notiType = (isReply, isChapter, isNovel) switch
             {
                 (false, false, true) => NotificationType.CommentNovelNotification,
                 (false, true, true) => NotificationType.CommentChapterNotification,
@@ -96,33 +124,40 @@ namespace Application.Features.Comment.Commands
                 SenderId = request.UserId,
                 NovelId = request.NovelId,
                 ChapterId = request.ChapterId,
-                CommentId = createdComment.id,
+                CommentId = comment.id,
                 ParentCommentId = request.ParentCommentId,
                 Type = notiType
             });
+
             bool signalRSent = notiResponse.Success;
-            if (!string.IsNullOrWhiteSpace(request.ChapterId))
-            {
-                await _chapterRepository.IncrementCommentsAsync(request.ChapterId);
-            }
+
+            if (isChapter)
+                await _chapterRepo.IncrementCommentsAsync(request.ChapterId);
             else
+                await _novelRepo.IncrementCommentsAsync(request.NovelId);
+
+            var response = _mapper.Map<CreateCommentResponse>(comment);
+            var user = await _userRepo.GetById(request.UserId);
+
+            response.Author = new BaseCommentResponse.UserInfo
             {
-                await _novelRepository.IncrementCommentsAsync(request.NovelId);
-            }
+                Id = user.id,
+                UserName = user.username,
+                DisplayName = user.displayname,
+                Avatar = user.avata_url
+            };
+
+            response.SignalR = new CreateCommentResponse.SignalRResult
+            {
+                Sent = signalRSent,
+                NotificationType = notiType.ToString()
+            };
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Comment created successfully and SignalR sent.",
-                Data = new
-                {
-                    Comment = createdComment,
-                    SignalR = new
-                    {
-                        Sent = signalRSent,
-                        NotificationType = notiType.ToString()
-                    }
-                }
+                Data = response
             };
         }
 

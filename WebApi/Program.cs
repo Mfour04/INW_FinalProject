@@ -20,7 +20,7 @@ builder.Services.Configure<MongoSetting>(
     builder.Configuration.GetSection("MongoDB"));
 
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddApplication(builder.Configuration);
+builder.Services.AddApplication();
 
 builder.Services.AddMediatR(config =>
 {
@@ -43,13 +43,11 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.Configure<PayOSConfig>(builder.Configuration.GetSection("PayOS"));
 builder.Services.AddSingleton<PayOS>(sp =>
 {
-	var config = sp.GetRequiredService<IOptions<PayOSConfig>>().Value;
-	return new PayOS(config.ClientId, config.ApiKey, config.ChecksumKey);
+    var config = sp.GetRequiredService<IOptions<PayOSConfig>>().Value;
+    return new PayOS(config.ClientId, config.ApiKey, config.ChecksumKey);
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHostedService<TransactionCleanupService>();
-builder.Services.AddHostedService<ScheduledChapterReleaseService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

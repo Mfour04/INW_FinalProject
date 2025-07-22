@@ -4,7 +4,6 @@ using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Contracts.Response;
 using System.Security.Claims;
 
 namespace WebApi.Controllers
@@ -50,7 +49,8 @@ namespace WebApi.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            var result = await _mediator.Send(new GetChapterById {
+            var result = await _mediator.Send(new GetChapterById
+            {
                 ChapterId = id,
                 UserId = userId,
                 IpAddress = ipAddress
@@ -71,7 +71,7 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new DeleteChapterCommand { ChapterId = id });
             return Ok(result);
         }
-        
+
         [HttpPost("{id}/buy")]
         public async Task<IActionResult> BuyChapter(string id, [FromBody] BuyChapterCommand command)
         {
@@ -120,6 +120,15 @@ namespace WebApi.Controllers
             if (!result.Success)
                 return BadRequest(result);
 
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/comments")]
+        public async Task<ActionResult> GetComments(string id, [FromQuery] GetChapterComments query)
+        {
+            query.ChapterId = id;
+
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
     }
