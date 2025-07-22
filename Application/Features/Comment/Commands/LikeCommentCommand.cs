@@ -38,7 +38,7 @@ namespace Application.Features.Comment.Commands
                 return Fail("Invalid or unsupported comment type.");
             }
 
-            var targetComment = await _commentRepo.GetCommentByIdAsync(request.CommentId);
+            var targetComment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (targetComment == null)
                 return Fail("Comment does not exist.");
 

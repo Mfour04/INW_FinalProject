@@ -74,7 +74,7 @@ namespace Application.Features.Report.Command
             }
             else if (request.Report.Type == ReportTypeStatus.CommentReport)
             {
-                var comment = await _commentRepository.GetCommentByIdAsync(request.Report.CommentId);
+                var comment = await _commentRepository.GetByIdAsync(request.Report.CommentId);
                 if (comment == null)
                 {
                     return new ApiResponse { Success = false, Message = "Comment not found" };

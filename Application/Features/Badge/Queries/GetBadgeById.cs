@@ -26,7 +26,6 @@ namespace Application.Features.Badge.Queries
         {
 
             var badge = await _badgeRepo.GetByIdAsync(request.Id);
-
             if (badge == null)
             {
                 return new ApiResponse { Success = false, Message = "No forum posts found." };

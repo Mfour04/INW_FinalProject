@@ -1,10 +1,11 @@
+using Application.Services.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using Shared.Contracts.Response;
 using Shared.Helpers;
 
-namespace Application.Features.Comment.Validators
+namespace Application.Services.Implements
 {
-    public class CommentSpamGuard
+    public class CommentSpamGuard : ICommentSpamGuard
     {
         private readonly ICommentRepository _commentRepo;
 
@@ -33,4 +34,5 @@ namespace Application.Features.Comment.Validators
             Message = msg
         };
     }
+
 }

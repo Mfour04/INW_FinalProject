@@ -28,7 +28,7 @@ namespace Application.Features.Comment.Commands
             if (string.IsNullOrWhiteSpace(request.CommentId) || string.IsNullOrWhiteSpace(request.UserId))
                 return Fail("Missing required fields: CommentId or UserId.");
 
-            var comment = await _commentRepo.GetCommentByIdAsync(request.CommentId);
+            var comment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (comment == null)
                 return Fail("Comment does not exist.");
 

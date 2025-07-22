@@ -74,8 +74,8 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new GetNovelById
             {
                 NovelId = id,
-				UserId = userId,
-				Page = page,
+                UserId = userId,
+                Page = page,
                 Limit = limit,
                 SortBy = sortBy,
                 ChapterNumber = chapterNumber
@@ -177,6 +177,15 @@ namespace WebApi.Controllers
             if (!result.Success)
                 return BadRequest(result);
 
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/comments")]
+        public async Task<ActionResult> GetComments(string id, [FromQuery] GetNovelComments query)
+        {
+            query.NovelId = id;
+
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
     }
