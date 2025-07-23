@@ -50,6 +50,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))
+                .ForMember(dest => dest.AllowComment, opt => opt.MapFrom(src => src.allow_comment))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image)) // đây là string ✔️
                 .ForMember(dest => dest.NovelBanner, opt => opt.MapFrom(src => src.novel_banner))
                 .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
@@ -71,6 +72,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
+                .ForMember(dest => dest.AllowComment, opt => opt.MapFrom(src => src.allow_comment))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price))
@@ -87,6 +89,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
+                .ForMember(dest => dest.AllowComment, opt => opt.MapFrom(src => src.allow_comment))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price))
@@ -101,6 +104,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price))
+                .ForMember(dest => dest.AllowComment, opt => opt.MapFrom(src => src.allow_comment))
                 .ForMember(dest => dest.IsDraft, opt => opt.MapFrom(src => src.is_draft))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.TotalChapterViews, opt => opt.MapFrom(src => src.total_chapter_views))
@@ -116,6 +120,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price))
+                .ForMember(dest => dest.AllowComment, opt => opt.MapFrom(src => src.allow_comment))
                 .ForMember(dest => dest.IsDraft, opt => opt.MapFrom(src => src.is_draft))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.TotalChapterViews, opt => opt.MapFrom(src => src.total_chapter_views))
@@ -131,6 +136,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price))
+                .ForMember(dest => dest.AllowComment, opt => opt.MapFrom(src => src.allow_comment))
                 .ForMember(dest => dest.IsDraft, opt => opt.MapFrom(src => src.is_draft))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.TotalChapterViews, opt => opt.MapFrom(src => src.total_chapter_views))
