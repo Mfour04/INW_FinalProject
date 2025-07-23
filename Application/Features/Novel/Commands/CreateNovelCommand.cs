@@ -35,13 +35,19 @@ namespace Application.Features.Novel.Commands
         private readonly IMapper _mapper;
         private readonly ITagRepository _tagRepository;
         private readonly ICloudDinaryService _cloudDinaryService;
-        public CreateNovelHandler(INovelRepository novelRepository, IMapper mapper, IUserRepository userRepository, ITagRepository tagRepository, ICloudDinaryService cloudDinaryService)
+        private readonly IOpenAIService _openAIService;
+        private readonly IOpenAIRepository _openAIRepository;
+        public CreateNovelHandler(INovelRepository novelRepository, IMapper mapper, IUserRepository userRepository
+            , ITagRepository tagRepository, ICloudDinaryService cloudDinaryService, IOpenAIService openAIService
+            , IOpenAIRepository openAIRepository)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
             _userRepository = userRepository;
             _tagRepository = tagRepository;
             _cloudDinaryService = cloudDinaryService;
+            _openAIService = openAIService;
+            _openAIRepository = openAIRepository;
         }
         public async Task<ApiResponse> Handle(CreateNovelCommand request, CancellationToken cancellationToken)
         {
@@ -87,6 +93,10 @@ namespace Application.Features.Novel.Commands
 
             await _novelRepository.CreateNovelAsync(novel);
             var tags = await _tagRepository.GetTagsByIdsAsync(validTagIds);
+            var tagNames = tags.Select(t => t.name).ToList();
+            var vector = await _openAIService.GetEmbeddingAsync(tagNames);
+            await _openAIRepository.SaveNovelEmbeddingAsync(novel.id, vector);
+
             var response = _mapper.Map<CreateNovelResponse>(novel);
             response.AuthorId = novel.author_id;
             response.AuthorName = author.displayname;

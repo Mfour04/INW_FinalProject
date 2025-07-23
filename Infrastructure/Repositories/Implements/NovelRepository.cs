@@ -274,5 +274,18 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<List<NovelEntity>> GetManyByIdsAsync(List<string> ids)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.In(x => x.id, ids);
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }

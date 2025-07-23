@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Application.Services.Interfaces;
+using AutoMapper;
 using Domain.Entities.System;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -25,12 +26,17 @@ namespace Application.Features.Novel.Queries
         private readonly IMapper _mapper;
         private readonly ITagRepository _tagRepository;
         private readonly IUserRepository _userRepository;
-        public GetNovelHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository, IUserRepository userRepository)
+        private readonly IOpenAIService _openAIService;
+        private readonly IOpenAIRepository _openAIRepository;
+        public GetNovelHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository
+            , IUserRepository userRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
             _tagRepository = tagRepository;
             _userRepository = userRepository;
+            _openAIRepository = openAIRepository;
+            _openAIService = openAIService;
         }
 
         public async Task<ApiResponse> Handle(GetNovel request, CancellationToken cancellationToken)
@@ -73,6 +79,24 @@ namespace Application.Features.Novel.Queries
             var allTagIds = novels.SelectMany(n => n.tags).Distinct().ToList();
             var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
 
+            //embedding cho tất cả tag của các novel
+            var novelIds = novels.Select(n => n.id).ToList();
+            var existingEmbeddingIds = await _openAIRepository.GetExistingNovelEmbeddingIdsAsync(novelIds);
+
+            var novelsToEmbed = novels.Where(n => !existingEmbeddingIds.Contains(n.id)).ToList();
+            var newlyEmbeddedIds = novelsToEmbed.Select(n => n.id).ToList();
+
+            if (novelsToEmbed.Any())
+            {
+                var tagNames = novelsToEmbed.Select(n => n.tags)
+                    .Select(tags => string.Join(", ", tags))
+                    .ToList();
+
+                var vectors = await _openAIService.GetEmbeddingAsync(tagNames);
+                await _openAIRepository.SaveListNovelEmbeddingAsync(newlyEmbeddedIds, vectors);
+            }
+
+
             for (int i = 0; i < novels.Count; i++)
             {
                 var author = authors.FirstOrDefault(a => a.id == novels[i].author_id);
@@ -101,7 +125,14 @@ namespace Application.Features.Novel.Queries
                 {
                     Novels = novelResponse,
                     TotalNovels = totalCount,
-                    TotalPages = totalPages
+                    TotalPages = totalPages,
+                    EmbeddingStats = new
+                    {
+                        TotalRequested = novelIds.Count,
+                        AlreadyExist = existingEmbeddingIds.Count,
+                        NewlyEmbedded = newlyEmbeddedIds.Count,
+                        NewlyEmbeddedIds = newlyEmbeddedIds
+                    }
                 }
             };
         }
