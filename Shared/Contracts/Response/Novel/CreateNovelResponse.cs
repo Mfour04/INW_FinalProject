@@ -19,6 +19,7 @@ namespace Shared.Contracts.Response.Novel
         [BsonRepresentation(BsonType.String)]
         public NovelStatus Status { get; set; }
         public bool IsPublic { get; set; }
+        public bool AllowComment { get; set; }
         public bool IsPaid { get; set; }
         public bool IsLock { get; set; }
         public int Price { get; set; }

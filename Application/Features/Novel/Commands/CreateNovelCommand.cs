@@ -25,6 +25,7 @@ namespace Application.Features.Novel.Commands
         public bool? IsPublic { get; set; }
         public bool? IsPaid { get; set; }
         public bool? IsLock { get; set; }
+        public bool? AllowComment { get; set; }
         public int? Price { get; set; }
     }
 
@@ -82,6 +83,7 @@ namespace Application.Features.Novel.Commands
                 status = request.Status,
                 is_lock = false,
                 is_public = request.IsPublic ?? false,
+                allow_comment = request.AllowComment ?? true,
                 is_paid = request.IsPaid ?? false,
                 price = request.Price ?? 0,
                 total_chapters = 0,

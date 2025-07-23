@@ -13,6 +13,7 @@ namespace Application.Features.Chapter.Commands
         public string Content { get; set; }
         public int? ChapterNumber { get; set; }
         public bool? IsPaid { get; set; }
+        public bool? AllowComment { get; set; }
         public int? Price { get; set; }
         public DateTime? ScheduledAt { get; set; }
         public bool IsDraft { get; set; }
@@ -40,6 +41,7 @@ namespace Application.Features.Chapter.Commands
             chapter.content = request.Content ?? chapter.content;
             chapter.chapter_number = request.ChapterNumber ?? chapter.chapter_number;
             chapter.is_paid = request.IsPaid ?? chapter.is_paid;
+            chapter.allow_comment = request.AllowComment ?? chapter.allow_comment;
             chapter.price = request.Price ?? chapter.price;
             if (request.ScheduledAt.HasValue)
             {

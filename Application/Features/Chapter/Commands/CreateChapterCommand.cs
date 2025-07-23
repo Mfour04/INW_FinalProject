@@ -17,6 +17,7 @@ namespace Application.Features.Chapter.Commands
         public long? ScheduleAt { get; set; }
         public bool? IsPaid { get; set; }
         public int? Price { get; set; }
+        public bool? AllowComment { get; set; }
         public bool? IsDraft { get; set; }
         public bool? IsPublic { get; set; }
     }
@@ -69,7 +70,8 @@ namespace Application.Features.Chapter.Commands
                 scheduled_at = scheduleAt,
                 is_lock = false,
                 is_draft = isDraft,
-                is_public = isPublic, 
+                is_public = isPublic,
+                allow_comment = request.AllowComment ?? true,
                 comment_count = 0,
                 created_at = nowTicks,
                 updated_at = nowTicks

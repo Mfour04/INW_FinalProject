@@ -18,6 +18,7 @@ namespace Shared.Contracts.Response.Chapter
         public int? Price { get; set; }
         public long ScheduledAt { get; set; }
         public bool? IsLock { get; set; }
+        public bool AllowComment { get; set; }
         public bool? IsDraft { get; set; }
         public bool? IsPublic { get; set; }
         public int? CommentCount { get; set; }
