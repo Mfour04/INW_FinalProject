@@ -12,10 +12,11 @@ using Application.Services.Interfaces;
 
 namespace Application.Features.Novel.Commands
 {
-    public class UpdateNovelCommand: IRequest<ApiResponse>
+    public class UpdateNovelCommand : IRequest<ApiResponse>
     {
         public string NovelId { get; set; }
         public string Title { get; set; }
+        public string Slug { get; set; }
         public string Description { get; set; }
         public IFormFile? NovelImage { get; set; }
         public IFormFile? NovelBanner { get; set; }
@@ -35,6 +36,7 @@ namespace Application.Features.Novel.Commands
         private readonly ICloudDinaryService _cloudDinaryService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ITagRepository _tagRepository;
+
         public UpdateNovelHandle(INovelRepository novelRepository, IMapper mapper, ICloudDinaryService cloudDinaryService, ICurrentUserService currentUserService, ITagRepository tagRepository)
         {
             _novelRepository = novelRepository;
@@ -43,11 +45,16 @@ namespace Application.Features.Novel.Commands
             _currentUserService = currentUserService;
             _tagRepository = tagRepository;
         }
+
         public async Task<ApiResponse> Handle(UpdateNovelCommand request, CancellationToken cancellationToken)
         {
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
-            if(novel == null)
+            if (novel == null)
                 return new ApiResponse { Success = false, Message = "Novel not found" };
+
+            var slugExists = await _novelRepository.IsSlugExistsAsync(request.Slug);
+            if (slugExists)
+                return new ApiResponse { Success = false, Message = "Slug already exists." };
 
             if (novel.author_id != _currentUserService.UserId)
             {
@@ -59,8 +66,9 @@ namespace Application.Features.Novel.Commands
             }
 
             novel.title = request.Title ?? novel.title;
+            novel.slug = request.Slug ?? novel.slug;
             novel.description = request.Description ?? novel.description;
-            if(request.NovelImage != null)
+            if (request.NovelImage != null)
             {
                 var novelImageUpdate = await _cloudDinaryService.UploadImagesAsync(request.NovelImage);
                 novel.novel_image = novelImageUpdate;

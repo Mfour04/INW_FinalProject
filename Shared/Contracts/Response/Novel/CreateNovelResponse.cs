@@ -1,8 +1,6 @@
 ﻿using Domain.Enums;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http;
 using Shared.Contracts.Response.Tag;
 
 namespace Shared.Contracts.Response.Novel
@@ -11,6 +9,7 @@ namespace Shared.Contracts.Response.Novel
     {
         public string NovelId { get; set; }
         public string Title { get; set; }
+        public string Slug { get; set; }
         public string Description { get; set; }
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }

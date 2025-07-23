@@ -19,5 +19,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task UpdateHideNovelAsync(string novelId, bool isPublic);
         Task<bool> IncrementCommentsAsync(string novelId);
         Task<bool> DecrementCommentsAsync(string novelId);
+        Task<bool> IsSlugExistsAsync(string slug, string? excludeId = null);
     }
 }
