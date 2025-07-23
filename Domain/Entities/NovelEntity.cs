@@ -8,6 +8,7 @@ namespace Domain.Entities
     {
         public string title { get; set; }
         public string title_unsigned { get; set; }
+        public string slug { get; set; }
         public string description { get; set; }
         public string author_id { get; set; }
         public string novel_image { get; set; }

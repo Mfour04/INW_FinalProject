@@ -12,11 +12,12 @@ using Application.Services.Interfaces;
 
 namespace Application.Features.Novel.Commands
 {
-    public class CreateNovelCommand: IRequest<ApiResponse>
+    public class CreateNovelCommand : IRequest<ApiResponse>
     {
         public string Title { get; set; }
+        public string Slug { get; set; }
         public string Description { get; set; }
-        public string AuthorId { get; set; }
+        public string? AuthorId { get; set; }
         public IFormFile? NovelImage { get; set; }
         public IFormFile? NovelBanner { get; set; }
         public List<string> Tags { get; set; } = new();
@@ -49,13 +50,19 @@ namespace Application.Features.Novel.Commands
             _openAIService = openAIService;
             _openAIRepository = openAIRepository;
         }
+
         public async Task<ApiResponse> Handle(CreateNovelCommand request, CancellationToken cancellationToken)
         {
             var author = await _userRepository.GetById(request.AuthorId);
             if (author == null)
-            {
-                return new ApiResponse { Success = false, Message = "Author not found" };
-            }
+                return Fail("Author not found");
+
+            if (string.IsNullOrWhiteSpace(request.Slug))
+                return Fail("Slug is required.");
+
+            var slugExists = await _novelRepository.IsSlugExistsAsync(request.Slug);
+            if (slugExists)
+                return Fail("Slug already exists.");
 
             var validTagIds = new List<string>();
             if (request.Tags != null && request.Tags.Any())
@@ -66,11 +73,13 @@ namespace Application.Features.Novel.Commands
 
             var novelImage = await _cloudDinaryService.UploadImagesAsync(request.NovelImage);
             var novelBanner = await _cloudDinaryService.UploadImagesAsync(request.NovelBanner);
+
             var novel = new NovelEntity
             {
                 id = SystemHelper.RandomId(),
                 title = request.Title,
                 title_unsigned = SystemHelper.RemoveDiacritics(request.Title),
+                slug = request.Slug,
                 description = request.Description,
                 author_id = author.id,
                 novel_image = novelImage,
@@ -92,12 +101,14 @@ namespace Application.Features.Novel.Commands
             };
 
             await _novelRepository.CreateNovelAsync(novel);
+
             var tags = await _tagRepository.GetTagsByIdsAsync(validTagIds);
             var tagNames = tags.Select(t => t.name).ToList();
             var vector = await _openAIService.GetEmbeddingAsync(tagNames);
             await _openAIRepository.SaveNovelEmbeddingAsync(novel.id, vector);
 
             var response = _mapper.Map<CreateNovelResponse>(novel);
+
             response.AuthorId = novel.author_id;
             response.AuthorName = author.displayname;
             response.Tags = tags.Select(t => new TagListResponse
@@ -113,6 +124,11 @@ namespace Application.Features.Novel.Commands
                 Data = response
             };
         }
+
+        private ApiResponse Fail(string message) => new()
+        {
+            Success = false,
+            Message = message
+        };
     }
 }
-    

@@ -50,6 +50,7 @@ namespace Application.Mapping
             CreateMap<NovelEntity, NovelResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
+                .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.slug))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))
                 .ForMember(dest => dest.AllowComment, opt => opt.MapFrom(src => src.allow_comment))
@@ -67,6 +68,7 @@ namespace Application.Mapping
             CreateMap<NovelEntity, CreateNovelResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
+                .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.slug))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel_image)) // đây là string ✔️
@@ -83,6 +85,7 @@ namespace Application.Mapping
 
             CreateMap<NovelEntity, UpdateNovelResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.slug))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author_id))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.title))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.description))

@@ -275,6 +275,25 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<bool> IsSlugExistsAsync(string slug, string? excludeId = null)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(n => n.slug, slug);
+                if (!string.IsNullOrEmpty(excludeId))
+                {
+                    filter &= Builders<NovelEntity>.Filter.Ne(n => n.id, excludeId);
+                }
+
+                var result = await _collection.Find(filter).AnyAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task<List<NovelEntity>> GetManyByIdsAsync(List<string> ids)
         {
             try

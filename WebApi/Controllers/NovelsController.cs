@@ -201,5 +201,12 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+
+        [HttpGet("slug/{slug}")]
+        public async Task<IActionResult> CheckSlug(string slug)
+        {
+            var result = await _mediator.Send(new CheckSlug { Slug = slug });
+            return Ok(result);
+        }
     }
 }
