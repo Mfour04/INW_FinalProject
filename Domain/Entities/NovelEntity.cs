@@ -17,6 +17,7 @@ namespace Domain.Entities
         public NovelStatus status { get; set; }
         public bool is_public { get; set; }
         public bool is_lock { get; set; }
+        public bool allow_comment { get; set; }
         public bool is_paid { get; set; }
         public bool is_completed { get; set; }
         public int price { get; set; }

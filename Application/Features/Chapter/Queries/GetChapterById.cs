@@ -61,11 +61,12 @@ namespace Application.Features.Chapter.Queries
             {
                 if (string.IsNullOrEmpty(request.UserId))
                     return new ApiResponse { Success = false, Message = "Bạn chưa đăng nhập để xem chương này." };
-
+                var authorId = novel.author_id;
+                bool isAuthor = request.UserId == authorId;
                 bool hasFullOwnerShip = await _purchaserRepository.HasPurchasedFullAsync(request.UserId, novel.id);
                 bool hasFullChapter = await _purchaserRepository.HasPurchasedChapterAsync(request.UserId, novel.id, request.ChapterId);
 
-                if (hasFullOwnerShip || hasFullChapter)
+                if (hasFullOwnerShip || hasFullChapter || isAuthor)
                 {
                     await HandleNovelViewAsync(request.UserId, novel.id);
                     await _chapterHelperService.ProcessViewAsync(chapter.id, viewerId);

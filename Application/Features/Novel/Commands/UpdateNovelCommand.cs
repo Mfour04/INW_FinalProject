@@ -22,6 +22,7 @@ namespace Application.Features.Novel.Commands
         public NovelStatus? Status { get; set; }
         public bool? IsPublic { get; set; }
         public bool? IsLock { get; set; }
+        public bool? AllowComment { get; set; }
         public bool? IsPaid { get; set; }
         public int? Price { get; set; }
         public List<string>? Tags { get; set; }
@@ -71,6 +72,7 @@ namespace Application.Features.Novel.Commands
             }
             novel.status = request.Status ?? novel.status;
             novel.is_public = request.IsPublic ?? novel.is_public;
+            novel.allow_comment = request.AllowComment ?? novel.allow_comment;
             novel.is_lock = request.IsLock ?? novel.is_lock;
             novel.is_paid = request.IsPaid ?? novel.is_paid;
             novel.price = request.Price ?? novel.price;

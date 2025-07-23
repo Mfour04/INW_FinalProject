@@ -9,6 +9,7 @@ namespace Domain.Entities
         public bool is_paid { get; set; }
         public int price { get; set; }
         public long scheduled_at { get; set; }
+        public bool allow_comment { get; set; }
         public bool is_lock { get; set; }
         public bool is_draft { get; set; }
         public bool is_public { get; set; }
