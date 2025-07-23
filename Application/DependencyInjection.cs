@@ -1,6 +1,7 @@
 using Application.Services.Implements;
 using Application.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.Contracts.Response;
 
 namespace Application
 {
@@ -32,6 +33,7 @@ namespace Application
             services.AddScoped<IChapterHelperService, ChapterHelperService>();
             services.AddScoped<ICacheService, CacheService>();
             services.AddScoped<ICommentSpamGuard, CommentSpamGuard>();
+            services.AddHttpClient<IOpenAIService, OpenAIService>();
             return services;
         }
     }

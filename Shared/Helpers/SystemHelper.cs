@@ -89,5 +89,23 @@ namespace Shared.Helpers
             var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(raw));
             return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
         }
+
+        public static double CalculateCosineSimilarity(List<float> vectorA, List<float> vectorB)
+        {
+            if (vectorA.Count != vectorB.Count) throw new InvalidOperationException("Vectors must be the same length");
+
+            double dot = 0.0, magA = 0.0, magB = 0.0;
+
+            for (int i = 0; i < vectorA.Count; i++)
+            {
+                dot += vectorA[i] * vectorB[i];
+                magA += vectorA[i] * vectorA[i];
+                magB += vectorB[i] * vectorB[i];
+            }
+
+            if (magA == 0 || magB == 0) return 0.0;
+
+            return dot / (Math.Sqrt(magA) * Math.Sqrt(magB));
+        }
     }
 }

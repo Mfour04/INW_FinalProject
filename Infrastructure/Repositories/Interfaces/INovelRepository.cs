@@ -1,5 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Entities.System;
+using Shared.Contracts.Response.Novel;
 
 namespace Infrastructure.Repositories.Interfaces
 {
@@ -20,5 +21,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> IncrementCommentsAsync(string novelId);
         Task<bool> DecrementCommentsAsync(string novelId);
         Task<bool> IsSlugExistsAsync(string slug, string? excludeId = null);
+        Task<List<NovelEntity>> GetManyByIdsAsync(List<string> ids);
     }
 }

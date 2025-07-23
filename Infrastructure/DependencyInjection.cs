@@ -5,6 +5,7 @@ using Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.Contracts.Response;
 using Shared.SystemHelpers.TokenGenerate;
 
 namespace Infrastructure
@@ -25,6 +26,8 @@ namespace Infrastructure
                 configuration.GetSection("EmailSettings"));
             services.Configure<CloudinarySettings>(
                 configuration.GetSection("CloudinarySettings"));
+            services.Configure<OpenAIConfig>(
+                configuration.GetSection("OpenAIConfig"));
             return services;
         }
         
@@ -56,6 +59,7 @@ namespace Infrastructure
             services.AddScoped<IRatingRepository, RatingRepository>();
             services.AddScoped<INovelViewTrackingRepository, NovelViewTrackingRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IOpenAIRepository, OpenAIRepository>();
             return services;
         }
 

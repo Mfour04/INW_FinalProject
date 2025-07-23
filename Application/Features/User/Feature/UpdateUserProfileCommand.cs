@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.User;
 using Shared.Helpers;
+using static Domain.Entities.UserEntity;
 
 namespace Application.Features.User.Feature
 {
@@ -16,17 +17,23 @@ namespace Application.Features.User.Feature
         public string Bio { get; set; }
         public IFormFile? AvataUrl { get; set; }
         public List<string> BadgeId { get; set; } = new();
+        public List<TagName> FavouriteType { get; set; } = new();
     }
     public class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfileCommand, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly ICloudDinaryService _cloudDinaryService;
-        public UpdateUserProfileHandler(IUserRepository userRepository, IMapper mapper, ICloudDinaryService cloudDinaryService)
+        private readonly IOpenAIService _openAIService;
+        private readonly IOpenAIRepository _openAIRepository;
+        public UpdateUserProfileHandler(IUserRepository userRepository, IMapper mapper
+            , ICloudDinaryService cloudDinaryService, IOpenAIService openAIService, IOpenAIRepository openAIRepository)
         {
             _userRepository = userRepository;
             _mapper = mapper;
             _cloudDinaryService = cloudDinaryService;
+            _openAIService = openAIService;
+            _openAIRepository = openAIRepository;   
         }
         public async Task<ApiResponse> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
         {
@@ -39,11 +46,27 @@ namespace Application.Features.User.Feature
             user.bio = request.Bio;
             user.updated_at = DateTime.UtcNow.Ticks;
             user.badge_id = request.BadgeId;
+            user.favourite_type = request.FavouriteType;
 
-            if(request.AvataUrl != null)
+            if (request.AvataUrl != null)
             {
                 var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvataUrl);
                 user.avata_url = imageAUrl;
+            }
+            var validTags = request.FavouriteType
+                .Where(t => !string.IsNullOrWhiteSpace(t.name_tag))
+                .ToList();
+                user.favourite_type = validTags;
+
+            var tags = user.favourite_type
+                 .Select(t => t.name_tag.Trim().ToLowerInvariant())
+                 .Distinct()
+                 .ToList();
+
+            if (tags.Count > 0)
+            {
+                var vector = await _openAIService.GetEmbeddingAsync(tags);
+                await _openAIRepository.SaveUserEmbeddingAsync(user.id, vector);
             }
 
             await _userRepository.UpdateUser(user);

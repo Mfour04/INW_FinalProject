@@ -47,5 +47,7 @@ namespace Shared.Helpers
         /// Ticks tại 23:59:59.9999999 hôm nay (giờ VN)
         /// </summary>
         public static long EndOfTodayTicksVN => NowVN.Date.AddDays(1).AddTicks(-1).Ticks;
+        public static long NowUnixTimeSeconds => new DateTimeOffset(NowVN).ToUnixTimeSeconds();
+
     }
 }

@@ -1,9 +1,4 @@
-﻿using Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using static Domain.Entities.UserEntity;
 
 namespace Shared.Contracts.Response.User
 {
@@ -23,5 +18,6 @@ namespace Shared.Contracts.Response.User
         public int NovelFollowCount { get; set; }
         public List<string> BadgeId { get; set; } = new();
         public long LastLogin { get; set; }
+        public List<TagName> FavouriteType { get; set; } = new();
     }
 }

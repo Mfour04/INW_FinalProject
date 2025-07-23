@@ -37,13 +37,15 @@ namespace Application.Mapping
                 .ForMember(dest => dest.BlockCoin, opt => opt.MapFrom(src => src.block_coin))
                 .ForMember(dest => dest.NovelFollowCount, opt => opt.MapFrom(src => src.novel_follow_count))
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
-                .ForMember(dest => dest.LastLogin, opt => opt.MapFrom(src => src.last_login));
+                .ForMember(dest => dest.LastLogin, opt => opt.MapFrom(src => src.last_login))
+                .ForMember(dest => dest.FavouriteType, opt => opt.MapFrom(src => src.favourite_type));
 
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.AvataUrl, opt => opt.MapFrom(src => src.avata_url))
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.displayname))
-                .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id));
+                .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
+                .ForMember(dest => dest.FavouriteType, opt => opt.MapFrom(src => src.favourite_type));
             //Novel
             CreateMap<NovelEntity, NovelResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))

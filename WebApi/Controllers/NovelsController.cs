@@ -180,6 +180,19 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("recommendNovel-user")]
+        public async Task<IActionResult> GetRecommendedNovels([FromQuery] int topN = 10)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _mediator.Send(new GetRecommendedNovels
+            {
+                UserId = userId,
+                TopN = topN
+            });
+
+            return Ok(result);
+        }
+
         [HttpGet("{id}/comments")]
         public async Task<ActionResult> GetComments(string id, [FromQuery] GetNovelComments query)
         {
