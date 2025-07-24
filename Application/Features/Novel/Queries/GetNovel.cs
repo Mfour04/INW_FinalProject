@@ -74,28 +74,48 @@ namespace Application.Features.Novel.Queries
             }
 
             var novelResponse = _mapper.Map<List<NovelResponse>>(novels);
+            // Lấy thông tin tác giả và tag
             var authorIds = novels.Select(n => n.author_id).Distinct().ToList();
             var authors = await _userRepository.GetUsersByIdsAsync(authorIds);
+
             var allTagIds = novels.SelectMany(n => n.tags).Distinct().ToList();
             var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
+            var tagDict = allTags.ToDictionary(t => t.id, t => t.name);
 
-            //embedding cho tất cả tag của các novel
+            // Xử lý embedding nếu cần
             var novelIds = novels.Select(n => n.id).ToList();
             var existingEmbeddingIds = await _openAIRepository.GetExistingNovelEmbeddingIdsAsync(novelIds);
 
             var novelsToEmbed = novels.Where(n => !existingEmbeddingIds.Contains(n.id)).ToList();
-            var newlyEmbeddedIds = novelsToEmbed.Select(n => n.id).ToList();
 
-            if (novelsToEmbed.Any())
+            // Chỉ lấy các novel có tags hợp lệ (có trong tagDict)
+            var validEmbeddingData = novelsToEmbed
+                .Select(novel =>
+                {
+                    var validTags = novel.tags
+                        .Where(tagId => tagDict.ContainsKey(tagId))
+                        .Select(tagId => tagDict[tagId])
+                        .ToList();
+
+                    return new
+                    {
+                        NovelId = novel.id,
+                        TagNames = validTags
+                    };
+                })
+                .Where(x => x.TagNames.Any()) // loại bỏ novel không có tag hợp lệ
+                .ToList();
+
+            if (validEmbeddingData.Any())
             {
-                var tagNames = novelsToEmbed.Select(n => n.tags)
-                    .Select(tags => string.Join(", ", tags))
-                    .ToList();
+                var embeddingIds = validEmbeddingData.Select(x => x.NovelId).ToList();
+                var tagNamesList = validEmbeddingData.Select(x => string.Join(", ", x.TagNames)).ToList();
+                var tagLists = validEmbeddingData.Select(x => x.TagNames).ToList();
 
-                var vectors = await _openAIService.GetEmbeddingAsync(tagNames);
-                await _openAIRepository.SaveListNovelEmbeddingAsync(newlyEmbeddedIds, vectors);
+                var vectors = await _openAIService.GetEmbeddingAsync(tagNamesList);
+
+                await _openAIRepository.SaveListNovelEmbeddingAsync(embeddingIds, vectors, tagLists);
             }
-
 
             for (int i = 0; i < novels.Count; i++)
             {
@@ -130,8 +150,8 @@ namespace Application.Features.Novel.Queries
                     {
                         TotalRequested = novelIds.Count,
                         AlreadyExist = existingEmbeddingIds.Count,
-                        NewlyEmbedded = newlyEmbeddedIds.Count,
-                        NewlyEmbeddedIds = newlyEmbeddedIds
+                        NewlyEmbedded = validEmbeddingData.Count,
+                        NewlyEmbeddedIds = validEmbeddingData.Select(x => x.NovelId).ToList()
                     }
                 }
             };

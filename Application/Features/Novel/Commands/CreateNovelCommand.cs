@@ -104,8 +104,13 @@ namespace Application.Features.Novel.Commands
 
             var tags = await _tagRepository.GetTagsByIdsAsync(validTagIds);
             var tagNames = tags.Select(t => t.name).ToList();
-            var vector = await _openAIService.GetEmbeddingAsync(tagNames);
+            var vectors = await _openAIService.GetEmbeddingAsync(new List<string> {
+                string.Join(", ", tagNames)
+            });
+
+            var vector = vectors[0]; // lấy vector đầu tiên
             await _openAIRepository.SaveNovelEmbeddingAsync(novel.id, vector);
+
 
             var response = _mapper.Map<CreateNovelResponse>(novel);
 

@@ -10,6 +10,7 @@ namespace Shared.Contracts.Response.Novel
     {
         public string NovelId { get; set; }
         public string Title { get; set; }
+        public string Slug { get; set; }
         public string Description { get; set; }
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }

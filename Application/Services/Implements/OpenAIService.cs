@@ -19,15 +19,16 @@ namespace Application.Services.Implements
             _httpClient = httpClient;
             _config = config.Value;
         }
-        public async Task<List<float>> GetEmbeddingAsync(List<string> tags)
+        public async Task<List<List<float>>> GetEmbeddingAsync(List<string> inputs)
         {
-            var inputText = string.Join(", ", tags);
-
             var body = new
             {
                 model = _config.EmbeddingModel,
-                input = inputText
+                input = inputs
             };
+
+            Console.WriteLine("INPUT TO OPENAI:");
+            Console.WriteLine(JsonSerializer.Serialize(body));
 
             var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
             var request = new HttpRequestMessage(HttpMethod.Post, _config.EmbeddingUrl);
@@ -40,14 +41,17 @@ namespace Application.Services.Implements
             var stream = await response.Content.ReadAsStreamAsync();
             using var doc = await JsonDocument.ParseAsync(stream);
 
-            var embedding = doc.RootElement
-                .GetProperty("data")[0]
-                .GetProperty("embedding")
+            var embeddings = doc.RootElement
+                .GetProperty("data")
                 .EnumerateArray()
-                .Select(x => x.GetSingle())
-                .ToList();
+                .Select(item => item.GetProperty("embedding")
+                    .EnumerateArray()
+                    .Select(x => x.GetSingle())
+                    .ToList()
+                ).ToList();
 
-            return embedding;
+            return embeddings;
         }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using Infrastructure.Repositories.Implements;
+﻿using Domain.Entities;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -19,8 +20,9 @@ namespace Application.Features.Novel.Queries
         private readonly INovelRepository _novelRepository;
         private readonly IUserRepository _userRepository;
         private readonly ITagRepository _tagRepository;
-        public GetRecommendedNovelsHandler(IOpenAIRepository openAIRepository, INovelRepository novelRepository
-            , IUserRepository userRepository, ITagRepository tagRepository)
+
+        public GetRecommendedNovelsHandler(IOpenAIRepository openAIRepository, INovelRepository novelRepository,
+            IUserRepository userRepository, ITagRepository tagRepository)
         {
             _openAIRepository = openAIRepository;
             _novelRepository = novelRepository;
@@ -41,7 +43,25 @@ namespace Application.Features.Novel.Queries
                 };
             }
 
-            // 2. Lấy tất cả novel embedding
+            // 2. Lấy thông tin user
+            var user = await _userRepository.GetById(request.UserId);
+            if (user == null)
+            {
+                return new ApiResponse { Success = false, Message = "User not found." };
+            }
+
+            // 3. Lấy danh sách tên tag yêu thích của user
+            var userTags = (user.favourite_type ?? new List<UserEntity.TagName>())
+                .Select(t => t.name_tag?.Trim().ToLowerInvariant())
+                .Where(name => !string.IsNullOrEmpty(name))
+                .ToHashSet();
+
+            if (!userTags.Any())
+            {
+                return new ApiResponse { Success = false, Message = "User has no favorite tags." };
+            }
+
+            // 4. Lấy tất cả novel embeddings
             var novelEmbeddings = await _openAIRepository.GetAllNovelEmbeddingsAsync();
             if (novelEmbeddings == null || !novelEmbeddings.Any())
             {
@@ -52,34 +72,51 @@ namespace Application.Features.Novel.Queries
                 };
             }
 
-            // 3. Tính cosine similarity và chọn top N
-            var scores = novelEmbeddings
-                .Where(novel => novel.vector_novel != null && novel.vector_novel.Count == userEmbedding.vector_user.Count)
+            // 5. Lấy toàn bộ tag để ánh xạ id -> name
+            var allTagIds = novelEmbeddings.SelectMany(n => n.tags).Distinct().ToList();
+            var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
+            var tagDict = allTags.ToDictionary(t => t.id, t => t.name.Trim().ToLowerInvariant());
+
+            // 6. Lọc truyện có tag name trùng với user
+            var filteredNovelEmbeddings = novelEmbeddings
+                .Where(novel =>
+                    novel.vector_novel != null &&
+                    novel.vector_novel.Count == userEmbedding.vector_user.Count 
+                )
                 .Select(novel => new
                 {
-                    novel_id = novel.novel_id,
+                    novel.novel_id,
                     similarity = SystemHelper.CalculateCosineSimilarity(userEmbedding.vector_user, novel.vector_novel)
                 })
+                .Where(x => x.similarity >= 0.5)
                 .OrderByDescending(x => x.similarity)
                 .Take(request.TopN)
                 .ToList();
 
-            var topNovelIds = scores.Select(s => s.novel_id).ToList();
+            if (!filteredNovelEmbeddings.Any())
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "No similar novels found."
+                };
+            }
 
-            // 4. Lấy thông tin truyện từ novelRepository
+            // 7. Lấy chi tiết truyện
+            var topNovelIds = filteredNovelEmbeddings.Select(n => n.novel_id).ToList();
             var novels = await _novelRepository.GetManyByIdsAsync(topNovelIds);
-
             var authorIds = novels.Select(n => n.author_id).Distinct().ToList();
-            var allTagIds = novels.SelectMany(n => n.tags).Distinct().ToList();
-            var authors = await _userRepository.GetUsersByIdsAsync(authorIds);
-            var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);           
-            
-            // 5. Gộp kết quả để trả về
-            var scoreDict = scores.ToDictionary(x => x.novel_id, x => x.similarity);
-            var authorDict = authors.ToDictionary(a => a.id, a => a.displayname);
-            var tagDict = allTags.ToDictionary(t => t.id, t => t.name);
+            var novelTagIds = novels.SelectMany(n => n.tags).Distinct().ToList();
 
-            var response = novels.Select(novel => new NovelResponse
+            var authors = await _userRepository.GetUsersByIdsAsync(authorIds);
+            var tagsInResponse = await _tagRepository.GetTagsByIdsAsync(novelTagIds);
+
+            var scoreDict = filteredNovelEmbeddings.ToDictionary(x => x.novel_id, x => x.similarity);
+            var authorDict = authors.ToDictionary(a => a.id, a => a.displayname);
+            var tagDictForResponse = tagsInResponse.ToDictionary(t => t.id, t => t.name);
+
+            // 8. Tạo response
+            var response = novels.Select(novel => new NovelRecommendationResponse
             {
                 NovelId = novel.id,
                 Title = novel.title,
@@ -91,7 +128,7 @@ namespace Application.Features.Novel.Queries
                 Tags = novel.tags.Select(tagId => new TagListResponse
                 {
                     TagId = tagId,
-                    Name = tagDict.GetValueOrDefault(tagId)
+                    Name = tagDictForResponse.GetValueOrDefault(tagId)
                 }).ToList(),
                 Status = novel.status,
                 IsPublic = novel.is_public,
@@ -105,16 +142,22 @@ namespace Application.Features.Novel.Queries
                 RatingAvg = novel.rating_avg,
                 RatingCount = novel.rating_count,
                 CreateAt = novel.created_at,
-                UpdateAt = novel.updated_at
+                UpdateAt = novel.updated_at,
+                Slug = novel.slug,
+                Similarity = scoreDict.GetValueOrDefault(novel.id)
             }).ToList();
-
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Recommendation successful.",
-                Data = response
+                Data = new
+                {
+                    TotalNovels = response.Count,
+                    Novels = response
+                }
             };
         }
     }
+
 }

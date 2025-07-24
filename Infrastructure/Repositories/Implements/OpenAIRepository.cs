@@ -61,22 +61,65 @@ namespace Infrastructure.Repositories.Implements
             return await _novelCollection.Find(Builders<NovelEmbeddingEntity>.Filter.Empty).ToListAsync();
         }
 
-        public async Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<float> vector)
+        //public async Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<float> vector)
+        //{
+        //    var models = novelIds.Select(novelId =>
+        //    {
+        //        var filter = Builders<NovelEmbeddingEntity>.Filter.Eq(x => x.novel_id, novelId);
+        //        var entity = new NovelEmbeddingEntity
+        //        {
+        //            novel_id = novelId,
+        //            vector_novel = vector,
+        //            updated_at = TimeHelper.NowUnixTimeSeconds
+        //        };
+        //        return new ReplaceOneModel<NovelEmbeddingEntity>(filter, entity) { IsUpsert = true };
+        //    }).ToList();
+
+        //    await _novelCollection.BulkWriteAsync(models);
+        //}
+        public async Task SaveListNovelEmbeddingAsync(
+            List<string> novelIds,
+            List<List<float>> vectors,
+            List<List<string>> tagsList)
         {
-            var models = novelIds.Select(novelId =>
+            // Bảo vệ: Kiểm tra kích thước list đầu vào có đồng bộ không
+            if (novelIds.Count != vectors.Count || novelIds.Count != tagsList.Count)
             {
-                var filter = Builders<NovelEmbeddingEntity>.Filter.Eq(x => x.novel_id, novelId);
-                var entity = new NovelEmbeddingEntity
+                throw new ArgumentException("Số lượng novelIds, vectors, và tagsList phải bằng nhau.");
+            }
+
+            var currentTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            // Ghép từng phần tử theo chỉ mục, tránh lỗi index
+            var entities = novelIds
+                .Select((novelId, index) => new NovelEmbeddingEntity
                 {
                     novel_id = novelId,
-                    vector_novel = vector,
-                    updated_at = TimeHelper.NowUnixTimeSeconds
-                };
-                return new ReplaceOneModel<NovelEmbeddingEntity>(filter, entity) { IsUpsert = true };
-            }).ToList();
+                    vector_novel = vectors[index],
+                    updated_at = currentTimestamp
+                })
+                .ToList();
 
-            await _novelCollection.BulkWriteAsync(models);
+            // Upsert vào MongoDB
+            var models = new List<WriteModel<NovelEmbeddingEntity>>();
+
+            foreach (var entity in entities)
+            {
+                var filter = Builders<NovelEmbeddingEntity>.Filter.Eq(e => e.novel_id, entity.novel_id);
+                var update = Builders<NovelEmbeddingEntity>.Update
+                    .Set(e => e.vector_novel, entity.vector_novel)
+                    .Set(e => e.updated_at, entity.updated_at);
+
+                var upsert = new UpdateOneModel<NovelEmbeddingEntity>(filter, update) { IsUpsert = true };
+                models.Add(upsert);
+            }
+
+            if (models.Any())
+            {
+                await _novelCollection.BulkWriteAsync(models);
+            }
         }
+
 
         public async Task<List<string>> GetExistingNovelEmbeddingIdsAsync(List<string> novelIds)
         {

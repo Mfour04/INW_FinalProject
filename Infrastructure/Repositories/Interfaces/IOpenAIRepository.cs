@@ -13,8 +13,10 @@ namespace Infrastructure.Repositories.Interfaces
         Task<NovelEmbeddingEntity?> GetNovelEmbeddingAsync(string novelId);
         Task SaveNovelEmbeddingAsync(string novelId, List<float> vector);
         Task<List<NovelEmbeddingEntity>> GetAllNovelEmbeddingsAsync();
-        Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<float> vector);
+        //Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<float> vector);
+        Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<List<float>> vectors, List<List<string>> tagsList);
         Task<List<string>> GetExistingNovelEmbeddingIdsAsync(List<string> novelIds);
+        //Task SaveListNovelEmbeddingAsync(List<NovelEmbeddingEntity> embeddings);
 
         /// <summary>
         /// End Embedding methods
