@@ -33,7 +33,6 @@ namespace Application
             services.AddScoped<IChapterHelperService, ChapterHelperService>();
             services.AddScoped<ICacheService, CacheService>();
             services.AddScoped<ICommentSpamGuard, CommentSpamGuard>();
-            services.AddHttpClient<IOpenAIService, OpenAIService>();
             return services;
         }
     }

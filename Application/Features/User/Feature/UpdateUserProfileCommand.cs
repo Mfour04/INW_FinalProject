@@ -65,7 +65,12 @@ namespace Application.Features.User.Feature
 
             if (tags.Count > 0)
             {
-                var vector = await _openAIService.GetEmbeddingAsync(tags);
+                var vectors = await _openAIService.GetEmbeddingAsync(new List<string>
+                {
+                    string.Join(", ", tags)
+                });
+
+                var vector = vectors[0]; // chỉ lấy 1 vector
                 await _openAIRepository.SaveUserEmbeddingAsync(user.id, vector);
             }
 

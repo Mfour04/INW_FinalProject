@@ -8,6 +8,8 @@ namespace Application.Services.Interfaces
 {
     public interface IOpenAIService
     {
-        Task<List<float>> GetEmbeddingAsync(List<string> tags);
+        //Task<List<float>> GetEmbeddingAsync(List<string> tags);
+        Task<List<List<float>>> GetEmbeddingAsync(List<string> inputs);
+
     }
 }

@@ -26,8 +26,6 @@ namespace Infrastructure
                 configuration.GetSection("EmailSettings"));
             services.Configure<CloudinarySettings>(
                 configuration.GetSection("CloudinarySettings"));
-            services.Configure<OpenAIConfig>(
-                configuration.GetSection("OpenAIConfig"));
             return services;
         }
         
