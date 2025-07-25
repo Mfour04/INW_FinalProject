@@ -18,7 +18,6 @@ namespace Application.Features.NovelFollower.Commands
     {
         public string NovelId { get; set; }
         public string UserId { get; set; }
-        public string UserName { get; set; }
     }
 
     public class CreateNovelFollowerHandler : IRequestHandler<CreateNovelFollowerCommand, ApiResponse>
@@ -64,7 +63,7 @@ namespace Application.Features.NovelFollower.Commands
 
             await _novelFollowRepository.CreateNovelFollowAsync(novelfollower);
             await _novelRepository.IncrementFollowersAsync(request.NovelId);
-            var response = _mapper.Map<CreateNovelFollowReponse>(novelfollower);
+            var response = _mapper.Map<CreateNovelFollowReponse>((novelfollower, user));
 
             return new ApiResponse
             {
