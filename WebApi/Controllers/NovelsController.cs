@@ -17,6 +17,9 @@ namespace WebApi.Controllers
         private readonly IMediator _mediator;
         public FindCreterias FindCreterias { get; private set; }
         public SortCreterias SortCreterias { get; private set; }
+        private string currentUserId =>
+          User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+          ?? throw new UnauthorizedAccessException("User ID not found in token");
 
         public NovelsController(IMediator mediator)
         {
@@ -140,10 +143,11 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("{id}/buy")]
+        [Authorize]
         public async Task<IActionResult> BuyNovel(string id, [FromBody] BuyNovelCommand command)
         {
             command.NovelId = id;
-            command.UserId = "user_002";
+            command.UserId = currentUserId;
 
             var result = await _mediator.Send(command);
             return Ok(result);

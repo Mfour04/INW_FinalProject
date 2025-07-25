@@ -20,7 +20,6 @@ namespace Domain.Entities
         public bool is_lock { get; set; }
         public bool allow_comment { get; set; }
         public bool is_paid { get; set; }
-        public bool is_completed { get; set; }
         public int price { get; set; }
         public int total_chapters { get; set; }
         public int total_views { get; set; }

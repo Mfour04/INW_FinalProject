@@ -103,9 +103,12 @@ namespace Application.Features.Transaction.Queries
             {
                 Success = true,
                 Message = "Retrieved user's transaction successfully.",
-                Data = responseList,
-                TotalPage = totalPage,
-                TotalResult = totalCount
+                Data = new
+                {
+                    totalPage,
+                    totalTransaction = totalCount,
+                    items = responseList
+                }
             };
         }
     }

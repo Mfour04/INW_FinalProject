@@ -47,10 +47,8 @@ namespace Application.Features.Novel.Commands
 
             if (!novel.is_paid)
                 return Fail("This novel is free and does not need to be purchased.");
-            if (!novel.is_completed)
-                return Fail("This novel is not yet completed and cannot be purchased as a whole.");
-
-            if (!novel.is_completed)
+                
+            if (novel.status != NovelStatus.Completed)
                 return Fail("Only completed novels can be purchased in full.");
 
             var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, request.NovelId);

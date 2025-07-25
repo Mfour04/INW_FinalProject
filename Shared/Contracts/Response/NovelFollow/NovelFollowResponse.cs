@@ -48,7 +48,6 @@
         public string NovelBanner { get; set; }
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
-        public bool IsCompleted { get; set; }
         public bool IsPaid { get; set; }
         public int Price { get; set; }
         public double RatingAvg { get; set; }

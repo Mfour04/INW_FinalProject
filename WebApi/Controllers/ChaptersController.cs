@@ -14,8 +14,11 @@ namespace WebApi.Controllers
     {
         private readonly IMediator _mediator;
         public FindCreterias FindCreterias { get; private set; }
+		private string currentUserId =>
+	       User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+	       ?? throw new UnauthorizedAccessException("User ID not found in token");
 
-        public ChaptersController(IMediator mediator)
+		public ChaptersController(IMediator mediator)
         {
             _mediator = mediator;
         }
@@ -37,14 +40,15 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("created")]
-        public async Task<IActionResult> CreateChapter([FromBody] CreateChapterCommand command)
+		[Authorize]
+		public async Task<IActionResult> CreateChapter([FromBody] CreateChapterCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetChapterByIdAsync(string id)
+		public async Task<IActionResult> GetChapterByIdAsync(string id)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -59,24 +63,27 @@ namespace WebApi.Controllers
         }
 
         [HttpPut("updated")]
-        public async Task<IActionResult> UpdateChapter([FromBody] UpdateChapterCommand command)
+		[Authorize]
+		public async Task<IActionResult> UpdateChapter([FromBody] UpdateChapterCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteChapter(string id)
+		[Authorize]
+		public async Task<IActionResult> DeleteChapter(string id)
         {
             var result = await _mediator.Send(new DeleteChapterCommand { ChapterId = id });
             return Ok(result);
         }
 
         [HttpPost("{id}/buy")]
+        [Authorize]
         public async Task<IActionResult> BuyChapter(string id, [FromBody] BuyChapterCommand command)
         {
             command.ChapterId = id;
-            command.UserId = "user_002";
+            command.UserId = currentUserId;
 
             var result = await _mediator.Send(command);
             return Ok(result);

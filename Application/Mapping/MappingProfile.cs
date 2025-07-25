@@ -269,7 +269,6 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelBanner, opt => opt.MapFrom(src => src.novel.novel_banner))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author.id))
                 .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.author.displayname))
-                .ForMember(dest => dest.IsCompleted, opt => opt.MapFrom(src => src.novel.is_completed))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.novel.is_paid))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.novel.price))
                 .ForMember(dest => dest.RatingAvg, opt => opt.MapFrom(src => src.novel.rating_avg))
