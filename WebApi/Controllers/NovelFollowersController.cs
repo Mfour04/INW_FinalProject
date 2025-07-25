@@ -4,6 +4,7 @@ using Application.Features.NovelFollower.Queries;
 using Application.Features.Tag.Command;
 using Application.Features.Tag.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Contracts.Response;
@@ -22,16 +23,9 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("created")]
+        [Authorize]
         public async Task<IActionResult> CreateNovelFollower([FromBody] CreateNovelFollowerCommand command)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new ApiResponse
-                {
-                    Success = false,
-                    Message = "You should be login first."
-                });
-            command.UserId = userId;
             var result = await _mediator.Send(command);
             return Ok(result);
         }
