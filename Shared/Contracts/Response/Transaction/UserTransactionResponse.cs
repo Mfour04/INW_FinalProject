@@ -8,12 +8,13 @@ namespace Shared.Contracts.Response.Transaction
         public PaymentType Type { get; set; }
         public int Amount { get; set; }
         public PaymentStatus Status { get; set; }
-        public long CompletedAt { get; set; }
+        public long CreatedAt { get; set; }
     }
 
     public class TopUpTransactionResponse : UserTransactionResponse
     {
         public string PaymentMethod { get; set; }
+        public long CompletedAt { get; set; }
     }
 
     public class WithdrawTransactionResponse : UserTransactionResponse
@@ -21,7 +22,7 @@ namespace Shared.Contracts.Response.Transaction
         public string BankAccountName { get; set; }
         public string BankAccountNumber { get; set; }
         public string Message { get; set; }
-        public long CreatedAt { get; set; }
+        public long CompletedAt { get; set; }
     }
 
     public class BuyNovelTransactionResponse : UserTransactionResponse

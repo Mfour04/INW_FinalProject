@@ -1,3 +1,4 @@
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -30,9 +31,13 @@ namespace Application.Features.Transaction.Commands
 
             await _payOS.cancelPaymentLink(request.OrderCode, "User inactive too long");
 
-            transaction.updated_at = TimeHelper.NowTicks;
+            TransactionEntity updated = new()
+            {
+                status = PaymentStatus.Failed,
+                updated_at = TimeHelper.NowTicks,
+            };
 
-            await _transactionRepo.UpdateStatusAsync(request.OrderCode.ToString(), PaymentStatus.Failed);
+            await _transactionRepo.UpdateStatusAsync(transaction.id, updated);
         }
     }
 }

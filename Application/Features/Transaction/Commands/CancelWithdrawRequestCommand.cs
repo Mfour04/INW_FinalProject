@@ -1,3 +1,4 @@
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -47,11 +48,15 @@ namespace Application.Features.Transaction.Commands
 
             // huỷ: trả block coin
             user.block_coin -= transaction.amount;
-            transaction.status = PaymentStatus.Cancelled;
-            transaction.updated_at = TimeHelper.NowTicks;
+
+            TransactionEntity updated = new()
+            {
+                status = PaymentStatus.Cancelled,
+                updated_at = TimeHelper.NowTicks,
+            };
 
             await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
-            await _transactionRepository.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);
+            await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
 
             return new ApiResponse
             {

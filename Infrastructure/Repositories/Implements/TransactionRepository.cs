@@ -5,6 +5,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -93,13 +94,33 @@ namespace Infrastructure.Repositories.Implements
         }
 
         /// <summary>
-        /// Lấy giao dịch theo mã đơn hàng (orderCode) nạp PayOS.
+        /// Cập nhật trạng thái (status) của giao dịch theo id.
         /// </summary>
-        public async Task<TransactionEntity> GetByOrderCodeAsync(long orderCode)
+        public async Task<bool> UpdateStatusAsync(string id, TransactionEntity entity)
         {
             try
             {
-                return await _collection.Find(t => t.id == orderCode.ToString()).FirstOrDefaultAsync();
+                var filter = Builders<TransactionEntity>.Filter.Eq(x => x.id, id);
+
+                var transaction = await _collection.Find(filter).FirstOrDefaultAsync();
+
+                var update = Builders<TransactionEntity>
+                   .Update.Set(x => x.status, entity?.status ?? transaction.status)
+                   .Set(x => x.completed_at, entity.completed_at)
+                   .Set(x => x.updated_at, entity.updated_at);
+
+                await _collection.UpdateOneAsync(t => t.id == id, update);
+
+                var updated = await _collection.FindOneAndUpdateAsync(
+                   filter,
+                   update,
+                   new FindOneAndUpdateOptions<TransactionEntity>
+                   {
+                       ReturnDocument = ReturnDocument.After,
+                   }
+               );
+
+                return updated != null;
             }
             catch
             {
@@ -108,14 +129,13 @@ namespace Infrastructure.Repositories.Implements
         }
 
         /// <summary>
-        /// Cập nhật trạng thái (status) của giao dịch theo id.
+        /// Lấy giao dịch theo mã đơn hàng (orderCode) nạp PayOS.
         /// </summary>
-        public async Task UpdateStatusAsync(string id, PaymentStatus newStatus)
+        public async Task<TransactionEntity> GetByOrderCodeAsync(long orderCode)
         {
             try
             {
-                var update = Builders<TransactionEntity>.Update.Set(t => t.status, newStatus);
-                await _collection.UpdateOneAsync(t => t.id == id, update);
+                return await _collection.Find(t => t.id == orderCode.ToString()).FirstOrDefaultAsync();
             }
             catch
             {
@@ -151,7 +171,7 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Lấy danh sách giao dịch của người dùng theo loại giao dịch.
         /// </summary>
-        public async Task<List<TransactionEntity>> GetUserTransactionsAsync(
+        public async Task<(List<TransactionEntity> Transactions, int TotalCount)> GetUserTransactionsAsync(
             string userId,
             PaymentType? type,
             FindCreterias creterias,
@@ -159,16 +179,15 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
+                // 1. Tạo filter cơ bản theo userId
                 var builder = Builders<TransactionEntity>.Filter;
                 var filter = builder.Eq(t => t.requester_id, userId);
 
+                // 2. Nếu có filter theo type thì thêm vào
                 if (type.HasValue)
-                {
                     filter &= builder.Eq(t => t.type, type.Value);
-                }
 
-                var query = _collection.Find(filter);
-
+                // 3. Xây dựng phần sort
                 var sortBuilder = Builders<TransactionEntity>.Sort;
                 var sortDefinitions = new List<SortDefinition<TransactionEntity>>();
 
@@ -191,16 +210,25 @@ namespace Infrastructure.Repositories.Implements
                         sortDefinitions.Add(sortDef);
                 }
 
-                if (sortDefinitions.Any())
-                {
-                    query = query.Sort(sortBuilder.Combine(sortDefinitions));
-                }
+                // Nếu không có sort cụ thể → fallback sort theo created_at desc
+                var combinedSort = sortDefinitions.Any()
+                    ? sortBuilder.Combine(sortDefinitions)
+                    : sortBuilder.Descending(t => t.created_at);
 
-                query = query
+                // 4. Tạo 2 task song song: count và get data
+                var countTask = _collection.CountDocumentsAsync(filter);
+
+                var dataTask = _collection.Find(filter)
+                    .Sort(combinedSort)
                     .Skip(creterias.Page * creterias.Limit)
-                    .Limit(creterias.Limit);
+                    .Limit(creterias.Limit)
+                    .ToListAsync();
 
-                return await query.ToListAsync();
+                // 5. Chạy song song, chờ cả 2 task hoàn thành
+                await Task.WhenAll(countTask, dataTask);
+
+                // 6. Trả tuple gồm danh sách và tổng số record
+                return (dataTask.Result, (int)countTask.Result);
             }
             catch
             {

@@ -12,13 +12,16 @@ namespace WebApi.Controllers
     public class TransactionController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly string _baseUrl;
+
         private string currentUserId =>
             User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new UnauthorizedAccessException("User ID not found in token");
 
-        public TransactionController(IMediator mediator)
+        public TransactionController(IMediator mediator, IConfiguration config)
         {
             _mediator = mediator;
+            _baseUrl = config["FeUrl"];
         }
 
         [HttpGet()]
@@ -104,6 +107,8 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        // ===== CALLBACKS PayOS =====
+
         [HttpGet("recharges/return-url")]
         public async Task<IActionResult> HandleReturn(
             [FromQuery] string code,
@@ -117,8 +122,7 @@ namespace WebApi.Controllers
                 {
                     OrderCode = orderCode
                 });
-
-                return Ok();
+                return Redirect($"{_baseUrl}");
             }
 
             return BadRequest();
@@ -136,8 +140,7 @@ namespace WebApi.Controllers
                 {
                     OrderCode = orderCode
                 });
-
-                return Ok();
+                return Redirect($"{_baseUrl}");
             }
 
             return BadRequest();

@@ -42,13 +42,14 @@ namespace Application.Mapping
 
             CreateMap<TransactionEntity, TopUpTransactionResponse>()
                 .IncludeBase<TransactionEntity, UserTransactionResponse>()
-                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.payment_method));
+                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.payment_method))
+                .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => src.completed_at));
 
             CreateMap<TransactionEntity, WithdrawTransactionResponse>()
                 .IncludeBase<TransactionEntity, UserTransactionResponse>()
                 .ForMember(dest => dest.BankAccountName, opt => opt.MapFrom(src => src.bank_account_name))
                 .ForMember(dest => dest.BankAccountNumber, opt => opt.MapFrom(src => src.bank_account_number))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
+                .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => src.completed_at))
                 .ForMember(dest => dest.Message, opt => opt.Ignore());
 
             CreateMap<TransactionEntity, BuyNovelTransactionResponse>()
@@ -65,7 +66,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.type))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.amount))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
-                .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => src.completed_at));
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at));
         }
     }
 }

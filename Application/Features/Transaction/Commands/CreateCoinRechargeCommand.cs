@@ -25,7 +25,7 @@ namespace Application.Features.Transaction.Commands
         {
             _transactionRepo = transactionRepo;
             _payOS = payOS;
-            _baseUrl = config["BaseUrl"] ?? throw new ArgumentNullException("BaseUrl is missing in config");
+            _baseUrl = config["BeUrl"] ?? throw new ArgumentNullException("BaseUrl is missing in config");
         }
 
         public async Task<string> Handle(CreateCoinRechargeCommand request, CancellationToken cancellationToken)
@@ -43,8 +43,8 @@ namespace Application.Features.Transaction.Commands
                 amountVND,
                 "Recharge Coins",
                 items,
-                cancelUrl: $"{_baseUrl}/api/transactions/cancel-url",
-                returnUrl: $"{_baseUrl}/api/transactions/return-url"
+                cancelUrl: $"{_baseUrl}/api/transactions/recharges/cancel-url",
+                returnUrl: $"{_baseUrl}/api/transactions/recharges/return-url"
             );
 
             var paymentLink = await _payOS.createPaymentLink(paymentData);

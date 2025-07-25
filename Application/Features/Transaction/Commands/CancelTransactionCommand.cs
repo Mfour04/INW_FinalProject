@@ -1,3 +1,4 @@
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -25,9 +26,13 @@ namespace Application.Features.Transaction.Commands
             if (transaction == null || transaction.status == PaymentStatus.Cancelled)
                 return;
 
-            transaction.updated_at = TimeHelper.NowTicks;
+            TransactionEntity updated = new()
+            {
+                status = PaymentStatus.Cancelled,
+                updated_at = TimeHelper.NowTicks,
+            };
 
-            await _transactionRepo.UpdateStatusAsync(transaction.id, PaymentStatus.Cancelled);
+            await _transactionRepo.UpdateStatusAsync(transaction.id, updated);
         }
     }
 }

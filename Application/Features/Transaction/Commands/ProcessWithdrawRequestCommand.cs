@@ -55,22 +55,28 @@ namespace Application.Features.Transaction.Commands
                 user.coin -= transaction.amount;
                 user.block_coin -= transaction.amount;
 
-                transaction.status = PaymentStatus.Completed;
-                transaction.completed_at = TimeHelper.NowTicks;
+                TransactionEntity updated = new()
+                {
+                    status = PaymentStatus.Completed,
+                    completed_at = TimeHelper.NowTicks,
+                };
 
                 await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
-                await _transactionRepository.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);
+                await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
             }
             else
             {
                 // admin deny
                 user.block_coin -= transaction.amount;
 
-                transaction.status = PaymentStatus.Rejected;
-                transaction.updated_at = TimeHelper.NowTicks;
+                TransactionEntity updated = new()
+                {
+                    status = PaymentStatus.Rejected,
+                    updated_at = TimeHelper.NowTicks,
+                };
 
                 await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
-                await _transactionRepository.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);
+                await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
             }
 
             TransactionLogEntity log = new()

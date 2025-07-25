@@ -44,14 +44,14 @@ namespace Application.Features.Transaction.Queries
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            var userTransaction = await _transactionRepo.GetUserTransactionsAsync(request.UserId, request.Type, findCreterias, sortBy);
-            if (userTransaction == null || userTransaction.Count == 0)
+            var (userTransactions, totalCount) = await _transactionRepo.GetUserTransactionsAsync(request.UserId, request.Type, findCreterias, sortBy);
+            if (userTransactions == null || userTransactions.Count == 0)
                 return new ApiResponse { Success = false, Message = "No transaction found." };
 
             var responseList = new List<object>();
             var withdrawIds = new List<string>();
 
-            foreach (var tx in userTransaction)
+            foreach (var tx in userTransactions)
             {
                 object mapped;
 
@@ -97,11 +97,15 @@ namespace Application.Features.Transaction.Queries
                 }
             }
 
+            var totalPage = (int)Math.Ceiling((double)totalCount / request.Limit);
+
             return new ApiResponse
             {
                 Success = true,
                 Message = "Retrieved user's transaction successfully.",
-                Data = responseList
+                Data = responseList,
+                TotalPage = totalPage,
+                TotalResult = totalCount
             };
         }
     }
