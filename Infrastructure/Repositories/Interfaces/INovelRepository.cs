@@ -1,6 +1,5 @@
 ﻿using Domain.Entities;
 using Domain.Entities.System;
-using Shared.Contracts.Response.Novel;
 
 namespace Infrastructure.Repositories.Interfaces
 {
@@ -8,6 +7,7 @@ namespace Infrastructure.Repositories.Interfaces
     {
         Task<(List<NovelEntity> Novels, int TotalCount)> GetAllNovelAsync(FindCreterias filter, List<SortCreterias> sort);
         Task<NovelEntity> GetByNovelIdAsync(string novelId);
+        Task<NovelEntity> GetBySlugAsync(string slugName);
         Task<NovelEntity> CreateNovelAsync(NovelEntity entity);
         Task<NovelEntity> UpdateNovelAsync(NovelEntity entity);
         Task<bool> DeleteNovelAsync(string id);

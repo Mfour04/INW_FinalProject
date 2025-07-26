@@ -157,6 +157,19 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<NovelEntity> GetBySlugAsync(string slugName)
+        {
+            try
+            {
+                var result = await _collection.Find(x => x.slug == slugName.Trim()).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task IncreaseTotalViewAsync(string novelId)
         {
             var filtered = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);

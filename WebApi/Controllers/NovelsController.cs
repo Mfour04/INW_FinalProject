@@ -63,27 +63,28 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-
         [HttpGet("{id}")]
         public async Task<IActionResult> GetNovelByIdAsync(string id, [FromQuery] int page = 0, [FromQuery] int limit = 10
             , [FromQuery] string sortBy = "chapter_number:asc", [FromQuery] int? chapterNumber = null)
         {
-            string? userId = null;
-            if (User.Identity != null && User.Identity.IsAuthenticated)
-            {
-                userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            }
-
             var result = await _mediator.Send(new GetNovelById
             {
                 NovelId = id,
-                UserId = userId,
                 Page = page,
                 Limit = limit,
                 SortBy = sortBy,
                 ChapterNumber = chapterNumber
             });
 
+            return Ok(result);
+        }
+
+        [HttpGet("slug/{slugName}")]
+        public async Task<IActionResult> GetNovelBySlugAsync(string slugName, [FromQuery] GetNovelBySlug query)
+        {
+            query.SlugName = slugName;
+
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
 
@@ -109,15 +110,7 @@ namespace WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> CreateNovel([FromForm] CreateNovelCommand command)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new ApiResponse
-                {
-                    Success = false,
-                    Message = "User not authenticated."
-                });
-            command.AuthorId = userId;
+            command.AuthorId = currentUserId;
             var result = await _mediator.Send(command);
             return Ok(result);
         }
@@ -206,10 +199,10 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("slug/{slug}")]
-        public async Task<IActionResult> CheckSlug(string slug)
+        [HttpGet("{slugName}/check")]
+        public async Task<IActionResult> CheckSlug(string slugName)
         {
-            var result = await _mediator.Send(new CheckSlug { Slug = slug });
+            var result = await _mediator.Send(new CheckSlug { Slug = slugName });
             return Ok(result);
         }
     }
