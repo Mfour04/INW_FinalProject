@@ -27,7 +27,6 @@ namespace Application.Features.Novel.Commands
         public bool? IsPaid { get; set; }
         public int? Price { get; set; }
         public List<string>? Tags { get; set; }
-        public PurchaseType? PurchaseType { get; set; }
     }
 
     public class UpdateNovelHandle : IRequestHandler<UpdateNovelCommand, ApiResponse>
@@ -52,11 +51,7 @@ namespace Application.Features.Novel.Commands
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
                 return new ApiResponse { Success = false, Message = "Novel not found" };
-
-            var slugExists = await _novelRepository.IsSlugExistsAsync(request.Slug);
-            if (slugExists)
-                return new ApiResponse { Success = false, Message = "Slug already exists." };
-
+            
             if (novel.author_id != _currentUserService.UserId)
             {
                 return new ApiResponse
@@ -65,9 +60,8 @@ namespace Application.Features.Novel.Commands
                     Message = "Unauthorized: You are not the author of this novel"
                 };
             }
-
-            novel.title = request.Title ?? novel.title;
-            novel.slug = request.Slug ?? novel.slug;
+            
+            novel.title = request.Title ?? novel.title; 
             novel.description = request.Description ?? novel.description;
             if (request.NovelImage != null)
             {
@@ -80,6 +74,15 @@ namespace Application.Features.Novel.Commands
             }
             novel.status = request.Status ?? novel.status;
             novel.is_public = request.IsPublic ?? novel.is_public;
+            if (request.Slug != null && request.Slug != novel.slug)
+            {
+                var slugExists = await _novelRepository.IsSlugExistsAsync(request.Slug);
+                if (slugExists)
+                    return new ApiResponse { Success = false, Message = "Slug already exists." };
+
+                novel.slug = request.Slug; // Gán sau khi đã chắc chắn không trùng
+            }
+
             novel.allow_comment = request.AllowComment ?? novel.allow_comment;
             novel.is_lock = request.IsLock ?? novel.is_lock;
             novel.is_paid = request.IsPaid ?? novel.is_paid;
