@@ -27,6 +27,7 @@ namespace Shared.Contracts.Response.Novel
         public int TotalChapters { get; set; }
         public int TotalViews { get; set; }
         public int Followers { get; set; }
+        public int CommentCount { get; set; }
         public double RatingAvg { get; set; }
         public int RatingCount { get; set; }
         public long CreateAt { get; set; }

@@ -1,4 +1,7 @@
-﻿namespace Shared.Contracts.Response.Follow
+﻿using Domain.Enums;
+using Shared.Contracts.Response.Tag;
+
+namespace Shared.Contracts.Response.Follow
 {
     public class NovelFollowResponse
     {
@@ -49,6 +52,8 @@
         public string AuthorId { get; set; }
         public string AuthorName { get; set; }
         public bool IsPaid { get; set; }
+        public NovelStatus Status { get; set; }
+        public List<TagListResponse> Tags { get; set; } = new();
         public int Price { get; set; }
         public double RatingAvg { get; set; }
         public int Followers { get; set; }

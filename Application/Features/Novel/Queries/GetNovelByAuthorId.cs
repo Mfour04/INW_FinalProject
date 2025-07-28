@@ -68,11 +68,19 @@ namespace Application.Features.Novel.Queries
                     }).ToList();
             }
 
+            var totalNovelViews = novelResponse.Sum(n => n.TotalViews);
+            var totalComments = novelResponse.Sum(n => n.CommentCount);
+
             return new ApiResponse
             {
                 Success = true,
                 Message = "Get Novel By Novel By AuthorId Successfully",
-                Data = novelResponse
+                Data = new
+                {
+                    Novels = novelResponse,
+                    TotalNovelViews = totalNovelViews,
+                    TotalComments = totalComments
+                }
             };
         }
     }
