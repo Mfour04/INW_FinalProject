@@ -31,14 +31,18 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Bio, opt => opt.MapFrom(src => src.bio))
                 //.ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.role))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.role.ToString()))
-                .ForMember(dest => dest.isVerified, opt => opt.MapFrom(src => src.is_verified))
-                .ForMember(dest => dest.isBanned, opt => opt.MapFrom(src => src.is_banned))
+                .ForMember(dest => dest.IsVerified, opt => opt.MapFrom(src => src.is_verified))
+                .ForMember(dest => dest.IsBanned, opt => opt.MapFrom(src => src.is_banned))
                 .ForMember(dest => dest.Coin, opt => opt.MapFrom(src => src.coin))
                 .ForMember(dest => dest.BlockCoin, opt => opt.MapFrom(src => src.block_coin))
                 .ForMember(dest => dest.NovelFollowCount, opt => opt.MapFrom(src => src.novel_follow_count))
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
                 .ForMember(dest => dest.LastLogin, opt => opt.MapFrom(src => src.last_login))
                 .ForMember(dest => dest.FavouriteType, opt => opt.MapFrom(src => src.favourite_type));
+
+            CreateMap<UserEntity.TagName, TagListResponse>()
+                .ForMember(dest => dest.TagId, opt => opt.MapFrom(src => src.id_tag))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name_tag));
 
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
@@ -58,6 +62,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelBanner, opt => opt.MapFrom(src => src.novel_banner))
                 .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.comment_count))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
@@ -269,6 +274,8 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelBanner, opt => opt.MapFrom(src => src.novel.novel_banner))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author.id))
                 .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.author.displayname))
+                .ForMember(dest => dest.Tags, opt => opt.Ignore())
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.novel.status))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.novel.is_paid))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.novel.price))
                 .ForMember(dest => dest.RatingAvg, opt => opt.MapFrom(src => src.novel.rating_avg))

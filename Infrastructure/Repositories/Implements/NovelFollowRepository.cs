@@ -1,6 +1,8 @@
 ﻿using Domain.Entities;
+using Domain.Entities.System;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Exceptions;
 
@@ -67,17 +69,27 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<List<NovelFollowerEntity>> GetFollowedNovelsByUserIdAsync(string userId)
+        public async Task<(List<NovelFollowerEntity> NovelFollows, int TotalCount)> GetFollowedNovelsByUserIdAsync(string userId, FindCreterias findCreterias)
         {
             try
             {
-                return await _collection.Find(x => x.user_id == userId).ToListAsync();
+                var filter = Builders<NovelFollowerEntity>.Filter.Eq(x => x.user_id, userId);
+
+                var totalCount = await _collection.CountDocumentsAsync(filter);
+
+                var follows = await _collection.Find(filter)
+                    .Skip(findCreterias.Page * findCreterias.Limit)
+                    .Limit(findCreterias.Limit)
+                    .ToListAsync();
+
+                return (follows, (int)totalCount);
             }
-            catch
+            catch (Exception ex)
             {
-                throw new InternalServerException();
+                throw new InternalServerException("Failed to retrieve followed novels");
             }
         }
+
 
         public async Task<List<NovelFollowerEntity>> GetFollowersByNovelIdAsync(string novelId)
         {

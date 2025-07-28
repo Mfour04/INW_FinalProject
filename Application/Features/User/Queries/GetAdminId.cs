@@ -1,7 +1,9 @@
-﻿using Domain.Enums;
+﻿using AutoMapper;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.User;
 
 
 namespace Application.Features.User.Queries
@@ -12,10 +14,12 @@ namespace Application.Features.User.Queries
     public class GetAdminIdHandler : IRequestHandler<GetAdminId, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
 
-        public GetAdminIdHandler(IUserRepository userRepository)
+        public GetAdminIdHandler(IUserRepository userRepository, IMapper mapper)
         {
             _userRepository = userRepository;
+            _mapper = mapper;
         }
 
         public async Task<ApiResponse> Handle(GetAdminId request, CancellationToken cancellationToken)
@@ -26,8 +30,8 @@ namespace Application.Features.User.Queries
             {
                 return new ApiResponse { Success = false, Message = "Not found admin" };
             }
-
-            return new ApiResponse { Success = true, Message = " found admin", Data = adminUser};
+            var response = _mapper.Map<UserResponse>(adminUser);
+            return new ApiResponse { Success = true, Message = " found admin", Data = response};
         }
     }
 }

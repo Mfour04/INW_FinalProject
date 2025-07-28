@@ -1,4 +1,5 @@
-﻿using static Domain.Entities.UserEntity;
+﻿using Shared.Contracts.Response.Tag;
+using static Domain.Entities.UserEntity;
 
 namespace Shared.Contracts.Response.User
 {
@@ -11,13 +12,13 @@ namespace Shared.Contracts.Response.User
         public string AvatarUrl { get; set; }
         public string Bio { get; set; }
         public string Role { get; set; } 
-        public bool isVerified { get; set; }
-        public bool isBanned { get; set; }
+        public bool IsVerified { get; set; }
+        public bool IsBanned { get; set; }
         public int Coin { get; set; }
         public int BlockCoin { get; set; }
         public int NovelFollowCount { get; set; }
         public List<string> BadgeId { get; set; } = new();
         public long LastLogin { get; set; }
-        public List<TagName> FavouriteType { get; set; } = new();
+        public List<TagListResponse> FavouriteType { get; set; } = new();
     }
 }

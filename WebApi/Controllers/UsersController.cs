@@ -99,8 +99,8 @@ namespace WebApi.Controllers
         }
 
         [Authorize]
-        [HttpGet("user-infor")]
-        public async Task<IActionResult> GetUserInfo()
+        [HttpGet("my-infor")]
+        public async Task<IActionResult> GetCurrentUserInfo()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -115,6 +115,25 @@ namespace WebApi.Controllers
 
             return Ok(result.Data);
         }
+
+        [Authorize]
+        [HttpGet("user-infor")]
+        public async Task<IActionResult> GetUserInfor(string userId)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            var result = await _mediator.Send(new GetUserById
+            {
+                UserId = userId,
+                CurrentUserId = currentUserId
+            });
+
+            if (!result.Success)
+                return NotFound(result.Message);
+
+            return Ok(result.Data);
+        }
+
 
         // Đăng xuất người dùng
         [HttpPost("logout")]
