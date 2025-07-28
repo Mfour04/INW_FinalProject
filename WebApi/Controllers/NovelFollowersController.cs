@@ -43,19 +43,31 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new GetFollowerByNovelIdCommand { NovelId = novelId });
             return Ok(result);
         }
+
         [HttpGet("user")]
-        public async Task<IActionResult> GetFollowedNovelsByUserId()
+        [Authorize]
+        public async Task<IActionResult> GetFollowedNovelsByUserId([FromQuery] int page = 0, [FromQuery] int limit = 20)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
+            {
                 return Unauthorized(new ApiResponse
                 {
                     Success = false,
                     Message = "User not authenticated."
                 });
-            var query = new GetFollowerByUserId { UserId = userId };
+            }
+
+            var query = new GetFollowerByUserId
+            {
+                UserId = userId,
+                Page = page,
+                Limit = limit
+            };
+
             var result = await _mediator.Send(query);
-            return Ok(result); 
+            return Ok(result);
         }
+
     }
 }
