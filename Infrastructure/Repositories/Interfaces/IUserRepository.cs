@@ -1,6 +1,8 @@
 ﻿using Domain.Entities;
 using Domain.Entities.System;
 using Domain.Enums;
+using Shared.Contracts.Response.Admin;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories.Interfaces
 {
@@ -8,7 +10,7 @@ namespace Infrastructure.Repositories.Interfaces
     {
         Task<UserEntity> CreateUser(UserEntity entity);
         Task<UserEntity> UpdateUser(UserEntity entity);
-        Task UpdateLockvsUnLockUser(string userId, bool isbanned);
+        Task UpdateLockvsUnLockUser(string userId, bool isbanned, long? bannedUntilTicks = null);
         Task<UserEntity> GetById(string userId);
         Task<UserEntity> GetByEmail(string email);
         Task<UserEntity> GetByName(string userName);
@@ -22,5 +24,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<List<UserEntity>> GetUsersByIdsAsync(List<string> userIds);
         Task<bool> IncrementFollowerCountAsync(string userId, int value);
         Task<bool> IncrementFollowingCountAsync(string userId, int value);
+        Task<int> CountAsync(Expression<Func<UserEntity, bool>> filter = null);
+        Task<List<WeeklyStatItem>> CountUsersPerDayCurrentWeekAsync();
     }
 }

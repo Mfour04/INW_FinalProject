@@ -4,7 +4,10 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Shared.Contracts.Response.Admin;
 using Shared.Exceptions;
+using Shared.Helpers;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -318,6 +321,40 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task<int> CountAsync(Expression<Func<NovelEntity, bool>> filter = null)
+        {
+            return (int)(filter == null
+            ? await _collection.CountDocumentsAsync(_ => true)
+            : await _collection.CountDocumentsAsync(filter));
+        }
+
+        public async Task<List<WeeklyStatItem>> CountNovelsPerDayCurrentWeekAsync()
+        {
+            var fromTicks = TimeHelper.StartOfCurrentWeekTicksVN;
+            var toTicks = TimeHelper.NowTicks;
+
+            var novels = await _collection
+                .Find(n => n.created_at >= fromTicks && n.created_at <= toTicks)
+                .ToListAsync();
+
+            // Nhóm theo ngày (VN timezone)
+            var grouped = novels
+                .GroupBy(n => TimeHelper.ToVN(new DateTime(n.created_at)).Date)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Danh sách các ngày từ thứ 2 đến hôm nay
+            var days = TimeHelper.GetDaysFromStartOfWeekToTodayVN();
+
+            var result = days.Select(d => new WeeklyStatItem
+            {
+                Day = d.ToString("yyyy-MM-dd"),
+                Count = grouped.ContainsKey(d) ? grouped[d] : 0,
+                Weekday = TimeHelper.DayOfWeekVN(d.DayOfWeek)
+            }).ToList();
+
+            return result;
         }
     }
 }

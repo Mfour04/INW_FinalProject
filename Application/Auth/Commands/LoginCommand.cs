@@ -1,9 +1,15 @@
 ﻿using Application.Exceptions;
+using Application.Features.Notification.Commands;
+using Application.Services.Interfaces;
 using AutoMapper;
+using Domain.Entities;
+using Domain.Enums;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.User;
+using Shared.Helpers;
 using Shared.SystemHelpers.TokenGenerate;
 
 namespace Application.Auth.Commands
@@ -19,12 +25,17 @@ namespace Application.Auth.Commands
         private readonly IUserRepository _userRepository;
         private readonly JwtHelpers _jwtHelpers;
         private readonly IMapper _mapper;
+        private readonly INotificationRepository _notificationRepository;
+        private readonly INotificationService _notificationService;
 
-        public LoginHandler(IUserRepository userRepository, JwtHelpers jwtHelpers, IMapper mapper)
+        public LoginHandler(IUserRepository userRepository, JwtHelpers jwtHelpers, IMapper mapper
+            , INotificationRepository notificationRepository, INotificationService notificationService)
         {
             _userRepository = userRepository;
             _jwtHelpers = jwtHelpers;
             _mapper = mapper;
+            _notificationRepository = notificationRepository;
+            _notificationService = notificationService;
         }
         
         public async Task<ApiResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -38,6 +49,34 @@ namespace Application.Auth.Commands
             if (user == null)
             {
                 throw new ApiException("Invalid userName or password.");
+            }
+
+            if (user.is_banned)
+            {
+                if (TimeHelper.IsBanExpired(user.banned_until))
+                {
+                    // Ban đã hết hạn => tự động gỡ ban
+                    user.is_banned = false;
+                    user.banned_until = null;
+                    await _userRepository.UpdateLockvsUnLockUser(user.id, false, null);
+                    await _notificationRepository.CreateAsync(new NotificationEntity
+                    {
+                        id = SystemHelper.RandomId(),
+                        user_id = user.id,
+                        type = NotificationType.UnBanUser,
+                        message = "Tài khoản của bạn đã được mở khóa tự động sau thời gian khóa.",
+                        is_read = false,
+                        created_at = TimeHelper.NowVN.Ticks
+                    });
+
+                    await _notificationService.SendNotificationAsync(user.id, "Tài khoản của bạn đã được mở khóa tự động sau thời gian khóa.", NotificationType.UnBanUser);
+                }
+                else
+                {
+                    // Ban chưa hết hạn => chặn đăng nhập
+                    var bannedUntilText = TimeHelper.FromTicks(user.banned_until.Value).ToString("HH:mm dd/MM/yyyy");
+                    throw new ApiException($"This account will be banned until {bannedUntilText}.");
+                }
             }
 
             // Kiểm tra mật khẩu

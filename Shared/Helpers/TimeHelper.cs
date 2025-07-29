@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Shared.Helpers
 {
     public static class TimeHelper
@@ -47,7 +49,42 @@ namespace Shared.Helpers
         /// Ticks tại 23:59:59.9999999 hôm nay (giờ VN)
         /// </summary>
         public static long EndOfTodayTicksVN => NowVN.Date.AddDays(1).AddTicks(-1).Ticks;
-        public static long NowUnixTimeSeconds => new DateTimeOffset(NowVN).ToUnixTimeSeconds();
+        public static long NowUnixTimeSeconds => new DateTimeOffset(NowVN).ToUnixTimeMilliseconds();
+        /// Ticks tại 00:00 thứ 2 đầu tuần hiện tại (giờ VN)
+        public static long StartOfCurrentWeekTicksVN =>
+            NowVN.Date.AddDays(-(int)(NowVN.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)NowVN.DayOfWeek - 1)).Ticks;
 
+        /// Ticks tại 23:59:59.9999999 Chủ nhật tuần này (giờ VN)
+        public static long EndOfCurrentWeekTicksVN =>
+            new DateTime(StartOfCurrentWeekTicksVN).AddDays(7).AddTicks(-1).Ticks;
+        public static List<DateTime> GetDaysFromStartOfWeekToTodayVN()
+        {
+            var today = NowVN.Date;
+            var startOfWeek = today.AddDays(-(int)(today.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)today.DayOfWeek - 1));
+
+            var days = new List<DateTime>();
+            for (var d = startOfWeek; d <= today; d = d.AddDays(1))
+                days.Add(d);
+
+            return days;
+        }
+
+        public static string DayOfWeekVN(DayOfWeek day)
+        {
+            return day switch
+            {
+                DayOfWeek.Sunday => "Chủ nhật",
+                DayOfWeek.Monday => "Thứ 2",
+                DayOfWeek.Tuesday => "Thứ 3",
+                DayOfWeek.Wednesday => "Thứ 4",
+                DayOfWeek.Thursday => "Thứ 5",
+                DayOfWeek.Friday => "Thứ 6",
+                DayOfWeek.Saturday => "Thứ 7",
+                _ => ""
+            };
+        }
+
+        public static bool IsBanExpired(long? bannedUntilTicks) => 
+            bannedUntilTicks.HasValue && NowTicks > bannedUntilTicks.Value;
     }
 }

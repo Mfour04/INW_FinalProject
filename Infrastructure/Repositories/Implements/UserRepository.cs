@@ -5,8 +5,10 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Shared.Contracts.Response.Admin;
 using Shared.Exceptions;
 using Shared.Helpers;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -323,18 +325,54 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task UpdateLockvsUnLockUser(string userId, bool isbanned)
+        public async Task UpdateLockvsUnLockUser(string userId, bool isbanned, long? bannedUntilTicks = null)
         {
             try
             {
                 var filter = Builders<UserEntity>.Filter.Eq(x => x.id, userId);
-                var updatelockUser = Builders<UserEntity>.Update.Set(x => x.is_banned, isbanned);
+                var updatelockUser = Builders<UserEntity>.Update
+                   .Set(x => x.is_banned, isbanned)
+                   .Set(x => x.banned_until, bannedUntilTicks);
                 await _collection.UpdateOneAsync(filter, updatelockUser);
             }
             catch
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task<int> CountAsync(Expression<Func<UserEntity, bool>> filter = null)
+        {
+            return (int)(filter == null
+            ? await _collection.CountDocumentsAsync(_ => true)
+            : await _collection.CountDocumentsAsync(filter));
+        }
+
+        public async Task<List<WeeklyStatItem>> CountUsersPerDayCurrentWeekAsync()
+        {
+            var fromTicks = TimeHelper.StartOfCurrentWeekTicksVN;
+            var toTicks = TimeHelper.NowTicks;
+
+            var users = await _collection
+                .Find(u => u.created_at >= fromTicks && u.created_at <= toTicks)
+                .ToListAsync();
+
+            // Nhóm theo ngày giờ Việt Nam
+            var grouped = users
+                .GroupBy(u => TimeHelper.ToVN(new DateTime(u.created_at)).Date)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Lấy danh sách các ngày từ thứ 2 đến hôm nay
+            var days = TimeHelper.GetDaysFromStartOfWeekToTodayVN();
+
+            var result = days.Select(d => new WeeklyStatItem
+            {
+                Day = d.ToString("yyyy-MM-dd"),
+                Count = grouped.ContainsKey(d) ? grouped[d] : 0,
+                Weekday = TimeHelper.DayOfWeekVN(d.DayOfWeek)
+            }).ToList();
+
+            return result;
         }
     }
 }

@@ -15,6 +15,7 @@ namespace Domain.Entities
         public Role role { get; set; } 
         public bool is_verified { get; set; }
         public bool is_banned { get; set; }
+        public long? banned_until { get; set; }
         public int coin { get; set; }
         public int block_coin { get; set; }
         public List<TagName> favourite_type { get; set; } = new();

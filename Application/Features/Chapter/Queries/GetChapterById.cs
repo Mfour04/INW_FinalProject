@@ -49,6 +49,19 @@ namespace Application.Features.Chapter.Queries
             var nextChapter = await _chapterRepository.GetNextAsync(novel.id, chapter.chapter_number ?? 0);
 
             var viewerId = !string.IsNullOrEmpty(request.UserId) ? request.UserId : request.IpAddress;
+
+            bool isAuthor = request.UserId == novel.author_id;
+            bool hasFullOwnerShip = await _purchaserRepository.HasPurchasedFullAsync(request.UserId, novel.id);
+            bool hasChapterOwnership = await _purchaserRepository.HasPurchasedChapterAsync(request.UserId, novel.id, chapter.id);
+
+            bool hasAccess = isAuthor || hasFullOwnerShip || hasChapterOwnership;
+
+            if (!novel.is_public || !chapter.is_public)
+            {
+                if (!hasAccess)
+                    return new ApiResponse { Success = false, Message = "Nội dung này đã bị ẩn." };
+            }
+
             bool shouldReloadChapter = false;
 
             if (!chapter.is_paid)
@@ -62,11 +75,8 @@ namespace Application.Features.Chapter.Queries
                 if (string.IsNullOrEmpty(request.UserId))
                     return new ApiResponse { Success = false, Message = "Bạn chưa đăng nhập để xem chương này." };
                 var authorId = novel.author_id;
-                bool isAuthor = request.UserId == authorId;
-                bool hasFullOwnerShip = await _purchaserRepository.HasPurchasedFullAsync(request.UserId, novel.id);
-                bool hasFullChapter = await _purchaserRepository.HasPurchasedChapterAsync(request.UserId, novel.id, request.ChapterId);
 
-                if (hasFullOwnerShip || hasFullChapter || isAuthor)
+                if (hasAccess)
                 {
                     await HandleNovelViewAsync(request.UserId, novel.id);
                     await _chapterHelperService.ProcessViewAsync(chapter.id, viewerId);

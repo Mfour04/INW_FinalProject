@@ -15,13 +15,16 @@ namespace Application.Features.Novel.Commands
     {
         private readonly INovelRepository _novelRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IChapterRepository _chapterRepository;
         public HideNovelCommandHandler(
         INovelRepository novelRepository,
-        ICurrentUserService currentUserService
+        ICurrentUserService currentUserService,
+        IChapterRepository chapterRepository
         )
         {
             _novelRepository = novelRepository;
             _currentUserService = currentUserService;
+            _chapterRepository = chapterRepository;
         }
         public async Task<ApiResponse> Handle(UpdateHideNovelCommand request, CancellationToken cancellationToken)
         {
@@ -40,6 +43,7 @@ namespace Application.Features.Novel.Commands
                 return new ApiResponse { Success = false, Message = "Forbidden: You are not the author of this novel." };
             }
             await _novelRepository.UpdateHideNovelAsync(request.NovelId, request.IsPublic);
+            await _chapterRepository.UpdateHideAllChaptersByNovelIdAsync(request.NovelId, request.IsPublic);
             var action = request.IsPublic ? "unhidden" : "hidden";
             return new ApiResponse
             {

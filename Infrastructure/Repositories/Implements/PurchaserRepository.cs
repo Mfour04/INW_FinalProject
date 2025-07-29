@@ -175,5 +175,27 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<bool> HasAnyPurchasedChapterAsync(string userId, string novelId, List<string> chapterIds)
+        {
+            try
+            {
+                if (chapterIds == null || chapterIds.Count == 0)
+                    return false;
+
+                var filter = Builders<PurchaserEntity>.Filter.And(
+                    Builders<PurchaserEntity>.Filter.Eq(p => p.user_id, userId),
+                    Builders<PurchaserEntity>.Filter.Eq(p => p.novel_id, novelId),
+                    Builders<PurchaserEntity>.Filter.Eq(p => p.is_full, false),
+                    Builders<PurchaserEntity>.Filter.Where(p => p.chapter_ids.Any(id => chapterIds.Contains(id)))
+                );
+
+                return await _collection.Find(filter).AnyAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }
