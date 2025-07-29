@@ -14,5 +14,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<(List<TransactionEntity> Transactions, int TotalCount)> GetUserTransactionsAsync(string userId, PaymentType? type, FindCreterias creterias, List<SortCreterias> sortCreterias);
         Task<TransactionEntity> GetByIdAsync(string id);
         Task<List<TransactionEntity>> GetPendingWithdrawRequestsAsync(FindCreterias creterias, List<SortCreterias> sortCreterias);
+        Task<List<TransactionEntity>> GetCompletedTransactionsInRangeAsync(long startDate, long endDate);
     }
 }

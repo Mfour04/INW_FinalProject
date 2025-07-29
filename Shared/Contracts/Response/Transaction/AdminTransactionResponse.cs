@@ -39,4 +39,23 @@ namespace Shared.Contracts.Response.Transaction
         public string NovelId { get; set; }
         public string ChapterId { get; set; }
     }
+
+    public class AdminTransactionChartResponse
+    {
+        public string Label { get; set; }
+        public int RechargeCount { get; set; }
+        public int RechargeCoins { get; set; }
+        public int WithdrawCount { get; set; }
+        public int WithdrawCoins { get; set; }
+        public int ProfitCoins { get; set; }
+    }
+
+    public class AdminTransactionSummaryResponse
+    {
+        public int TotalTransactions { get; set; }
+        public int TotalRechargeCoins { get; set; }
+        public int TotalWithdrawCoins { get; set; }
+        public int ProfitCoins { get; set; }
+        public decimal ProfitVND { get; set; }
+    }
 }

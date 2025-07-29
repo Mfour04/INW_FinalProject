@@ -107,6 +107,22 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("dashboard/chart")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetDashboardChart([FromQuery] GetTransactionDashboardChart query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
+        [HttpGet("dashboard/summary")]
+        // [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetDashboardSummary([FromQuery] GetTransactionDashboardSummary query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
         // ===== CALLBACKS PayOS =====
 
         [HttpGet("recharges/return-url")]

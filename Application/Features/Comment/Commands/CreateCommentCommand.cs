@@ -14,8 +14,8 @@ namespace Application.Features.Comment.Commands
     public class CreateCommentCommand : IRequest<ApiResponse>
     {
         public string? UserId { get; set; }
-        public string? NovelId { get; set; }
-        public string? ChapterId { get; set; }
+        public string? NovelId { get; set; } 
+        public string? ChapterId { get; set; } 
         public string Content { get; set; }
         public string? ParentCommentId { get; set; }
     }
