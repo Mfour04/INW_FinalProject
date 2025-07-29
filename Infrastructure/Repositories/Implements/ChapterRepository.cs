@@ -494,5 +494,20 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+        public async Task UpdateHideAllChaptersByNovelIdAsync(string novelId, bool isPublic)
+        {
+            try
+            {
+                var filter = Builders<ChapterEntity>.Filter.Eq(x => x.novel_id, novelId);
+                var update = Builders<ChapterEntity>.Update
+                    .Set(x => x.is_public, isPublic)
+                    .Set(x => x.updated_at, TimeHelper.NowTicks);
+                await _collection.UpdateManyAsync(filter, update);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }

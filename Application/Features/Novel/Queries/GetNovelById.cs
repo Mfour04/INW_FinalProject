@@ -56,7 +56,7 @@ namespace Application.Features.Novel.Queries
                 var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
                 if (novel == null)
                     return Fail("Truyện không tồn tại.");
-
+                
                 var novelResponse = _mapper.Map<NovelResponse>(novel);
 
                 var author = (await _userRepository.GetUsersByIdsAsync(new List<string> { novel.author_id }))
@@ -72,11 +72,12 @@ namespace Application.Features.Novel.Queries
                     .ToList();
 
                 // Kiểm tra quyền
+                var chapterIds = await _chapterRepository.GetIdsByNovelIdAsync(request.NovelId);
                 bool isGuest = string.IsNullOrEmpty(_currentUser.UserId);
                 bool isAuthor = !isGuest && novel.author_id == _currentUser.UserId;
                 bool hasPurchasedFull = !isGuest && await _purchaserRepository.HasPurchasedFullAsync(_currentUser.UserId, request.NovelId);
-
-                if (!novel.is_public && !isAuthor && !hasPurchasedFull)
+                bool hasPurchasedChapters = !isGuest && await _purchaserRepository.HasAnyPurchasedChapterAsync(_currentUser.UserId, request.NovelId, chapterIds);
+                if (!novel.is_public && !isAuthor && !hasPurchasedFull && !hasPurchasedChapters)
                     return Fail("Truyện này chưa được công khai.");
 
                 var chapterCriteria = new ChapterFindCreterias
@@ -89,7 +90,6 @@ namespace Application.Features.Novel.Queries
 
                 var (allChapterEntities, totalChapters, totalPages) = await _chapterRepository.GetPagedByNovelIdAsync(request.NovelId, chapterCriteria, sort);
                 var allChapterIds = allChapterEntities.Select(c => c.id).ToList();
-                var chapterResponse = _mapper.Map<List<ChapterResponse>>(allChapterEntities);
 
                 // Lọc các chương miễn phí
                 var freeChapterIds = allChapterEntities
@@ -101,9 +101,17 @@ namespace Application.Features.Novel.Queries
                 var purchasedChapterIds = hasPurchasedFull
                     ? new List<string>()
                     : await _purchaserRepository.GetPurchasedChaptersAsync(_currentUser.UserId, request.NovelId);
-
+                var filteredChapters = allChapterEntities
+                .Where(c =>
+                    c.is_public ||
+                    isAuthor ||
+                    hasPurchasedFull ||
+                    purchasedChapterIds.Contains(c.id)
+                )
+                .ToList();
+                var chapterResponse = _mapper.Map<List<ChapterResponse>>(filteredChapters);
                 bool isAccessFull = isAuthor || hasPurchasedFull || (!novel.is_paid && novel.is_public);
-
+                    
                 string message = isAccessFull
                     ? "Bạn có thể truy cập toàn bộ truyện."
                     : "Bạn chỉ xem được chương miễn phí và chương đã mua.";

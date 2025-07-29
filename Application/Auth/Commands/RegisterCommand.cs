@@ -48,8 +48,8 @@ namespace Application.Auth.Commands
                 password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 role = Role.User,
                 is_verified = false,
-                created_at = DateTime.Now.Ticks,
-                updated_at = DateTime.Now.Ticks
+                created_at = TimeHelper.NowTicks,
+                updated_at = TimeHelper.NowTicks
             };
 
             await _userRepository.CreateUser(newUser);

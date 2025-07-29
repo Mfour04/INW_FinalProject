@@ -178,6 +178,13 @@ namespace Application.Features.Notification.Commands
                     receiverId = admin.id;
                     userNameReported = reportedUser.username;
                     break;
+                case NotificationType.BanUser:
+                    receiverId = request.UserId;
+                    break;
+                case NotificationType.UnBanUser:
+                    receiverId = request.UserId;
+                    break;
+
                 default:
                     return new ApiResponse
                     {

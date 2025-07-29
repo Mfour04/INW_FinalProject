@@ -1,5 +1,7 @@
 ﻿using Domain.Entities;
 using Domain.Entities.System;
+using Shared.Contracts.Response.Admin;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories.Interfaces
 {
@@ -22,5 +24,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> DecrementCommentsAsync(string novelId);
         Task<bool> IsSlugExistsAsync(string slug, string? excludeId = null);
         Task<List<NovelEntity>> GetManyByIdsAsync(List<string> ids);
+        Task<int> CountAsync(Expression<Func<NovelEntity, bool>> filter = null);
+        Task<List<WeeklyStatItem>> CountNovelsPerDayCurrentWeekAsync();
     }
 }
