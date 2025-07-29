@@ -301,5 +301,19 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        /// <summary>
+        /// Lấy danh sách transaction hoàn tất trong khoảng thời gian
+        /// </summary>
+        public async Task<List<TransactionEntity>> GetCompletedTransactionsInRangeAsync(long startDate, long endDate)
+        {
+            var filter = Builders<TransactionEntity>.Filter.And(
+                Builders<TransactionEntity>.Filter.Gte(x => x.completed_at, startDate),
+                Builders<TransactionEntity>.Filter.Lte(x => x.completed_at, endDate),
+                Builders<TransactionEntity>.Filter.Eq(x => x.status, PaymentStatus.Completed)
+            );
+
+            return await _collection.Find(filter).ToListAsync();
+        }
     }
 }

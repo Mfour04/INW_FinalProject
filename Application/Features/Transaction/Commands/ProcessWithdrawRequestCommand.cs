@@ -9,7 +9,7 @@ namespace Application.Features.Transaction.Commands
 {
     public class ProcessWithdrawRequestCommand : IRequest<ApiResponse>
     {
-        public string TransactionId { get; set; }
+        public string? TransactionId { get; set; }
         public string? ApproverId { get; set; }
         public bool IsApproved { get; set; }
         public string? Message { get; set; }
