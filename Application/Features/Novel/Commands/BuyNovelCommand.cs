@@ -21,19 +21,22 @@ namespace Application.Features.Novel.Commands
         private readonly ITransactionRepository _transactionRepo;
         private readonly INovelRepository _novelRepo;
         private readonly IChapterRepository _chapterRepo;
+        private readonly IAuthorEarningRepository _authorEarningRepo;
 
         public BuyNovelCommandHandler(
            IUserRepository userRepo,
            IPurchaserRepository purchaserRepo,
            ITransactionRepository transactionRepo,
            INovelRepository novelRepo,
-           IChapterRepository chapterRepo)
+           IChapterRepository chapterRepo,
+           IAuthorEarningRepository authorEarningRepo)
         {
             _userRepo = userRepo;
             _purchaserRepo = purchaserRepo;
             _transactionRepo = transactionRepo;
             _novelRepo = novelRepo;
             _chapterRepo = chapterRepo;
+            _authorEarningRepo = authorEarningRepo;
         }
 
         public async Task<ApiResponse> Handle(BuyNovelCommand request, CancellationToken cancellationToken)
@@ -47,7 +50,7 @@ namespace Application.Features.Novel.Commands
 
             if (!novel.is_paid)
                 return Fail("This novel is free and does not need to be purchased.");
-                
+
             if (novel.status != NovelStatus.Completed)
                 return Fail("Only completed novels can be purchased in full.");
 
@@ -81,6 +84,23 @@ namespace Application.Features.Novel.Commands
                 return Fail("Failed to deduct coins.");
 
             await _transactionRepo.AddAsync(transaction);
+
+            if (!string.IsNullOrEmpty(novel.author_id))
+            {
+                await _userRepo.IncreaseCoinAsync(novel.author_id, request.CoinCost);
+
+                AuthorEarningEntity authorEarning = new()
+                {
+                    id = SystemHelper.RandomId(),
+                    author_id = novel.author_id,
+                    novel_id = novel.id,
+                    amount = request.CoinCost,
+                    type = PaymentType.BuyNovel,
+                    source_transaction_id = transaction.id,
+                    created_at = nowTicks
+                };
+                await _authorEarningRepo.AddAsync(authorEarning);
+            }
 
             if (existing == null)
             {

@@ -116,7 +116,7 @@ namespace WebApi.Controllers
         }
 
         [HttpGet("dashboard/summary")]
-        // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetDashboardSummary([FromQuery] GetTransactionDashboardSummary query)
         {
             var result = await _mediator.Send(query);
