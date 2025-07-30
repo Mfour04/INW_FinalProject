@@ -21,19 +21,22 @@ namespace Application.Features.Chapter.Commands
         private readonly ITransactionRepository _transactionRepo;
         private readonly INovelRepository _novelRepo;
         private readonly IChapterRepository _chapterRepo;
+        private readonly IAuthorEarningRepository _authorEarningRepo; 
 
-        public BuyChapterCommandHandler(
+         public BuyChapterCommandHandler(
             IUserRepository userRepo,
             IPurchaserRepository purchaserRepo,
             ITransactionRepository transactionRepo,
             INovelRepository novelRepo,
-            IChapterRepository chapterRepo)
+            IChapterRepository chapterRepo,
+            IAuthorEarningRepository authorEarningRepo)
         {
             _userRepo = userRepo;
             _purchaserRepo = purchaserRepo;
             _transactionRepo = transactionRepo;
             _novelRepo = novelRepo;
             _chapterRepo = chapterRepo;
+            _authorEarningRepo = authorEarningRepo;
         }
 
         public async Task<ApiResponse> Handle(BuyChapterCommand request, CancellationToken cancellationToken)
@@ -54,11 +57,11 @@ namespace Application.Features.Chapter.Commands
             if (await _purchaserRepo.HasPurchasedChapterAsync(request.UserId, novel.id, request.ChapterId))
                 return Fail("Chapter already purchased.");
 
-			var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, novel.id);
-			if (existing?.is_full == true)
-				return Fail("You have already purchased the full novel.");
+            var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, novel.id);
+            if (existing?.is_full == true)
+                return Fail("You have already purchased the full novel.");
 
-			var user = await _userRepo.GetById(request.UserId);
+            var user = await _userRepo.GetById(request.UserId);
             if (user == null || user.coin < request.CoinCost)
                 return Fail("Not enough coins.");
 
@@ -97,8 +100,27 @@ namespace Application.Features.Chapter.Commands
                 created_at = TimeHelper.NowTicks,
                 completed_at = TimeHelper.NowTicks
             };
+
             await _transactionRepo.AddAsync(transaction);
 
+            if (!string.IsNullOrEmpty(novel.author_id))
+            {
+                await _userRepo.IncreaseCoinAsync(novel.author_id, request.CoinCost);
+
+                AuthorEarningEntity authorEarning = new()
+                {
+                    id = SystemHelper.RandomId(),
+                    author_id = novel.author_id,
+                    novel_id = novel.id,
+                    chapter_id = request.ChapterId,
+                    amount = request.CoinCost,
+                    type = PaymentType.BuyChapter,
+                    source_transaction_id = transaction.id,
+                    created_at = TimeHelper.NowTicks
+                };
+
+                await _authorEarningRepo.AddAsync(authorEarning);
+            }
 
             return new ApiResponse
             {

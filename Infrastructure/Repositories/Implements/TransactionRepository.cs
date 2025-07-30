@@ -5,7 +5,6 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
-using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -314,6 +313,29 @@ namespace Infrastructure.Repositories.Implements
             );
 
             return await _collection.Find(filter).ToListAsync();
+        }
+
+        public async Task<List<TransactionEntity>> GetTransactionsByNovelIdsAsync(List<string> novelIds, long startTicks, long endTicks, int[] types)
+        {
+            var filterBuilder = Builders<TransactionEntity>.Filter;
+
+            var filter = filterBuilder.In(x => x.novel_id, novelIds) &
+						 filterBuilder.In(x => (int)x.type, types) &
+                         filterBuilder.Eq(x => x.status, PaymentStatus.Completed) &
+                         filterBuilder.Gte(x => x.completed_at, startTicks) &
+                         filterBuilder.Lte(x => x.completed_at, endTicks);
+
+            var projection = Builders<TransactionEntity>.Projection
+                .Include(x => x.id)
+                .Include(x => x.novel_id)
+                .Include(x => x.amount)
+                .Include(x => x.type)
+                .Include(x => x.completed_at);
+
+            return await _collection
+                .Find(filter)
+                .Project<TransactionEntity>(projection)
+                .ToListAsync();
         }
     }
 }
