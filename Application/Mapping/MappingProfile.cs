@@ -28,6 +28,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.displayname))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.email))
                 .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.avata_url))
+                .ForMember(dest => dest.CoverUrl, opt => opt.MapFrom(src => src.cover_url))
                 .ForMember(dest => dest.Bio, opt => opt.MapFrom(src => src.bio))
                 //.ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.role))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.role.ToString()))
@@ -47,6 +48,7 @@ namespace Application.Mapping
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.AvataUrl, opt => opt.MapFrom(src => src.avata_url))
+                .ForMember(dest => dest.CoverUrl, opt => opt.MapFrom(src => src.cover_url))
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.displayname))
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
                 .ForMember(dest => dest.FavouriteType, opt => opt.MapFrom(src => src.favourite_type));

@@ -128,6 +128,19 @@ namespace Infrastructure.Repositories.Implements
             return result;
         }
 
+        public async Task DeleteUserEmbeddingAsync(string userId)
+        {
+            var filter = Builders<UserEmbeddingEntity>.Filter.Eq(x => x.user_id, userId);
+            await _userCollection.DeleteOneAsync(filter);
+
+        }
+
+        public async Task DeleteNovelEmbeddingAsync(string novelId)
+        {
+            var filter = Builders<NovelEmbeddingEntity>.Filter.Eq(x => x.novel_id, novelId);
+            await _novelCollection.DeleteOneAsync(filter);
+        }
+
         /// <summary>
         /// End Embedding methods
         /// </summary>

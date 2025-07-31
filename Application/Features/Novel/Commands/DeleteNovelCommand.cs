@@ -13,11 +13,15 @@ namespace Application.Features.Novel.Commands
     {
         private readonly INovelRepository _novelRepository;
         private readonly ICurrentUserService _currentUserService;
-
-        public DeleteNovelHandler(INovelRepository novelRepository, ICurrentUserService currentUserService)
+        private readonly ICloudDinaryService _cloudDinaryService;
+        private readonly IOpenAIRepository _openAIRepository;
+        public DeleteNovelHandler(INovelRepository novelRepository, ICurrentUserService currentUserService
+            , ICloudDinaryService cloudDinaryService, IOpenAIRepository openAIRepository)
         {
             _novelRepository = novelRepository;
             _currentUserService = currentUserService;
+            _cloudDinaryService = cloudDinaryService;
+            _openAIRepository = openAIRepository;
         }
         public async Task<ApiResponse> Handle(DeleteNovelCommand request, CancellationToken cancellationToken)
         {
@@ -33,6 +37,14 @@ namespace Application.Features.Novel.Commands
                     Message = "Unauthorized: You are not the author of this novel"
                 };
             }
+
+            if (!string.IsNullOrEmpty(novel.novel_image))
+                await _cloudDinaryService.DeleteImageAsync(novel.novel_image);
+
+            if (!string.IsNullOrEmpty(novel.novel_banner))
+                await _cloudDinaryService.DeleteImageAsync(novel.novel_banner);
+
+            await _openAIRepository.DeleteNovelEmbeddingAsync(request.NovelId);
             var deleted = await _novelRepository.DeleteNovelAsync(request.NovelId);
 
             return new ApiResponse

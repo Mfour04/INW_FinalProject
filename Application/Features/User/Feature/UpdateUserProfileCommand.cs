@@ -16,6 +16,7 @@ namespace Application.Features.User.Feature
         public string DisplayName { get; set; }
         public string Bio { get; set; }
         public IFormFile? AvataUrl { get; set; }
+        public IFormFile? CoverUrl { get; set; }
         public List<string> BadgeId { get; set; } = new();
         public List<TagName> FavouriteType { get; set; } = new();
     }
@@ -48,11 +49,18 @@ namespace Application.Features.User.Feature
             user.badge_id = request.BadgeId;
             user.favourite_type = request.FavouriteType;
 
-            if (request.AvataUrl != null)
+            if (request.AvataUrl != null && request.CoverUrl != null)
             {
-                var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvataUrl);
+                var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvataUrl, CloudFolders.Users);
                 user.avata_url = imageAUrl;
             }
+
+            if (request.CoverUrl != null)
+            {
+                var coverUrl = await _cloudDinaryService.UploadImagesAsync(request.CoverUrl, CloudFolders.Users);
+                user.cover_url = coverUrl;
+            }
+
             var validTags = request.FavouriteType
                 .Where(t => !string.IsNullOrWhiteSpace(t.name_tag))
                 .ToList();
