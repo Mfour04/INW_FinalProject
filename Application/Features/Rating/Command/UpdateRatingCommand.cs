@@ -13,7 +13,8 @@ namespace Application.Features.Rating.Command
 {
     public class UpdateRatingCommand : IRequest<ApiResponse>
     {
-        public UpdateRatingResponse UpdateRating { get; set; }
+        public string RatingId { get; set; }
+        public int Score { get; set; }
     }
     public class UpdateRatingCommandHandler : IRequestHandler<UpdateRatingCommand, ApiResponse>
     {
@@ -28,7 +29,7 @@ namespace Application.Features.Rating.Command
 
         public async Task<ApiResponse> Handle(UpdateRatingCommand request, CancellationToken cancellationToken)
         {
-            var input = request.UpdateRating;
+            var input = request;
             var rating = await _ratingRepository.GetByIdAsync(input.RatingId);
             if (rating == null)
             {

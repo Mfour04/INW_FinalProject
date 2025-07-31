@@ -16,8 +16,9 @@ namespace Application.Features.Rating.Command
 {
     public class CreateRatingCommand : IRequest<ApiResponse>
     {
-        [JsonPropertyName("rating")]
-        public CreateRatingResponse CreateRatingResponse { get; set; }
+        public string UserId { get; set; }
+        public string NovelId { get; set; }
+        public int Score { get; set; }
     }
     public class CreateRatingCommandHandler : IRequestHandler<CreateRatingCommand, ApiResponse>
     {
@@ -36,7 +37,7 @@ namespace Application.Features.Rating.Command
 
         public async Task<ApiResponse> Handle(CreateRatingCommand request, CancellationToken cancellationToken)
         {
-            var existingRating = await _ratingRepository.GetByUserAndNovelAsync(request.CreateRatingResponse.UserId, request.CreateRatingResponse.NovelId);
+            var existingRating = await _ratingRepository.GetByUserAndNovelAsync(request.UserId, request.NovelId);
             if (existingRating != null)
             {
                 return new ApiResponse
@@ -45,7 +46,7 @@ namespace Application.Features.Rating.Command
                     Message = "Bạn đã đánh giá truyện này rồi."
                 };
             }
-            var novel = await _novelRepository.GetByNovelIdAsync(request.CreateRatingResponse.NovelId);
+            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
             {
                 return new ApiResponse
@@ -59,8 +60,8 @@ namespace Application.Features.Rating.Command
             {
                 id = SystemHelper.RandomId(),
                 novel_id = novel.id,
-                user_id = request.CreateRatingResponse.UserId,
-                score = request.CreateRatingResponse.Score
+                user_id = request.UserId,
+                score = request.Score
             };
 
             await _ratingRepository.CreateAsync(createdRating);
