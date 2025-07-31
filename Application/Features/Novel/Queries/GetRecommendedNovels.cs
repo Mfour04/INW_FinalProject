@@ -50,9 +50,10 @@ namespace Application.Features.Novel.Queries
                 return new ApiResponse { Success = false, Message = "User not found." };
             }
 
-            // 3. Lấy danh sách tên tag yêu thích của user
-            var userTags = (user.favourite_type ?? new List<UserEntity.TagName>())
-                .Select(t => t.name_tag?.Trim().ToLowerInvariant())
+            var tagEntities = await _tagRepository.GetTagsByIdsAsync(user.favourite_type);
+
+            var userTags = tagEntities
+                .Select(t => t.name?.Trim().ToLowerInvariant())
                 .Where(name => !string.IsNullOrEmpty(name))
                 .ToHashSet();
 

@@ -19,16 +19,16 @@ namespace Domain.Entities
         public long? banned_until { get; set; }
         public int coin { get; set; }
         public int block_coin { get; set; }
-        public List<TagName> favourite_type { get; set; } = new();
+        public List<string> favourite_type { get; set; } = new();
         public int novel_follow_count { get; set; }
         public int follower_count { get; set; }
         public int following_count { get; set; }
         public List<string> badge_id { get; set; } = new();
         public long last_login { get; set; }
-        public class TagName
-        {
-            public string id_tag { get; set; }
-            public string name_tag { get; set; }
-        }
+        //public class TagName
+        //{
+        //    public string id_tag { get; set; }
+        //    public string name_tag { get; set; }
+        //}
     }
 }
