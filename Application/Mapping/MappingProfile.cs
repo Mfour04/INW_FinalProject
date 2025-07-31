@@ -39,11 +39,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelFollowCount, opt => opt.MapFrom(src => src.novel_follow_count))
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
                 .ForMember(dest => dest.LastLogin, opt => opt.MapFrom(src => src.last_login))
-                .ForMember(dest => dest.FavouriteType, opt => opt.MapFrom(src => src.favourite_type));
-
-            CreateMap<UserEntity.TagName, TagListResponse>()
-                .ForMember(dest => dest.TagId, opt => opt.MapFrom(src => src.id_tag))
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.name_tag));
+                .ForMember(dest => dest.FavouriteType, opt => opt.Ignore());
 
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
@@ -51,7 +47,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.CoverUrl, opt => opt.MapFrom(src => src.cover_url))
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.displayname))
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
-                .ForMember(dest => dest.FavouriteType, opt => opt.MapFrom(src => src.favourite_type));
+                .ForMember(dest => dest.FavouriteType, opt => opt.Ignore());
             //Novel
             CreateMap<NovelEntity, NovelResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))

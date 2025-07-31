@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using static Domain.Entities.UserEntity;
+﻿using Shared.Contracts.Response.Tag;
 
 namespace Shared.Contracts.Response.User
 {
@@ -11,6 +10,6 @@ namespace Shared.Contracts.Response.User
         public string CoverUrl { get; set; }    
         public string Bio { get; set; }
         public List<string> BadgeId { get; set; } = new();
-        public List<TagName> FavouriteType { get; set; } = new();
+        public List<TagListResponse> FavouriteType { get; set; } = new();
     }
 }

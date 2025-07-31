@@ -1,9 +1,13 @@
 ﻿using Application.Services.Interfaces;
 using AutoMapper;
+using Domain.Entities;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Novel;
+using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.User;
 using Shared.Helpers;
 using static Domain.Entities.UserEntity;
@@ -18,7 +22,7 @@ namespace Application.Features.User.Feature
         public IFormFile? AvataUrl { get; set; }
         public IFormFile? CoverUrl { get; set; }
         public List<string> BadgeId { get; set; } = new();
-        public List<TagName> FavouriteType { get; set; } = new();
+        public List<string>? FavouriteType { get; set; } = new();
     }
     public class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfileCommand, ApiResponse>
     {
@@ -27,20 +31,24 @@ namespace Application.Features.User.Feature
         private readonly ICloudDinaryService _cloudDinaryService;
         private readonly IOpenAIService _openAIService;
         private readonly IOpenAIRepository _openAIRepository;
+        private readonly ITagRepository _tagRepository;
         public UpdateUserProfileHandler(IUserRepository userRepository, IMapper mapper
-            , ICloudDinaryService cloudDinaryService, IOpenAIService openAIService, IOpenAIRepository openAIRepository)
+            , ICloudDinaryService cloudDinaryService, IOpenAIService openAIService
+            , IOpenAIRepository openAIRepository, ITagRepository tagRepository)
         {
             _userRepository = userRepository;
             _mapper = mapper;
             _cloudDinaryService = cloudDinaryService;
             _openAIService = openAIService;
-            _openAIRepository = openAIRepository;   
+            _openAIRepository = openAIRepository;
+            _tagRepository = tagRepository;
         }
         public async Task<ApiResponse> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetById(request.UserId);
             if(user == null)
                 return new ApiResponse { Success = false, Message = "User not found." };
+            var oldFavouriteTypes = user.favourite_type ?? new List<string>();
             user.displayname = request.DisplayName;
             user.displayname_unsigned = SystemHelper.RemoveDiacritics(request.DisplayName);
             user.displayname_normalized = SystemHelper.RemoveDiacritics(request.DisplayName);
@@ -61,29 +69,44 @@ namespace Application.Features.User.Feature
                 user.cover_url = coverUrl;
             }
 
-            var validTags = request.FavouriteType
-                .Where(t => !string.IsNullOrWhiteSpace(t.name_tag))
-                .ToList();
-                user.favourite_type = validTags;
-
-            var tags = user.favourite_type
-                 .Select(t => t.name_tag.Trim().ToLowerInvariant())
-                 .Distinct()
-                 .ToList();
-
-            if (tags.Count > 0)
+            if (user.favourite_type != null && user.favourite_type.Any())
             {
-                var vectors = await _openAIService.GetEmbeddingAsync(new List<string>
-                {
-                    string.Join(", ", tags)
-                });
+                var hasChanged = !oldFavouriteTypes.OrderBy(x => x).SequenceEqual(user.favourite_type.OrderBy(x => x));
 
-                var vector = vectors[0]; // chỉ lấy 1 vector
-                await _openAIRepository.SaveUserEmbeddingAsync(user.id, vector);
+                if (hasChanged)
+                {
+                    var favouriteTags = await _tagRepository.GetTagsByIdsAsync(user.favourite_type);
+                    var tagNames = favouriteTags.Select(tag => tag.name).ToList();
+
+                    if (tagNames.Any())
+                    {
+                        var embeddingInput = string.Join(", ", tagNames);
+                        var vectors = await _openAIService.GetEmbeddingAsync(new List<string> { embeddingInput });
+
+                        var vector = vectors.FirstOrDefault();
+                        if (vector != null)
+                        {
+                            await _openAIRepository.SaveUserEmbeddingAsync(user.id, vector);
+                        }
+                    }
+                }
             }
 
             await _userRepository.UpdateUser(user);
+
+            List<TagEntity> tagEntities = new();
+            if (user.favourite_type != null && user.favourite_type.Any())
+            {
+                tagEntities = await _tagRepository.GetTagsByIdsAsync(user.favourite_type);
+            }
+          
             var response = _mapper.Map<UpdateUserProfileReponse>(user);
+
+            response.FavouriteType = tagEntities.Select(tag => new TagListResponse
+            {
+                TagId = tag.id,
+                Name = tag.name
+            }).ToList();
 
             return new ApiResponse 
             { 

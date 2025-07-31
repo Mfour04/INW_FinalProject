@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -13,7 +14,8 @@ namespace Application.Features.Report.Command
 {
     public class UpdateReportCommand : IRequest<ApiResponse>
     {
-        public UpdateReportResponse UpdateReport { get; set; }
+        public string ReportId { get; set; }
+        public ReportStatus Status { get; set; }
     }
 
     public class UpdateReportCommandHandler : IRequestHandler<UpdateReportCommand, ApiResponse>
@@ -27,7 +29,7 @@ namespace Application.Features.Report.Command
         }
         public async Task<ApiResponse> Handle(UpdateReportCommand request, CancellationToken cancellationToken)
         {
-            var input = request.UpdateReport;
+            var input = request;
             var report = await _reportRepository.GetByIdAsync(input.ReportId);
             if (report == null)
                 return new ApiResponse { Success = false, Message = "Report not found" };

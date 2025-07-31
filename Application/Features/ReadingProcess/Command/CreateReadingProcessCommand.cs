@@ -11,8 +11,9 @@ namespace Application.Features.ReadingProcess.Command
 {
     public class CreateReadingProcessCommand : IRequest<ApiResponse>
     {
-        [JsonPropertyName("reading_process")]
-        public CreateReadingProcessResponse ReadingProcess { get; set; }
+        public string UserId { get; set; }
+        public string NovelId { get; set; }
+        public string ChapterId { get; set; }
     }
 
     public class CreateReadingProcessCommandHandler : IRequestHandler<CreateReadingProcessCommand, ApiResponse>
@@ -34,9 +35,9 @@ namespace Application.Features.ReadingProcess.Command
 
         public async Task<ApiResponse> Handle(CreateReadingProcessCommand request, CancellationToken cancellationToken)
         {
-            if (request.ReadingProcess.UserId != null)
+            if (request.UserId != null)
             {
-                var user = await _userRepository.GetById(request.ReadingProcess.UserId);
+                var user = await _userRepository.GetById(request.UserId);
                 if (user == null)
                 {
                     return new ApiResponse
@@ -46,9 +47,9 @@ namespace Application.Features.ReadingProcess.Command
                     };
                 }
             }
-            if (request.ReadingProcess.NovelId != null)
+            if (request.NovelId != null)
             {
-                var novel = await _novelRepository.GetByNovelIdAsync(request.ReadingProcess.NovelId);
+                var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
                 if (novel == null)
                 {
                     return new ApiResponse
@@ -58,9 +59,9 @@ namespace Application.Features.ReadingProcess.Command
                     };
                 }
             }
-            if (request.ReadingProcess.ChapterId != null)
+            if (request.ChapterId != null)
             {
-                var chapter = await _chapterRepository.GetByIdAsync(request.ReadingProcess.ChapterId);
+                var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
                 if (chapter == null)
                 {
                     return new ApiResponse
@@ -71,10 +72,10 @@ namespace Application.Features.ReadingProcess.Command
                 }
             }
 
-            var existingReadingProcess = await _readingProcessRepository.GetByUserAndNovelAsync(request.ReadingProcess.UserId, request.ReadingProcess.NovelId);
+            var existingReadingProcess = await _readingProcessRepository.GetByUserAndNovelAsync(request.UserId, request.NovelId);
             if (existingReadingProcess != null)
             {
-                existingReadingProcess.chapter_id = request.ReadingProcess.ChapterId;
+                existingReadingProcess.chapter_id = request.ChapterId;
                 existingReadingProcess.updated_at = DateTime.UtcNow.Ticks;
 
                 var updatedReadingProcess = await _readingProcessRepository.UpdateAsync(existingReadingProcess);
@@ -91,9 +92,9 @@ namespace Application.Features.ReadingProcess.Command
                 var newReadingProcess = new ReadingProcessEntity
                 {
                     id = SystemHelper.RandomId(),
-                    user_id = request.ReadingProcess.UserId,
-                    novel_id = request.ReadingProcess.NovelId,
-                    chapter_id = request.ReadingProcess.ChapterId,
+                    user_id = request.UserId,
+                    novel_id = request.NovelId,
+                    chapter_id = request.ChapterId,
                     created_at = DateTime.UtcNow.Ticks,
                     updated_at = DateTime.UtcNow.Ticks
                 };

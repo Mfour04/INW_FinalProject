@@ -83,7 +83,7 @@ namespace WebApi.Controllers
         [HttpPut("update")]
         public async Task<IActionResult> UpdateReport([FromBody] UpdateReportCommand report)
         {
-            if (report == null || string.IsNullOrEmpty(report.UpdateReport.ReportId))
+            if (report == null || string.IsNullOrEmpty(report.ReportId))
             {
                 return BadRequest("Invalid report data.");
             }

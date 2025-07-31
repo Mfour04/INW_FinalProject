@@ -13,8 +13,15 @@ namespace Application.Features.Report.Command
 {
     public class CreateReportCommand : IRequest<ApiResponse>
     {
-        [JsonPropertyName("report")]
-        public CreateReportResponse Report { get; set; }
+        public string UserId { get; set; }
+        public string MemberId { get; set; }
+        public string NovelId { get; set; }
+        public string ChapterId { get; set; }
+        public string CommentId { get; set; }
+        public string ForumPostId { get; set; }
+        public string ForumCommentId { get; set; }
+        public ReportTypeStatus Type { get; set; }
+        public string Reason { get; set; }
     }
 
     public class CreateReponseCommandHandler : IRequestHandler<CreateReportCommand, ApiResponse>
@@ -47,7 +54,7 @@ namespace Application.Features.Report.Command
         public async Task<ApiResponse> Handle(CreateReportCommand request, CancellationToken cancellationToken)
         {
             var targetId = GetTargetId(request);
-            var exists = await _reportRepository.ExistsAsync(request.Report.UserId, request.Report.Type, targetId);
+            var exists = await _reportRepository.ExistsAsync(request.UserId, request.Type, targetId);
             if (exists)
             {
                 return new ApiResponse
@@ -56,49 +63,49 @@ namespace Application.Features.Report.Command
                     Message = "You have already reported this item"
                 };
             }
-            if (request.Report.Type == ReportTypeStatus.NovelReport)
+            if (request.Type == ReportTypeStatus.NovelReport)
             {
-                var novel = await _novelRepository.GetByNovelIdAsync(request.Report.NovelId);
+                var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
                 if (novel == null)
                 {
                     return new ApiResponse { Success = false, Message = "Novel not found" };
                 }
             }
-            else if (request.Report.Type == ReportTypeStatus.ChapterReport)
+            else if (request.Type == ReportTypeStatus.ChapterReport)
             {
-                var chapter = await _chapterRepository.GetByIdAsync(request.Report.ChapterId);
+                var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
                 if (chapter == null)
                 {
                     return new ApiResponse { Success = false, Message = "Chapter not found" };
                 }
             }
-            else if (request.Report.Type == ReportTypeStatus.CommentReport)
+            else if (request.Type == ReportTypeStatus.CommentReport)
             {
-                var comment = await _commentRepository.GetByIdAsync(request.Report.CommentId);
+                var comment = await _commentRepository.GetByIdAsync(request.CommentId);
                 if (comment == null)
                 {
                     return new ApiResponse { Success = false, Message = "Comment not found" };
                 }
             }
-            else if (request.Report.Type == ReportTypeStatus.UserReport)
+            else if (request.Type == ReportTypeStatus.UserReport)
             {
-                var user = await _userRepository.GetById(request.Report.MemberId);
+                var user = await _userRepository.GetById(request.MemberId);
                 if (user == null)
                 {
                     return new ApiResponse { Success = false, Message = "User not found" };
                 }
             }
-            else if (request.Report.Type == ReportTypeStatus.ForumPostReport)
+            else if (request.Type == ReportTypeStatus.ForumPostReport)
             {
-                var forumPost = await _forumPostRepository.GetByIdAsync(request.Report.ForumPostId);
+                var forumPost = await _forumPostRepository.GetByIdAsync(request.ForumPostId);
                 if (forumPost == null)
                 {
                     return new ApiResponse { Success = false, Message = "Forum post not found" };
                 }
-            }
-            else if (request.Report.Type == ReportTypeStatus.ForumCommentReport)
+            }   
+            else if (request.Type == ReportTypeStatus.ForumCommentReport)
             {
-                var forumComment = await _forumCommentRepository.GetByIdAsync(request.Report.ForumCommentId);
+                var forumComment = await _forumCommentRepository.GetByIdAsync(request.ForumCommentId);
                 if (forumComment == null)
                 {
                     return new ApiResponse { Success = false, Message = "Forum comment not found" };
@@ -107,15 +114,15 @@ namespace Application.Features.Report.Command
             var createRequest = new ReportEntity
             {
                 id = SystemHelper.RandomId(),
-                user_id = request.Report.UserId,
-                type = request.Report.Type,
-                chapter_id = request.Report.ChapterId,
-                novel_id = request.Report.NovelId,
-                member_id = request.Report.MemberId,
-                comment_id = request.Report.CommentId,
-                forum_post_id = request.Report.ForumPostId,
-                forum_comment_id = request.Report.ForumCommentId,
-                reason = request.Report.Reason,
+                user_id = request.UserId,
+                type = request.Type,
+                chapter_id = request.ChapterId,
+                novel_id = request.NovelId,
+                member_id = request.MemberId,
+                comment_id = request.CommentId,
+                forum_post_id = request.ForumPostId,
+                forum_comment_id = request.ForumCommentId,
+                reason = request.Reason,
                 status = ReportStatus.InProgress,
                 created_at = DateTime.UtcNow.Ticks,
                 updated_at = DateTime.UtcNow.Ticks
@@ -125,7 +132,7 @@ namespace Application.Features.Report.Command
             var response = _mapper.Map<ReportResponse>(createRequest);
 
             var admin = await _userRepository.GetFirstUserByRoleAsync(Role.Admin);
-            NotificationType notiType = request.Report.Type switch
+            NotificationType notiType = request.Type switch
             {
                 ReportTypeStatus.ChapterReport => NotificationType.ChapterReportNotification,
                 ReportTypeStatus.NovelReport => NotificationType.NovelReportNofitication,
@@ -138,11 +145,11 @@ namespace Application.Features.Report.Command
             await _mediator.Send(new SendNotificationToUserCommand
             {
                 UserId = admin.id,
-                SenderId = request.Report.UserId,
-                NovelId = request.Report.NovelId,
-                ChapterId = request.Report.ChapterId,
-                CommentId = request.Report.CommentId,
-                UserReportedId = request.Report.MemberId,
+                SenderId = request.UserId,
+                NovelId = request.NovelId,
+                ChapterId = request.ChapterId,
+                CommentId = request.CommentId,
+                UserReportedId = request.MemberId,
                 Type = notiType
             });
 
@@ -164,7 +171,7 @@ namespace Application.Features.Report.Command
 
         private string GetTargetId(CreateReportCommand request)
         {
-            var result = request.Report;
+            var result = request;
             return result.Type switch
             {
                 ReportTypeStatus.UserReport => result.MemberId,
