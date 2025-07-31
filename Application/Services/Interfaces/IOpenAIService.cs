@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Shared.Contracts.Response.OpenAI;
 
 namespace Application.Services.Interfaces
 {
@@ -10,6 +6,6 @@ namespace Application.Services.Interfaces
     {
         //Task<List<float>> GetEmbeddingAsync(List<string> tags);
         Task<List<List<float>>> GetEmbeddingAsync(List<string> inputs);
-
+        Task<ModerationResult> CheckModerationAsync(string input);
     }
 }

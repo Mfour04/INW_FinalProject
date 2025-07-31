@@ -65,12 +65,12 @@ namespace Application.Features.Novel.Commands
             novel.description = request.Description ?? novel.description;
             if (request.NovelImage != null)
             {
-                var novelImageUpdate = await _cloudDinaryService.UploadImagesAsync(request.NovelImage);
+                var novelImageUpdate = await _cloudDinaryService.UploadImagesAsync(request.NovelImage, CloudFolders.Novels);
                 novel.novel_image = novelImageUpdate;
             }
             if (request.NovelBanner != null)
             {
-                novel.novel_banner = await _cloudDinaryService.UploadImagesAsync(request.NovelBanner);
+                novel.novel_banner = await _cloudDinaryService.UploadImagesAsync(request.NovelBanner, CloudFolders.Novels);
             }
             novel.status = request.Status ?? novel.status;
             novel.is_public = request.IsPublic ?? novel.is_public;

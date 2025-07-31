@@ -8,7 +8,7 @@ using Infrastructure.SignalRHub;
 using Microsoft.Extensions.Options;
 using Net.payOS;
 using Shared;
-using Shared.Contracts.Response;
+using Shared.Contracts.Response.OpenAI;
 
 
 var builder = WebApplication.CreateBuilder(args);

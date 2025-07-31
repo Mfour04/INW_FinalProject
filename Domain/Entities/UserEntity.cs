@@ -11,6 +11,7 @@ namespace Domain.Entities
         public string email { get; set; }
         public string password { get; set; }
         public string avata_url { get; set; }
+        public string cover_url { get; set; }
         public string bio { get; set; }
         public Role role { get; set; } 
         public bool is_verified { get; set; }

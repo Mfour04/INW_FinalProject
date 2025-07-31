@@ -71,8 +71,8 @@ namespace Application.Features.Novel.Commands
                 validTagIds = existingTags.Select(t => t.id).ToList();
             }
 
-            var novelImage = await _cloudDinaryService.UploadImagesAsync(request.NovelImage);
-            var novelBanner = await _cloudDinaryService.UploadImagesAsync(request.NovelBanner);
+            var novelImage = await _cloudDinaryService.UploadImagesAsync(request.NovelImage, CloudFolders.Novels);
+            var novelBanner = await _cloudDinaryService.UploadImagesAsync(request.NovelBanner, CloudFolders.Novels);
 
             var novel = new NovelEntity
             {

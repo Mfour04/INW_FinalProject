@@ -17,7 +17,8 @@ namespace Infrastructure.Repositories.Interfaces
         Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<List<float>> vectors, List<List<string>> tagsList);
         Task<List<string>> GetExistingNovelEmbeddingIdsAsync(List<string> novelIds);
         //Task SaveListNovelEmbeddingAsync(List<NovelEmbeddingEntity> embeddings);
-
+        Task DeleteUserEmbeddingAsync(string userId);
+        Task DeleteNovelEmbeddingAsync(string novelId);
         /// <summary>
         /// End Embedding methods
         /// </summary>

@@ -68,8 +68,8 @@ namespace Application.Features.User.Queries
                 Message = "Retrieved novels successfully.",
                 Data = new
                 {
-                    Novels = userResponse,
-                    TotalNovels = totalCount,
+                    Users = userResponse,
+                    TotalUsers = totalCount,
                     TotalPages = totalPages
                 }
             };
