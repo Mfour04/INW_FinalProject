@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Application.Features.Forum.Commands;
+using Application.Features.Forum.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,11 +21,21 @@ namespace WebApi.Controllers
             _mediator = mediator;
         }
 
+        [HttpGet("{id}/replies")]
+        public async Task<IActionResult> GetPostComments(string id, [FromQuery] GetPostCommentReplies query)
+        {
+            query.ParentId = id;
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreateComment([FromBody] CreatePostCommentCommand command)
         {
             command.UserId = currentUserId;
+
             var result = await _mediator.Send(command);
             return Ok(result);
         }

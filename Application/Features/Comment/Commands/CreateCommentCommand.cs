@@ -142,7 +142,7 @@ namespace Application.Features.Comment.Commands
             response.Author = new BaseCommentResponse.UserInfo
             {
                 Id = user.id,
-                UserName = user.username,
+                Username = user.username,
                 DisplayName = user.displayname,
                 Avatar = user.avata_url
             };

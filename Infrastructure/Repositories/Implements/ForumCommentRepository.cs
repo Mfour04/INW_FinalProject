@@ -18,7 +18,7 @@ namespace Infrastructure.Repositories.Implements
             _collection = mongoDBHelper.GetCollection<ForumCommentEntity>("forum_comment");
         }
 
-        public async Task<List<ForumCommentEntity>> GetAllByPostIdAsync(string postId, FindCreterias creterias, List<SortCreterias> sortCreterias)
+        public async Task<List<ForumCommentEntity>> GetRootCommentsByPostIdAsync(string postId, FindCreterias creterias, List<SortCreterias> sortCreterias)
         {
             try
             {
@@ -67,6 +67,49 @@ namespace Infrastructure.Repositories.Implements
             {
                 var result = await _collection.Find(x => x.id == id).FirstOrDefaultAsync();
                 return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<ForumCommentEntity>> GetRepliesByCommentIdAsync(string parentId, FindCreterias creterias, List<SortCreterias> sortCreterias)
+        {
+            try
+            {
+                var builder = Builders<ForumCommentEntity>.Filter;
+                var filter = builder.Eq(x => x.parent_comment_id, parentId);
+
+                var query = _collection
+                    .Find(filter)
+                    .Skip(creterias.Page * creterias.Limit)
+                    .Limit(creterias.Limit);
+
+                var sortBuilder = Builders<ForumCommentEntity>.Sort;
+                var sortDefinitions = new List<SortDefinition<ForumCommentEntity>>();
+
+                foreach (var criterion in sortCreterias)
+                {
+                    SortDefinition<ForumCommentEntity>? sortDef = criterion.Field switch
+                    {
+                        "created_at" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.created_at)
+                            : sortBuilder.Ascending(x => x.created_at),
+                        _ => null
+                    };
+
+                    if (sortDef != null)
+                        sortDefinitions.Add(sortDef);
+                }
+
+                if (sortDefinitions.Count > 0)
+                {
+                    var combinedSort = sortBuilder.Combine(sortDefinitions);
+                    query = query.Sort(combinedSort);
+                }
+
+                return await query.ToListAsync();
             }
             catch
             {

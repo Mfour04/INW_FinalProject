@@ -82,7 +82,7 @@ namespace Application.Features.Novel.Queries
                     mapped.Author = new BaseCommentResponse.UserInfo
                     {
                         Id = user.id,
-                        UserName = user.username,
+                        Username = user.username,
                         DisplayName = user.displayname,
                         Avatar = user.avata_url
                     };

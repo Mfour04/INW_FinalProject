@@ -1,5 +1,4 @@
 using AutoMapper;
-using Domain.Entities;
 using Domain.Entities.System;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -9,21 +8,21 @@ using Shared.Helpers;
 
 namespace Application.Features.Forum.Queries
 {
-    public class GetPostComments : IRequest<ApiResponse>
+    public class GetPostCommentReplies : IRequest<ApiResponse>
     {
         public string SortBy { get; set; } = "created_at:desc";
         public int Page { get; set; } = 0;
         public int Limit { get; set; } = int.MaxValue;
-        public string? PostId { get; set; }
+        public string? ParentId { get; set; }
     }
 
-    public class GetPostCommentsHandler : IRequestHandler<GetPostComments, ApiResponse>
+    public class GetPostCommentRepliesHandler : IRequestHandler<GetPostCommentReplies, ApiResponse>
     {
         private readonly IUserRepository _userRepo;
         private readonly IForumCommentRepository _postCommentRepo;
         private readonly IMapper _mapper;
 
-        public GetPostCommentsHandler(
+        public GetPostCommentRepliesHandler(
             IForumCommentRepository postCommentRepo,
             IUserRepository userRepo,
             IMapper mapper)
@@ -33,10 +32,10 @@ namespace Application.Features.Forum.Queries
             _mapper = mapper;
         }
 
-        public async Task<ApiResponse> Handle(GetPostComments request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(GetPostCommentReplies request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(request.PostId))
-                return new ApiResponse { Success = false, Message = "PostId is required." };
+            if (string.IsNullOrEmpty(request.ParentId))
+                return new ApiResponse { Success = false, Message = "ParentId is required." };
 
             FindCreterias findCreterias = new()
             {
@@ -46,14 +45,14 @@ namespace Application.Features.Forum.Queries
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            var commentList = await _postCommentRepo.GetRootCommentsByPostIdAsync(request.PostId, findCreterias, sortBy);
+            var commentList = await _postCommentRepo.GetRepliesByCommentIdAsync(request.ParentId, findCreterias, sortBy);
 
             if (commentList == null || commentList.Count == 0)
             {
                 return new ApiResponse
                 {
                     Success = true,
-                    Message = "No Post's comments found.",
+                    Message = "No Comment's reply found.",
                 };
             }
 
@@ -61,11 +60,11 @@ namespace Application.Features.Forum.Queries
             var users = await _userRepo.GetUsersByIdsAsync(userIds);
             var userDict = users.ToDictionary(u => u.id);
 
-            var response = new List<PostRootCommentResponse>();
+            var response = new List<PostReplyCommentResponse>();
 
             foreach (var comment in commentList)
             {
-                var mapped = _mapper.Map<PostRootCommentResponse>(comment);
+                var mapped = _mapper.Map<PostReplyCommentResponse>(comment);
 
                 if (userDict.TryGetValue(comment.user_id, out var user))
                 {
@@ -83,7 +82,7 @@ namespace Application.Features.Forum.Queries
             return new ApiResponse
             {
                 Success = true,
-                Message = "Retrieved comments successfully.",
+                Message = "Retrieved comment's replies successfully.",
                 Data = response
             };
         }

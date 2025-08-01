@@ -78,15 +78,9 @@ namespace WebApi.Controllers
         [HttpGet("{id}/comments")]
         public async Task<IActionResult> GetPostComments(string id, [FromQuery] GetPostComments query)
         {
-            GetPostComments newQuery = new()
-            {
-                PostId = id,
-                Page = query.Page,
-                Limit = query.Limit,
-                SortBy = query.SortBy
-            };
-
-            var result = await _mediator.Send(newQuery);
+            query.PostId = id;
+            
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
 

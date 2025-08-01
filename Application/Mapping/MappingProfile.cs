@@ -2,9 +2,7 @@
 using Domain.Entities;
 using Shared.Contracts.Response.Badge;
 using Shared.Contracts.Response.Chapter;
-using Shared.Contracts.Response.Comment;
 using Shared.Contracts.Response.Follow;
-using Shared.Contracts.Response.Forum;
 using Shared.Contracts.Response.Notification;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.NovelFollow;
