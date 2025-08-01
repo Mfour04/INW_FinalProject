@@ -4,6 +4,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -96,7 +97,7 @@ namespace Infrastructure.Repositories.Implements
 
                 var update = Builders<ForumCommentEntity>
                     .Update.Set(x => x.content, entity.content ?? post.content)
-                    .Set(x => x.updated_at, DateTime.Now.Ticks);
+                    .Set(x => x.updated_at, TimeHelper.NowTicks);
 
                 var updated = await _collection.FindOneAndUpdateAsync(
                     filter,

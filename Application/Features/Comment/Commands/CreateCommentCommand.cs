@@ -136,7 +136,7 @@ namespace Application.Features.Comment.Commands
             else
                 await _novelRepo.IncrementCommentsAsync(request.NovelId);
 
-            var response = _mapper.Map<CreateCommentResponse>(comment);
+            var response = _mapper.Map<CommentCreatedResponse>(comment);
             var user = await _userRepo.GetById(request.UserId);
 
             response.Author = new BaseCommentResponse.UserInfo
@@ -147,7 +147,7 @@ namespace Application.Features.Comment.Commands
                 Avatar = user.avata_url
             };
 
-            response.SignalR = new CreateCommentResponse.SignalRResult
+            response.SignalR = new CommentCreatedResponse.SignalRResult
             {
                 Sent = signalRSent,
                 NotificationType = notiType.ToString()

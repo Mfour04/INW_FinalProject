@@ -6,7 +6,7 @@ namespace Infrastructure.Repositories.Interfaces
     public interface ICommentRepository
     {
         Task<CommentEntity> CreateAsync(CommentEntity entity);
-        Task<CommentEntity> UpdateAsync(CommentEntity entity);
+        Task<bool> UpdateAsync(string id, CommentEntity entity);
         Task<bool> DeleteAsync(string id);
         Task<bool> DeleteRepliesByParentIdAsync(string parentId);
         Task<CommentEntity> GetByIdAsync(string commentId);

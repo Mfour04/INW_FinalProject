@@ -1,7 +1,7 @@
+using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using Shared.Helpers;
 
 namespace Application.Features.Forum.Commands
 {
@@ -33,10 +33,12 @@ namespace Application.Features.Forum.Commands
             if (comment.user_id != request.UserId)
                 return Fail("You are not allowed to edit this comment.");
 
-            comment.content = request.Content;
-            comment.updated_at = TimeHelper.NowTicks;
+            ForumCommentEntity updated = new()
+            {
+                content = request.Content
+            };
 
-            var success = await _commentRepo.UpdateAsync(request.Id, comment);
+            var success = await _commentRepo.UpdateAsync(request.Id, updated);
             if (!success)
                 return Fail("Failed to update the comment.");
 

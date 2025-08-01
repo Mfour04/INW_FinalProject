@@ -4,9 +4,9 @@ using Shared.Contracts.Response.Transaction;
 
 namespace Application.Mapping
 {
-    public class TransactionMap : Profile
+    public class TransactionProfile : Profile
     {
-        public TransactionMap()
+        public TransactionProfile()
         {
             CreateMap<TransactionEntity, AdminTopUpTransactionResponse>()
                 .IncludeBase<TransactionEntity, AdminTransactionResponse>()

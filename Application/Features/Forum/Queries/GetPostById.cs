@@ -3,7 +3,6 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Forum;
-using static Shared.Contracts.Response.Forum.PostResponse;
 
 namespace Application.Features.Forum.Queries
 {
@@ -40,7 +39,7 @@ namespace Application.Features.Forum.Queries
             var user = await _userRepo.GetById(post.user_id);
             if (user != null)
             {
-                response.Author = new PostAuthorResponse
+                response.Author = new BasePostResponse.PostAuthorResponse
                 {
                     Id = user.id,
                     Username = user.username,

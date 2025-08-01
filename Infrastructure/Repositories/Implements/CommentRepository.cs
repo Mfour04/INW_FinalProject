@@ -36,14 +36,28 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Cập nhật nội dung bình luận
         /// </summary>
-        public async Task<CommentEntity> UpdateAsync(CommentEntity entity)
+        public async Task<bool> UpdateAsync(string id, CommentEntity entity)
         {
             try
             {
-                entity.updated_at = DateTime.UtcNow.Ticks;
-                var filter = Builders<CommentEntity>.Filter.Eq(x => x.id, entity.id);
-                var result = await _collection.ReplaceOneAsync(filter, entity);
-                return entity;
+                var filter = Builders<CommentEntity>.Filter.Eq(x => x.id, id);
+
+                var comment = await _collection.Find(filter).FirstOrDefaultAsync();
+
+                var update = Builders<CommentEntity>
+                    .Update.Set(x => x.content, entity.content ?? comment.content)
+                    .Set(x => x.updated_at, TimeHelper.NowTicks);
+
+                var updated = await _collection.FindOneAndUpdateAsync(
+                    filter,
+                    update,
+                    new FindOneAndUpdateOptions<CommentEntity>
+                    {
+                        ReturnDocument = ReturnDocument.After,
+                    }
+                );
+
+                return updated != null;
             }
             catch
             {

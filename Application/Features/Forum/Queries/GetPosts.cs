@@ -5,7 +5,6 @@ using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Forum;
 using Shared.Helpers;
-using static Shared.Contracts.Response.Forum.PostResponse;
 
 namespace Application.Features.Forum.Queries
 {
@@ -55,7 +54,7 @@ namespace Application.Features.Forum.Queries
 
                 if (userDict.TryGetValue(post.user_id, out var user))
                 {
-                    mapped.Author = new PostAuthorResponse
+                    mapped.Author = new BasePostResponse.PostAuthorResponse
                     {
                         Id = user.id,
                         Username = user.username,
@@ -64,7 +63,7 @@ namespace Application.Features.Forum.Queries
                 }
                 else
                 {
-                    mapped.Author = new PostAuthorResponse();
+                    mapped.Author = new BasePostResponse.PostAuthorResponse();
                 }
 
                 response.Add(mapped);

@@ -32,7 +32,7 @@
         public string ParentCommentId { get; set; }
     }
 
-    public class CreateCommentResponse : BaseCommentResponse
+    public class CommentCreatedResponse : BaseCommentResponse
     {
         public string ParentCommentId { get; set; }
         public SignalRResult SignalR { get; set; }
@@ -42,12 +42,5 @@
             public bool Sent { get; set; }
             public string NotificationType { get; set; }
         }
-    }
-
-    public class UpdateCommentResponse
-    {
-        public string Id { get; set; }
-        public string Content { get; set; }
-        public long UpdatedAt { get; set; }
     }
 }

@@ -6,5 +6,6 @@ namespace Application.Services.Interfaces
     {
         Task<string?> UploadImagesAsync(IFormFile file, string folder);
         Task<bool> DeleteImageAsync(string imageUrl);
+        Task<List<string>> UploadMultipleImagesAsync(List<IFormFile>? files, string folder);
     }
 }
