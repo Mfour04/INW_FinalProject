@@ -32,7 +32,7 @@
         public string ParentCommentId { get; set; }
     }
 
-    public class CreateCommentResponse : BaseCommentResponse
+    public class CommentCreatedResponse : BaseCommentResponse
     {
         public string ParentCommentId { get; set; }
         public SignalRResult SignalR { get; set; }

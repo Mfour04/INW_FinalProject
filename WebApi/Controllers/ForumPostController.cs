@@ -42,9 +42,10 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> CreatePost([FromBody] CreatePostCommand command)
+        public async Task<IActionResult> CreatePost([FromForm] CreatePostCommand command)
         {
             command.UserId = currentUserId;
+
             var result = await _mediator.Send(command);
             return Ok(result);
         }

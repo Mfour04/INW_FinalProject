@@ -2,7 +2,6 @@ using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using Shared.Helpers;
 
 namespace Application.Features.Forum.Commands
 {

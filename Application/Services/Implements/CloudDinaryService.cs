@@ -16,7 +16,7 @@ namespace Application.Services.Implements
             Console.WriteLine($"CloudName: {settings.CloudName}");
             Console.WriteLine($"ApiKey: {settings.ApiKey}");
             Console.WriteLine($"ApiSecret: {settings.ApiSecret}");
-            
+
             if (string.IsNullOrWhiteSpace(settings.CloudName))
                 throw new Exception("❌ CloudName is null or empty – check your appsettings.json");
 
@@ -71,7 +71,6 @@ namespace Application.Services.Implements
             }
         }
 
-
         public async Task<string?> UploadImagesAsync(IFormFile? file, string folder)
         {
             if (file == null || file.Length == 0)
@@ -102,6 +101,43 @@ namespace Application.Services.Implements
             }
 
             return uploadResult.SecureUrl.AbsoluteUri;
+        }
+
+        public async Task<List<string>> UploadMultipleImagesAsync(List<IFormFile>? files, string folder)
+        {
+            if (files == null || files.Count == 0)
+                return new List<string>();
+
+            var allowedTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "image/jpeg", "image/png", "image/webp", "image/gif"
+            };
+
+            var uploadTasks = files
+                .Where(file => file != null && file.Length > 0)
+                .Select(async file =>
+                {
+                    if (!allowedTypes.Contains(file.ContentType))
+                        throw new ArgumentException($"File '{file.FileName}' type is not allowed");
+
+                    using var stream = file.OpenReadStream();
+
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(file.FileName, stream),
+                        Transformation = new Transformation().Quality("auto").FetchFormat("auto"),
+                        Folder = folder
+                    };
+
+                    var uploadResult = await _cloudDinary.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode != System.Net.HttpStatusCode.OK || uploadResult.SecureUrl == null)
+                        throw new Exception($"Image upload failed: {uploadResult.Error?.Message}");
+
+                    return uploadResult.SecureUrl.AbsoluteUri;
+                });
+
+            return (await Task.WhenAll(uploadTasks)).ToList();
         }
     }
 }
