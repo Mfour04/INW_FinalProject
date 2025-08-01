@@ -56,7 +56,7 @@ namespace Application.Features.Novel.Queries
                 var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
                 if (novel == null)
                     return Fail("Truyện không tồn tại.");
-                
+
                 var novelResponse = _mapper.Map<NovelResponse>(novel);
 
                 var author = (await _userRepository.GetUsersByIdsAsync(new List<string> { novel.author_id }))
@@ -111,7 +111,7 @@ namespace Application.Features.Novel.Queries
                 .ToList();
                 var chapterResponse = _mapper.Map<List<ChapterResponse>>(filteredChapters);
                 bool isAccessFull = isAuthor || hasPurchasedFull || (!novel.is_paid && novel.is_public);
-                    
+
                 string message = isAccessFull
                     ? "Bạn có thể truy cập toàn bộ truyện."
                     : "Bạn chỉ xem được chương miễn phí và chương đã mua.";
@@ -119,6 +119,7 @@ namespace Application.Features.Novel.Queries
                 return new ApiResponse
                 {
                     Success = true,
+                    Message = message,
                     Data = new
                     {
                         NovelInfo = novelResponse,
@@ -128,7 +129,6 @@ namespace Application.Features.Novel.Queries
                         PurchasedChapterIds = isAccessFull ? null : purchasedChapterIds,
                         TotalChapters = totalChapters,
                         TotalPages = totalPages,
-                        Message = message
                     }
                 };
             }

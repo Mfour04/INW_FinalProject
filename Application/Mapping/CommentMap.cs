@@ -28,10 +28,6 @@ namespace Application.Mapping
             CreateMap<CommentEntity, CreateCommentResponse>()
                 .ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.parent_comment_id))
                 .IncludeBase<CommentEntity, BaseCommentResponse>();
-            CreateMap<CommentEntity, UpdateCommentResponse>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.content))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
         }
     }
 }

@@ -43,11 +43,4 @@
             public string NotificationType { get; set; }
         }
     }
-
-    public class UpdateCommentResponse
-    {
-        public string Id { get; set; }
-        public string Content { get; set; }
-        public long UpdatedAt { get; set; }
-    }
 }

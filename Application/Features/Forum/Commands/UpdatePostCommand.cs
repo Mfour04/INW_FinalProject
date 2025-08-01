@@ -1,3 +1,4 @@
+using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -33,10 +34,12 @@ namespace Application.Features.Forum.Commands
             if (post.user_id != request.UserId)
                 return Fail("You are not allowed to edit this post.");
 
-            post.content = request.Content;
-            post.updated_at = TimeHelper.NowTicks;
+            ForumPostEntity updated = new()
+            {
+                content = request.Content
+            };
 
-            var success = await _postRepo.UpdateAsync(request.Id, post);
+            var success = await _postRepo.UpdateAsync(request.Id, updated);
             if (!success)
                 return Fail("Failed to update the post.");
 

@@ -4,6 +4,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -97,7 +98,8 @@ namespace Infrastructure.Repositories.Implements
                 var update = Builders<BadgeEntity>
                     .Update.Set(x => x.name, entity.name ?? post.name)
                     .Set(x => x.description, entity.description ?? post.description)
-                    .Set(x => x.icon_url, entity.icon_url ?? post.icon_url);
+                    .Set(x => x.icon_url, entity.icon_url ?? post.icon_url)
+                    .Set(x => x.updated_at, TimeHelper.NowTicks);
 
                 var updated = await _collection.FindOneAndUpdateAsync(
                     filter,

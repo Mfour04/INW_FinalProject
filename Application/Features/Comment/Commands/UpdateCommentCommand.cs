@@ -1,9 +1,7 @@
-﻿using AutoMapper;
+﻿using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using Shared.Contracts.Response.Comment;
-using Shared.Helpers;
 
 namespace Application.Features.Comment.Commands
 {
@@ -17,35 +15,40 @@ namespace Application.Features.Comment.Commands
     public class UpdateCommentHandler : IRequestHandler<UpdateCommentCommand, ApiResponse>
     {
         private readonly ICommentRepository _commentRepository;
-        private readonly IMapper _mapper;
 
-        public UpdateCommentHandler(ICommentRepository commentRepository, IMapper mapper)
+        public UpdateCommentHandler(ICommentRepository commentRepository)
         {
             _commentRepository = commentRepository;
-            _mapper = mapper;
         }
         public async Task<ApiResponse> Handle(UpdateCommentCommand request, CancellationToken cancellationToken)
         {
             var comment = await _commentRepository.GetByIdAsync(request.CommentId!);
             if (comment == null)
-                return new ApiResponse { Success = false, Message = "Comment not found." };
+                return Fail("Comment not found.");
 
             if (comment.user_id != request.UserId)
-                return new ApiResponse { Success = false, Message = "You are not authorized to update this comment." };
+                return Fail("You are not authorized to update this comment.");
 
-            comment.content = request.Content;
-            comment.updated_at = TimeHelper.NowTicks;
+            CommentEntity updated = new()
+            {
+                content = request.Content
+            };
 
-            await _commentRepository.UpdateAsync(comment);
-
-            var response = _mapper.Map<UpdateCommentResponse>(comment);
+            var success = await _commentRepository.UpdateAsync(request.CommentId, updated);
+            if (!success)
+                return Fail("Failed to update the badge.");
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment Updated Successfully",
-                Data = response
+                Message = "Comment Updated Successfully."
             };
         }
+
+        private ApiResponse Fail(string message) => new()
+        {
+            Success = false,
+            Message = message
+        };
     }
 }
