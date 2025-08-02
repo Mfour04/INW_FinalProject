@@ -262,11 +262,11 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<bool> DecrementCommentsAsync(string novelId)
+        public async Task<bool> DecrementCommentsAsync(string novelId, int count = 1)
         {
             try
             {
-                var update = Builders<NovelEntity>.Update.Inc(x => x.comment_count, -1);
+                var update = Builders<NovelEntity>.Update.Inc(x => x.comment_count, -count);
                 var result = await _collection.UpdateOneAsync(x => x.id == novelId, update);
 
                 return result.ModifiedCount > 0;

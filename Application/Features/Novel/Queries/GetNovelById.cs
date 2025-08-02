@@ -73,11 +73,22 @@ namespace Application.Features.Novel.Queries
 
                 // Kiểm tra quyền
                 var chapterIds = await _chapterRepository.GetIdsByNovelIdAsync(request.NovelId);
-                bool isGuest = string.IsNullOrEmpty(_currentUser.UserId);
-                bool isAuthor = !isGuest && novel.author_id == _currentUser.UserId;
-                bool hasPurchasedFull = !isGuest && await _purchaserRepository.HasPurchasedFullAsync(_currentUser.UserId, request.NovelId);
-                bool hasPurchasedChapters = !isGuest && await _purchaserRepository.HasAnyPurchasedChapterAsync(_currentUser.UserId, request.NovelId, chapterIds);
-                if (!novel.is_public && !isAuthor && !hasPurchasedFull && !hasPurchasedChapters)
+
+                var currentUserId = _currentUser.UserId;
+                bool isGuest = string.IsNullOrEmpty(currentUserId);
+                bool isAdmin = _currentUser.IsAdmin();
+                bool isAuthor = !isGuest && novel.author_id == currentUserId;
+
+                bool hasPurchasedFull = false;
+                bool hasPurchasedChapters = false;
+
+                if (!isGuest)
+                {
+                    hasPurchasedFull = await _purchaserRepository.HasPurchasedFullAsync(currentUserId, request.NovelId);
+                    hasPurchasedChapters = await _purchaserRepository.HasAnyPurchasedChapterAsync(currentUserId, request.NovelId, chapterIds);
+                }
+
+                if (!novel.is_public && !isAuthor && !isAdmin && !hasPurchasedFull && !hasPurchasedChapters)
                     return Fail("Truyện này chưa được công khai.");
 
                 var chapterCriteria = new ChapterFindCreterias
@@ -110,7 +121,7 @@ namespace Application.Features.Novel.Queries
                 )
                 .ToList();
                 var chapterResponse = _mapper.Map<List<ChapterResponse>>(filteredChapters);
-                bool isAccessFull = isAuthor || hasPurchasedFull || (!novel.is_paid && novel.is_public);
+                bool isAccessFull = isAuthor || isAdmin || hasPurchasedFull || (!novel.is_paid && novel.is_public);
 
                 string message = isAccessFull
                     ? "Bạn có thể truy cập toàn bộ truyện."

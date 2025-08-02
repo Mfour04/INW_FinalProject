@@ -61,6 +61,21 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<List<BadgeEntity>> GetAllWithoutPagingAsync()
+        {
+            try
+            {
+                var filter = Builders<BadgeEntity>.Filter.Empty;
+                var result = await _collection.Find(filter).ToListAsync();
+
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task<BadgeEntity> GetByIdAsync(string id)
         {
             try

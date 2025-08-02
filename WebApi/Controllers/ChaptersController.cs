@@ -50,15 +50,15 @@ namespace WebApi.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetChapterByIdAsync(string id)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            var result = await _mediator.Send(new GetChapterById
+            GetChapterById query = new()
             {
                 ChapterId = id,
-                UserId = userId,
                 IpAddress = ipAddress
-            });
+            };
+
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
 

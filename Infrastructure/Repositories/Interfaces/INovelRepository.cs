@@ -21,7 +21,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task UpdateLockStatusAsync(string novelId, bool isLocked);
         Task UpdateHideNovelAsync(string novelId, bool isPublic);
         Task<bool> IncrementCommentsAsync(string novelId);
-        Task<bool> DecrementCommentsAsync(string novelId);
+        Task<bool> DecrementCommentsAsync(string novelId, int count = 1);
         Task<bool> IsSlugExistsAsync(string slug, string? excludeId = null);
         Task<List<NovelEntity>> GetManyByIdsAsync(List<string> ids);
         Task<int> CountAsync(Expression<Func<NovelEntity, bool>> filter = null);

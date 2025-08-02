@@ -30,7 +30,7 @@ namespace Application.Features.Badge.Queries
                     Message = "No badge progress found for the user."
                 };
             }
-            
+
             return new ApiResponse
             {
                 Success = true,

@@ -61,19 +61,6 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<ForumCommentEntity> GetByIdAsync(string id)
-        {
-            try
-            {
-                var result = await _collection.Find(x => x.id == id).FirstOrDefaultAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
         public async Task<List<ForumCommentEntity>> GetRepliesByCommentIdAsync(string parentId, FindCreterias creterias, List<SortCreterias> sortCreterias)
         {
             try
@@ -110,6 +97,39 @@ namespace Infrastructure.Repositories.Implements
                 }
 
                 return await query.ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<ForumCommentEntity> GetByIdAsync(string id)
+        {
+            try
+            {
+                var result = await _collection.Find(x => x.id == id).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<string>> GetReplyIdsByCommentIdAsync(string parentId)
+        {
+            try
+            {
+                var filter = Builders<ForumCommentEntity>.Filter.Eq(c => c.parent_comment_id, parentId);
+
+                var projection = Builders<ForumCommentEntity>.Projection.Include(c => c.id);
+
+                var result = await _collection.Find(filter)
+                                .Project<ForumCommentEntity>(projection)
+                                .ToListAsync();
+
+                return result.Select(c => c.id).ToList();
             }
             catch
             {
@@ -167,6 +187,35 @@ namespace Infrastructure.Repositories.Implements
                 var deleted = await _collection.FindOneAndDeleteAsync(filter);
 
                 return deleted != null;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> DeleteManyAsync(List<string> ids)
+        {
+            try
+            {
+                var filter = Builders<ForumCommentEntity>.Filter.In(x => x.id, ids);
+                var result = await _collection.DeleteManyAsync(filter);
+
+                return result.DeletedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> IncrementReplyCountAsync(string commentId)
+        {
+            try
+            {
+                var update = Builders<ForumCommentEntity>.Update.Inc(x => x.reply_count, 1);
+                var result = await _collection.UpdateOneAsync(c => c.id == commentId, update);
+                return result.ModifiedCount > 0;
             }
             catch
             {

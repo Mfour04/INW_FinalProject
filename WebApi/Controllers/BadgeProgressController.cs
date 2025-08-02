@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Application.Features.Badge.Commands;
 using Application.Features.Badge.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -41,16 +40,15 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpPost("init")]
-        [Authorize]
-        public async Task<IActionResult> InitBadgeForUser()
+        [HttpGet("admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUserBadgeProgress([FromQuery] string userId)
         {
-            InitBadgeProgressCommand command = new()
+            var result = await _mediator.Send(new GetBadgeProgress
             {
-                UserId = currentUserId
-            };
+                UserId = userId
+            });
 
-            var result = await _mediator.Send(command);
             return Ok(result);
         }
     }

@@ -46,8 +46,13 @@ namespace Application.Features.Forum.Queries
                     Avatar = user.avata_url
                 };
             }
-            
-            return new ApiResponse { Success = true, Data = response };
+
+            return new ApiResponse
+            {
+                Success = true,
+                Message = "Post retrieved successfully.",
+                Data = response
+            };
         }
     }
 }
