@@ -9,12 +9,12 @@ using Shared.Helpers;
 
 namespace Application.Features.Chapter.Queries
 {
-    public class GetChapterById: IRequest<ApiResponse>
+    public class GetChapterById : IRequest<ApiResponse>
     {
         public string ChapterId { get; set; }
-        public string UserId { get; set; }
-        public string IpAddress { get; set; }
+        public string? IpAddress { get; set; }
     }
+
     public class GetChapterByIdHandler : IRequestHandler<GetChapterById, ApiResponse>
     {
         private readonly IChapterRepository _chapterRepository;
@@ -23,9 +23,11 @@ namespace Application.Features.Chapter.Queries
         private readonly INovelViewTrackingRepository _viewTrackingRepository;
         private readonly IChapterHelperService _chapterHelperService;
         private readonly IMapper _mapper;
-        public GetChapterByIdHandler(IChapterRepository chapterRepository, IPurchaserRepository purchaserRepository, 
+        private readonly ICurrentUserService _currentUser;
+
+        public GetChapterByIdHandler(IChapterRepository chapterRepository, IPurchaserRepository purchaserRepository,
             INovelRepository novelRepository, INovelViewTrackingRepository viewTrackingRepository,
-            IChapterHelperService chapterHelperService, IMapper mapper)
+            IChapterHelperService chapterHelperService, IMapper mapper, ICurrentUserService currentUser)
         {
             _chapterRepository = chapterRepository;
             _purchaserRepository = purchaserRepository;
@@ -33,10 +35,13 @@ namespace Application.Features.Chapter.Queries
             _viewTrackingRepository = viewTrackingRepository;
             _chapterHelperService = chapterHelperService;
             _mapper = mapper;
+            _currentUser = currentUser;
         }
 
         public async Task<ApiResponse> Handle(GetChapterById request, CancellationToken cancellationToken)
         {
+            var userId = _currentUser.UserId;
+
             var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             if (chapter == null)
                 return new ApiResponse { Success = false, Message = "Chapter not found" };
@@ -48,13 +53,14 @@ namespace Application.Features.Chapter.Queries
             var previousChapter = await _chapterRepository.GetPreviousAsync(novel.id, chapter.chapter_number ?? 0);
             var nextChapter = await _chapterRepository.GetNextAsync(novel.id, chapter.chapter_number ?? 0);
 
-            var viewerId = !string.IsNullOrEmpty(request.UserId) ? request.UserId : request.IpAddress;
+            var viewerId = !string.IsNullOrEmpty(userId) ? userId : request.IpAddress;
 
-            bool isAuthor = request.UserId == novel.author_id;
-            bool hasFullOwnerShip = await _purchaserRepository.HasPurchasedFullAsync(request.UserId, novel.id);
-            bool hasChapterOwnership = await _purchaserRepository.HasPurchasedChapterAsync(request.UserId, novel.id, chapter.id);
+            bool isAdmin = _currentUser.IsAdmin();
+            bool isAuthor = userId == novel.author_id;
+            bool hasFullOwnerShip = await _purchaserRepository.HasPurchasedFullAsync(userId, novel.id);
+            bool hasChapterOwnership = await _purchaserRepository.HasPurchasedChapterAsync(userId, novel.id, chapter.id);
 
-            bool hasAccess = isAuthor || hasFullOwnerShip || hasChapterOwnership;
+            bool hasAccess = isAdmin || isAuthor || hasFullOwnerShip || hasChapterOwnership;
 
             if (!novel.is_public || !chapter.is_public)
             {
@@ -66,19 +72,18 @@ namespace Application.Features.Chapter.Queries
 
             if (!chapter.is_paid)
             {
-                await HandleNovelViewAsync(request.UserId, novel.id);
+                await HandleNovelViewAsync(userId, novel.id);
                 await _chapterHelperService.ProcessViewAsync(chapter.id, viewerId);
                 shouldReloadChapter = true;
             }
             else
             {
-                if (string.IsNullOrEmpty(request.UserId))
+                if (string.IsNullOrEmpty(userId) && !isAdmin)
                     return new ApiResponse { Success = false, Message = "Bạn chưa đăng nhập để xem chương này." };
-                var authorId = novel.author_id;
 
                 if (hasAccess)
                 {
-                    await HandleNovelViewAsync(request.UserId, novel.id);
+                    await HandleNovelViewAsync(userId, novel.id);
                     await _chapterHelperService.ProcessViewAsync(chapter.id, viewerId);
                     shouldReloadChapter = true;
                 }

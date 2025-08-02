@@ -21,8 +21,20 @@ namespace WebApi.Controllers
             _mediator = mediator;
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPostCommentDetail(string id)
+        {
+            GetPostCommentById query = new()
+            {
+                Id = id,
+            };
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
         [HttpGet("{id}/replies")]
-        public async Task<IActionResult> GetPostComments(string id, [FromQuery] GetPostCommentReplies query)
+        public async Task<IActionResult> GetPostCommentReplies(string id, [FromQuery] GetPostCommentReplies query)
         {
             query.ParentId = id;
 
@@ -58,7 +70,6 @@ namespace WebApi.Controllers
             DeletePostCommentCommand command = new()
             {
                 Id = id,
-                UserId = currentUserId
             };
 
             var result = await _mediator.Send(command);

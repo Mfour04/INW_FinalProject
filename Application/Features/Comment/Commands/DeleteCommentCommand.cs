@@ -38,6 +38,19 @@ namespace Application.Features.Comment.Commands
             if (!_currentUser.IsAdmin() && _currentUser.UserId != existComment.user_id)
                 return Fail("You are not authorized to delete this comment.");
 
+            int totalDeleted = 1;
+
+            if (string.IsNullOrWhiteSpace(existComment.parent_comment_id))
+            {
+                var replyIds = await _commentRepo.GetReplyIdsByParentIdAsync(existComment.id);
+
+                if (replyIds.Any())
+                {
+                    await _commentRepo.DeleteManyAsync(replyIds);
+                    totalDeleted += replyIds.Count;
+                }
+            }
+
             var deleted = await _commentRepo.DeleteAsync(request.CommentId);
             if (!deleted)
             {
@@ -50,9 +63,9 @@ namespace Application.Features.Comment.Commands
             }
 
             if (!string.IsNullOrWhiteSpace(existComment.chapter_id))
-                await _chapterRepo.DecrementCommentsAsync(existComment.chapter_id);
+                await _chapterRepo.DecrementCommentsAsync(existComment.chapter_id, totalDeleted);
             else if (!string.IsNullOrWhiteSpace(existComment.novel_id))
-                await _novelRepo.DecrementCommentsAsync(existComment.novel_id);
+                await _novelRepo.DecrementCommentsAsync(existComment.novel_id, totalDeleted);
 
             return new ApiResponse
             {

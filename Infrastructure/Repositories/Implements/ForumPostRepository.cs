@@ -166,11 +166,11 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<bool> DecrementCommentsAsync(string id)
+        public async Task<bool> DecrementCommentsAsync(string id, int count = 1)
         {
             try
             {
-                var update = Builders<ForumPostEntity>.Update.Inc(x => x.comment_count, -1);
+                var update = Builders<ForumPostEntity>.Update.Inc(x => x.comment_count, -count);
                 var result = await _collection.UpdateOneAsync(x => x.id == id, update);
 
                 return result.ModifiedCount > 0;

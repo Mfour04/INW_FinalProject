@@ -13,6 +13,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> IncrementLikesAsync(string id);
         Task<bool> DecrementLikesAsync(string id);
         Task<bool> IncrementCommentsAsync(string id);
-        Task<bool> DecrementCommentsAsync(string id);
+        Task<bool> DecrementCommentsAsync(string id, int count);
     }
 }

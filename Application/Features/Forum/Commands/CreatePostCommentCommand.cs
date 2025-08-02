@@ -43,14 +43,14 @@ namespace Application.Features.Forum.Commands
             if (!(hasPostId ^ hasParentId))
                 return Fail("Either PostId or ParentCommentId must be provided, but not both.");
 
-            if (!string.IsNullOrEmpty(request.PostId))
+            if (hasPostId)
             {
                 var post = await _postRepo.GetByIdAsync(request.PostId);
                 if (post == null)
                     return Fail("Post does not exist.");
             }
 
-            if (!string.IsNullOrEmpty(request.ParentCommentId))
+            if (hasParentId)
             {
                 var parent = await _postCommentRepo.GetByIdAsync(request.ParentCommentId);
 
@@ -87,7 +87,17 @@ namespace Application.Features.Forum.Commands
                 }
                 : new BasePostCommentResponse.PostCommentAuthorResponse();
 
-            if (!string.IsNullOrEmpty(comment.post_id))
+            if (!string.IsNullOrEmpty(comment.parent_comment_id))
+            {
+                await _postCommentRepo.IncrementReplyCountAsync(comment.parent_comment_id);
+
+                var parentComment = await _postCommentRepo.GetByIdAsync(comment.parent_comment_id);
+                if (parentComment != null && !string.IsNullOrEmpty(parentComment.post_id))
+                {
+                    await _postRepo.IncrementCommentsAsync(parentComment.post_id);
+                }
+            }
+            else if (!string.IsNullOrEmpty(comment.post_id))
             {
                 await _postRepo.IncrementCommentsAsync(comment.post_id);
             }

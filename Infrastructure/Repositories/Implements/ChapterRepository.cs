@@ -384,12 +384,13 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Giảm số lượng comment
         /// </summary>
-        public async Task<bool> DecrementCommentsAsync(string chapterId)
+        public async Task<bool> DecrementCommentsAsync(string chapterId, int count = 1)
         {
             try
             {
-                var update = Builders<ChapterEntity>.Update.Inc(x => x.comment_count, -1);
+                var update = Builders<ChapterEntity>.Update.Inc(x => x.comment_count, -count);
                 var result = await _collection.UpdateOneAsync(x => x.id == chapterId, update);
+                
                 return result.ModifiedCount > 0;
             }
             catch

@@ -268,6 +268,7 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+        
         [HttpPut("ban-vs-unban")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateBanStatus([FromBody] UpdateLockvsUnLockUserCommand command)

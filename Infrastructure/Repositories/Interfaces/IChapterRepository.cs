@@ -37,7 +37,7 @@ namespace Infrastructure.Repositories.Interfaces
         // Counters & stats
         Task<int> CountPublishedAsync(string novelId);
         Task<bool> IncrementCommentsAsync(string novelId);
-        Task<bool> DecrementCommentsAsync(string novelId);
+        Task<bool> DecrementCommentsAsync(string chapterId, int count = 1);
         Task<int> ReleaseScheduledAsync();
         Task IncreaseViewCountAsync(string chapterId);
         Task UpdateHideChapterStatus(string chapterId, bool isPublic);

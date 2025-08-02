@@ -263,6 +263,25 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<List<string>> GetReplyIdsByParentIdAsync(string parentId)
+        {
+            try
+            {
+                var filter = Builders<CommentEntity>.Filter.Eq(c => c.parent_comment_id, parentId);
+                var projection = Builders<CommentEntity>.Projection.Include(c => c.id);
+
+                var replies = await _collection.Find(filter)
+                                               .Project<CommentEntity>(projection)
+                                               .ToListAsync();
+
+                return replies.Select(r => r.id).ToList();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         /// <summary>
         /// Kiểm tra bình luận trùng trong khoảng thời gian nhất định
         /// </summary>
@@ -341,6 +360,19 @@ namespace Infrastructure.Repositories.Implements
                     .ToDictionary(g => g.Key!, g => g.Count());
 
                 return replyCounts;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task DeleteManyAsync(List<string> ids)
+        {
+            try
+            {
+                var filter = Builders<CommentEntity>.Filter.In(c => c.id, ids);
+                await _collection.DeleteManyAsync(filter);
             }
             catch
             {

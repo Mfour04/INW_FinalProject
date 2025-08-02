@@ -15,7 +15,7 @@ namespace Application.Auth.Commands
         public string Email { get; set; }
         public string Password { get; set; }
     }
-    
+
     public class RegisterUserHandler : IRequestHandler<RegisterCommand, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
@@ -48,8 +48,7 @@ namespace Application.Auth.Commands
                 password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 role = Role.User,
                 is_verified = false,
-                created_at = TimeHelper.NowTicks,
-                updated_at = TimeHelper.NowTicks
+                created_at = TimeHelper.NowTicks
             };
 
             await _userRepository.CreateUser(newUser);
