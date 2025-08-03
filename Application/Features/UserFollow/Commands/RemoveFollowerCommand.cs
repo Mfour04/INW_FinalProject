@@ -2,7 +2,7 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 
-namespace Application.Features.Follow.Commands
+namespace Application.Features.UserFollow.Commands
 {
     public class RemoveFollowerCommand : IRequest<ApiResponse>
     {

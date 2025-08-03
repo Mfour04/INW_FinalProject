@@ -28,7 +28,7 @@ namespace Infrastructure
                 configuration.GetSection("CloudinarySettings"));
             return services;
         }
-        
+
         private static IServiceCollection AddPersistence(this IServiceCollection services)
         {
             services.AddSingleton<MongoDBHelper>();
@@ -37,7 +37,7 @@ namespace Infrastructure
             services.AddScoped<INovelRepository, NovelRepository>();
             services.AddScoped<IChapterRepository, ChapterRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
-         
+
 
             services.AddScoped<IBadgeRepository, BadgeRepository>();
             services.AddScoped<IBadgeProgressRepository, BadgeProgressRepository>();
@@ -49,6 +49,7 @@ namespace Infrastructure
             services.AddScoped<ITransactionRepository, TransactionRepository>();
             services.AddScoped<ITransactionLogRepository, TransactionLogRepository>();
             services.AddScoped<IPurchaserRepository, PurchaserRepository>();
+            services.AddScoped<IUserBankAccountRepository, UserBankAccountRepository>();
             services.AddScoped<IUserFollowRepository, UserFollowRepository>();
 
             services.AddScoped<ICommentRepository, CommentRepository>();

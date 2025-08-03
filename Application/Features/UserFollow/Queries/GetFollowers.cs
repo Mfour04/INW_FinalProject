@@ -3,7 +3,7 @@ using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.UserFollow;
 
-namespace Application.Features.Follow.Queries
+namespace Application.Features.UserFollow.Queries
 {
     public class GetFollowers : IRequest<ApiResponse>
     {

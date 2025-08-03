@@ -12,6 +12,7 @@ using Shared.Contracts.Response.Report;
 using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.Transaction;
 using Shared.Contracts.Response.User;
+using Shared.Contracts.Response.UserBankAccount;
 
 namespace Application.Mapping
 {
@@ -256,7 +257,6 @@ namespace Application.Mapping
                 .ForMember(dest => dest.TotalChapters, opt => opt.MapFrom(src => src.novel.total_chapters))
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
 
-
             //Notification
             CreateMap<NotificationEntity, NotificationReponse>()
                 .ForMember(dest => dest.NotificationId, opt => opt.MapFrom(src => src.id))
@@ -265,6 +265,17 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.message))
                 .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => src.updated_at));
+
+            //Bank
+            CreateMap<UserBankAccountEntity, BaseBankAccountResponse>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.BankShortName, opt => opt.MapFrom(src => src.bank_short_name))
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.MapFrom(src => src.bank_account_number))
+                .ForMember(dest => dest.BankAccountName, opt => opt.MapFrom(src => src.bank_account_name))
+                .ForMember(dest => dest.IsDefault, opt => opt.MapFrom(src => src.is_default))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at));
+            CreateMap<UserBankAccountEntity, BankAccountResponse>()
+                .IncludeBase<UserBankAccountEntity, BaseBankAccountResponse>();
         }
     }
 }

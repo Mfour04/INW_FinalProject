@@ -4,7 +4,7 @@ using MediatR;
 using Shared.Contracts.Response;
 using Shared.Helpers;
 
-namespace Application.Features.Follow.Commands
+namespace Application.Features.UserFollow.Commands
 {
     public class FollowUserCommand : IRequest<ApiResponse>
     {

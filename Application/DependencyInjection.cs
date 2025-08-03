@@ -33,6 +33,7 @@ namespace Application
             services.AddScoped<ICacheService, CacheService>();
             services.AddScoped<ICommentSpamGuard, CommentSpamGuard>();
             services.AddScoped<IBadgeProgressService, BadgeProgressService>();
+            services.AddScoped<IVietQrService, VietQrService>();
             return services;
         }
     }

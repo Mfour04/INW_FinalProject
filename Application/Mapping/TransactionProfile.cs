@@ -14,8 +14,7 @@ namespace Application.Mapping
 
             CreateMap<TransactionEntity, AdminWithdrawTransactionResponse>()
                 .IncludeBase<TransactionEntity, AdminTransactionResponse>()
-                .ForMember(dest => dest.BankAccountName, opt => opt.MapFrom(src => src.bank_account_name))
-                .ForMember(dest => dest.BankAccountNumber, opt => opt.MapFrom(src => src.bank_account_number))
+                .ForMember(dest => dest.BankAccountId, opt => opt.MapFrom(src => src.bank_account_id))
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.payment_method))
                 .ForMember(dest => dest.ActionById, opt => opt.Ignore())
                 .ForMember(dest => dest.ActionType, opt => opt.Ignore())
@@ -47,8 +46,7 @@ namespace Application.Mapping
 
             CreateMap<TransactionEntity, WithdrawTransactionResponse>()
                 .IncludeBase<TransactionEntity, UserTransactionResponse>()
-                .ForMember(dest => dest.BankAccountName, opt => opt.MapFrom(src => src.bank_account_name))
-                .ForMember(dest => dest.BankAccountNumber, opt => opt.MapFrom(src => src.bank_account_number))
+                .ForMember(dest => dest.BankAccountId, opt => opt.MapFrom(src => src.bank_account_id))
                 .ForMember(dest => dest.CompletedAt, opt => opt.MapFrom(src => src.completed_at))
                 .ForMember(dest => dest.Message, opt => opt.Ignore());
 
