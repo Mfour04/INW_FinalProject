@@ -32,6 +32,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.role.ToString()))
                 .ForMember(dest => dest.IsVerified, opt => opt.MapFrom(src => src.is_verified))
                 .ForMember(dest => dest.IsBanned, opt => opt.MapFrom(src => src.is_banned))
+                .ForMember(dest => dest.BannedUntil, opt => opt.MapFrom(src => src.banned_until))
                 .ForMember(dest => dest.Coin, opt => opt.MapFrom(src => src.coin))
                 .ForMember(dest => dest.BlockCoin, opt => opt.MapFrom(src => src.block_coin))
                 .ForMember(dest => dest.NovelFollowCount, opt => opt.MapFrom(src => src.novel_follow_count))

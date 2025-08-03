@@ -14,6 +14,7 @@ namespace Application.Features.User.Feature
         public bool isBanned { get; set; }   
         public string DurationType { get; set; }
     }
+    
     public class UpdateLockvsUnLockUserHandler : IRequestHandler<UpdateLockvsUnLockUserCommand, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
