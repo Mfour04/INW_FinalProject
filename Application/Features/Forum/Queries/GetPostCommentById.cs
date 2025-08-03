@@ -36,7 +36,7 @@ namespace Application.Features.Forum.Queries
                 return new ApiResponse { Success = false, Message = "No forum comment found." };
             }
 
-            var response = _mapper.Map<BasePostCommentResponse>(comment);
+            var response = _mapper.Map<PostCommentResponse>(comment);
 
             var user = await _userRepo.GetById(comment.user_id);
             if (user != null)

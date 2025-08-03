@@ -18,6 +18,13 @@ namespace Shared.Contracts.Response.Forum
         }
     }
 
+    public class PostCommentResponse : BasePostCommentResponse
+    {
+        public int ReplyCount { get; set; }
+        public string PostId { get; set; }
+        public string ParentCommentId { get; set; }
+    }
+
     public class PostRootCommentResponse : BasePostCommentResponse
     {
         public string PostId { get; set; }

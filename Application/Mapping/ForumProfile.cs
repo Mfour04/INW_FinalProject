@@ -31,6 +31,11 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at))
                 .ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src => src.like_count))
                 .ForMember(dest => dest.Author, opt => opt.Ignore());
+            CreateMap<ForumCommentEntity, PostCommentResponse>()
+                .IncludeBase<ForumCommentEntity, BasePostCommentResponse>()
+                .ForMember(dest => dest.ReplyCount, opt => opt.MapFrom(src => src.reply_count))
+                .ForMember(dest => dest.PostId, opt => opt.MapFrom(src => src.post_id))
+                .ForMember(dest => dest.ParentCommentId, opt => opt.MapFrom(src => src.parent_comment_id));
             CreateMap<ForumCommentEntity, PostRootCommentResponse>()
                 .IncludeBase<ForumCommentEntity, BasePostCommentResponse>()
                 .ForMember(dest => dest.PostId, opt => opt.MapFrom(src => src.post_id))
