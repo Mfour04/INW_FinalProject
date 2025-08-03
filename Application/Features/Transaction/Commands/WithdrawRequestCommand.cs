@@ -12,8 +12,7 @@ namespace Application.Features.Transaction.Commands
         public string? UserId { get; set; }
         public int CoinAmount { get; set; }
         public string PaymentMethod { get; set; }
-        public string BankAccountName { get; set; }
-        public string BankAccountNumber { get; set; }
+        public string BankAccountId { get; set; }
     }
 
     public class WithdrawRequestCommandHandler : IRequestHandler<WithdrawRequestCommand, ApiResponse>
@@ -51,8 +50,7 @@ namespace Application.Features.Transaction.Commands
                 payment_method = request.PaymentMethod,
                 status = PaymentStatus.Pending,
                 completed_at = 0,
-                bank_account_name = request.BankAccountName,
-                bank_account_number = request.BankAccountNumber,
+                bank_account_id = request.BankAccountId,
                 created_at = TimeHelper.NowTicks,
                 updated_at = 0
             };

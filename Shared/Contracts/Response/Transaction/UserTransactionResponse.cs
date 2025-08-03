@@ -19,8 +19,7 @@ namespace Shared.Contracts.Response.Transaction
 
     public class WithdrawTransactionResponse : UserTransactionResponse
     {
-        public string BankAccountName { get; set; }
-        public string BankAccountNumber { get; set; }
+        public string BankAccountId { get; set; }
         public string Message { get; set; }
         public long CompletedAt { get; set; }
     }

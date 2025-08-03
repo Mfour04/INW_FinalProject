@@ -1,6 +1,6 @@
 using System.Security.Claims;
-using Application.Features.Follow.Commands;
-using Application.Features.Follow.Queries;
+using Application.Features.UserFollow.Commands;
+using Application.Features.UserFollow.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

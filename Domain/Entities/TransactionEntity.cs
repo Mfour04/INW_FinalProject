@@ -12,7 +12,6 @@ namespace Domain.Entities
         public string payment_method { get; set; }
         public PaymentStatus status { get; set; }
         public long completed_at { get; set; }
-        public string bank_account_name { get; set; }
-        public string bank_account_number { get; set; }
+        public string bank_account_id { get; set; }
     }
 }

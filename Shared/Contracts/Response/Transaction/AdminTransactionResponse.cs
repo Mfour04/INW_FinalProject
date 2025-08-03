@@ -21,8 +21,7 @@ namespace Shared.Contracts.Response.Transaction
 
     public class AdminWithdrawTransactionResponse : AdminTransactionResponse
     {
-        public string BankAccountName { get; set; }
-        public string BankAccountNumber { get; set; }
+        public string BankAccountId { get; set; }
         public string ActionById { get; set; }
         public string ActionType { get; set; }
         public string Message { get; set; }
