@@ -39,7 +39,9 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelFollowCount, opt => opt.MapFrom(src => src.novel_follow_count))
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
                 .ForMember(dest => dest.LastLogin, opt => opt.MapFrom(src => src.last_login))
-                .ForMember(dest => dest.FavouriteType, opt => opt.Ignore());
+                .ForMember(dest => dest.FavouriteType, opt => opt.Ignore())
+                .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => src.created_at))
+                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => src.updated_at));
 
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
@@ -208,11 +210,13 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.score))
+                .ForMember(dest => dest.RatingContent, opt => opt.MapFrom(src => src.rating_cotent))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
 
             CreateMap<RatingEntity, UpdateRatingResponse>()
                 .ForMember(dest => dest.RatingId, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.RatingContent, opt => opt.MapFrom(src => src.rating_cotent))
                 .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.score));
             //Novel Follower
             CreateMap<NovelFollowerEntity, NovelFollowResponse>()

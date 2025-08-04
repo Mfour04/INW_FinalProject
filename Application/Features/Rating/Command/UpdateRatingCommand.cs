@@ -3,6 +3,7 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Rating;
+using Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,7 @@ namespace Application.Features.Rating.Command
     {
         public string RatingId { get; set; }
         public int Score { get; set; }
+        public string? RatingContent { get; set; }
     }
     public class UpdateRatingCommandHandler : IRequestHandler<UpdateRatingCommand, ApiResponse>
     {
@@ -40,6 +42,8 @@ namespace Application.Features.Rating.Command
                 };
             }
             rating.score = input.Score;
+            rating.rating_cotent = input.RatingContent;
+            rating.updated_at = TimeHelper.NowTicks;
             var updatedRating = await _ratingRepository.UpdateAsync(rating);
             var response = _mapper.Map<UpdateRatingResponse>(updatedRating);
             if (updatedRating == null)

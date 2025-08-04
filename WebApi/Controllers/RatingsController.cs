@@ -1,9 +1,15 @@
-﻿using Application.Features.Rating.Command;
+﻿using Application.Features.Novel.Queries;
+using Application.Features.Rating.Command;
 using Application.Features.Rating.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
 using Shared.Contracts.Response.Rating;
+using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -12,7 +18,10 @@ namespace WebApi.Controllers
     public class RatingsController : ControllerBase
     {
         private readonly IMediator _mediator;
-
+        private string currentUserId =>
+          User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+           ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+          ?? throw new UnauthorizedAccessException("User ID not found in token");
         public RatingsController(IMediator mediator)
         {
             _mediator = mediator;
@@ -51,24 +60,18 @@ namespace WebApi.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateRating([FromBody] CreateRatingCommand command)
+        [HttpGet("novel/{novelId}")]
+        public async Task<IActionResult> GetRatingsByNovelId(string novelId, [FromQuery] int page = 0, [FromQuery] int limit = 10)
         {
             try
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (command == null)
+                var result = await _mediator.Send(new GetRatingByNovelId
                 {
-                    return BadRequest("Invalid rating data.");
-                }
-                var result = await _mediator.Send(command);
+                    NovelId = novelId,
+                    Page = page,
+                    Limit = limit
+                });
                 return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
             }
             catch (Exception ex)
             {
@@ -76,30 +79,20 @@ namespace WebApi.Controllers
             }
         }
 
+        [HttpPost("create")]
+        [Authorize]
+        public async Task<IActionResult> CreateRating([FromBody] CreateRatingCommand command)
+        {  
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
         [HttpPut("update")]
+        [Authorize]
         public async Task<IActionResult> UpdateRating([FromBody] UpdateRatingCommand command)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                if (command == null)
-                {
-                    return BadRequest("Invalid rating data.");
-                }
-
-                var result = await _mediator.Send(command);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]

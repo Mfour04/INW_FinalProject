@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Application.Services.Interfaces;
+using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -16,28 +17,32 @@ namespace Application.Features.Rating.Command
 {
     public class CreateRatingCommand : IRequest<ApiResponse>
     {
-        public string UserId { get; set; }
         public string NovelId { get; set; }
         public int Score { get; set; }
+        public string? RatingContent { get; set; }
     }
     public class CreateRatingCommandHandler : IRequestHandler<CreateRatingCommand, ApiResponse>
     {
         private readonly IRatingRepository _ratingRepository;
         private readonly IUserRepository _userRepository;
         private readonly INovelRepository _novelRepository;
+        private readonly ICurrentUserService _currentUserService;
         private readonly IMapper _mapper;
 
-        public CreateRatingCommandHandler(IRatingRepository ratingRepository, IUserRepository userRepository, INovelRepository novelRepository, IMapper mapper)
+        public CreateRatingCommandHandler(IRatingRepository ratingRepository, IUserRepository userRepository
+            , INovelRepository novelRepository, IMapper mapper, ICurrentUserService currentUserService)
         {
             _ratingRepository = ratingRepository;
             _userRepository = userRepository;
             _novelRepository = novelRepository;
+            _currentUserService = currentUserService;
             _mapper = mapper;
         }
 
         public async Task<ApiResponse> Handle(CreateRatingCommand request, CancellationToken cancellationToken)
         {
-            var existingRating = await _ratingRepository.GetByUserAndNovelAsync(request.UserId, request.NovelId);
+            var currentUserId = _currentUserService.UserId;
+            var existingRating = await _ratingRepository.GetByUserAndNovelAsync(currentUserId, request.NovelId);
             if (existingRating != null)
             {
                 return new ApiResponse
@@ -55,13 +60,16 @@ namespace Application.Features.Rating.Command
                     Message = "Không tìm thấy truyện."
                 };
             }
-
+            
             var createdRating = new RatingEntity
             {
                 id = SystemHelper.RandomId(),
                 novel_id = novel.id,
-                user_id = request.UserId,
-                score = request.Score
+                user_id = currentUserId,
+                score = request.Score,
+                rating_cotent = request.RatingContent,
+                created_at = TimeHelper.NowTicks,
+                updated_at = TimeHelper.NowTicks
             };
 
             await _ratingRepository.CreateAsync(createdRating);
