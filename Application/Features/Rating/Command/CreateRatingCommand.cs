@@ -67,7 +67,7 @@ namespace Application.Features.Rating.Command
                 novel_id = novel.id,
                 user_id = currentUserId,
                 score = request.Score,
-                rating_cotent = request.RatingContent,
+                rating_content = request.RatingContent,
                 created_at = TimeHelper.NowTicks,
                 updated_at = TimeHelper.NowTicks
             };

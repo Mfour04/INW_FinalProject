@@ -206,17 +206,17 @@ namespace Application.Mapping
 
             //Rating
             CreateMap<RatingEntity, RatingResponse>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.RatingId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.score))
-                .ForMember(dest => dest.RatingContent, opt => opt.MapFrom(src => src.rating_cotent))
+                .ForMember(dest => dest.RatingContent, opt => opt.MapFrom(src => src.rating_content))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
 
             CreateMap<RatingEntity, UpdateRatingResponse>()
                 .ForMember(dest => dest.RatingId, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.RatingContent, opt => opt.MapFrom(src => src.rating_cotent))
+                .ForMember(dest => dest.RatingContent, opt => opt.MapFrom(src => src.rating_content))
                 .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.score));
             //Novel Follower
             CreateMap<NovelFollowerEntity, NovelFollowResponse>()

@@ -42,7 +42,7 @@ namespace Application.Features.Rating.Command
                 };
             }
             rating.score = input.Score;
-            rating.rating_cotent = input.RatingContent;
+            rating.rating_content = input.RatingContent;
             rating.updated_at = TimeHelper.NowTicks;
             var updatedRating = await _ratingRepository.UpdateAsync(rating);
             var response = _mapper.Map<UpdateRatingResponse>(updatedRating);
