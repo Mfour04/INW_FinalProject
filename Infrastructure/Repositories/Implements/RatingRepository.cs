@@ -1,5 +1,6 @@
 ﻿using DnsClient;
 using Domain.Entities;
+using Domain.Entities.System;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
@@ -132,6 +133,27 @@ namespace Infrastructure.Repositories.Implements
                 return await _ratings.Find(filter).FirstOrDefaultAsync();
             }
             catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<(List<RatingEntity> Ratings, int TotalRatings, int TotalPages)> GetRatingByNovelIdAsync(string novelId, FindCreterias creterias)
+        {
+            try
+            {
+                var filter = Builders<RatingEntity>.Filter.Eq(r => r.novel_id, novelId);
+                var ratings = _ratings.Find(filter);
+                var totalRatings = (int)await _ratings.CountDocumentsAsync(filter);
+                var totalPages = (int)Math.Ceiling((double)totalRatings / creterias.Limit);
+                var result = await ratings
+                    .SortByDescending(r => r.created_at)
+                    .Skip(creterias.Page * creterias.Limit)
+                    .Limit(creterias.Limit)
+                    .ToListAsync();
+                return (result, totalRatings, totalPages);
+            }
+            catch 
             {
                 throw new InternalServerException();
             }

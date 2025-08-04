@@ -141,6 +141,34 @@ namespace Infrastructure.Repositories.Implements
             await _novelCollection.DeleteOneAsync(filter);
         }
 
+        public async Task<List<(string NovelId, float Score)>> GetSimilarNovelsAsync(List<float> inputVector, int topN, string excludeNovelId = null)
+        {
+            try
+            {
+                var allEmbeddings = await _novelCollection
+                    .Find(Builders<NovelEmbeddingEntity>.Filter.Ne(e => e.novel_id, excludeNovelId))
+                    .ToListAsync();
+
+                var results = allEmbeddings
+                    .Where(x => x.vector_novel != null && x.vector_novel.Count == inputVector.Count)
+                    .Select(x => (
+                        NovelId: x.novel_id,
+                        Score: (float)SystemHelper.CalculateCosineSimilarity(inputVector, x.vector_novel)
+                    ))
+                    .OrderByDescending(x => x.Score)
+                    .Where(x => x.Score >= 0.5)
+                    .Take(topN)
+                    .ToList();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi nếu cần
+                throw new Exception("Lỗi khi lấy các tiểu thuyết tương tự", ex);
+            }
+        }
+
         /// <summary>
         /// End Embedding methods
         /// </summary>

@@ -42,7 +42,7 @@ namespace Application.Features.User.Queries
                         Message = "User not found"
                     };
                 }
-
+                bool isAdmin = _currentUserService.IsAdmin();
                 List<TagEntity> tagEntities = new();
                 if (user.favourite_type != null && user.favourite_type.Any())
                 {
@@ -58,7 +58,7 @@ namespace Application.Features.User.Queries
                 }).ToList();
 
                 // Nếu không phải chính mình thì ẩn các trường nhạy cảm
-                if (request.CurrentUserId != request.UserId)
+                if (request.CurrentUserId != request.UserId && !isAdmin)
                 {
                     response.Email = null;
                     response.Coin = 0;

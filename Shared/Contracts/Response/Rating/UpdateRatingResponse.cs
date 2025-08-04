@@ -10,5 +10,6 @@ namespace Shared.Contracts.Response.Rating
     {
         public string RatingId { get; set; }
         public int Score { get; set; }
+        public string RatingContent { get; set; }
     }
 }

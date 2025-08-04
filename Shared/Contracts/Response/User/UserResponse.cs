@@ -22,5 +22,7 @@ namespace Shared.Contracts.Response.User
         public List<string> BadgeId { get; set; } = new();
         public long LastLogin { get; set; }
         public List<TagListResponse> FavouriteType { get; set; } = new();
+        public long CreateAt { get; set; }
+        public long UpdateAt { get; set; }
     }
 }

@@ -12,6 +12,7 @@ namespace Shared.Contracts.Response.Rating
         public string UserId { get; set; }
         public string NovelId { get; set; }
         public int Score { get; set; }
+        public string RatingContent { get; set; } 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
