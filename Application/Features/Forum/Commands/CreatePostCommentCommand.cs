@@ -12,7 +12,7 @@ namespace Application.Features.Forum.Commands
     {
         public string? PostId { get; set; }
         public string? UserId { get; set; }
-        public string Content { get; set; }
+        public required string Content { get; set; }
         public string? ParentCommentId { get; set; }
     }
 
@@ -37,31 +37,11 @@ namespace Application.Features.Forum.Commands
 
         public async Task<ApiResponse> Handle(CreatePostCommentCommand request, CancellationToken cancellationToken)
         {
-            bool hasPostId = !string.IsNullOrEmpty(request.PostId);
-            bool hasParentId = !string.IsNullOrEmpty(request.ParentCommentId);
+            var validation = await ValidateCommand(request);
+            if (validation != null)
+                return validation;
 
-            if (!(hasPostId ^ hasParentId))
-                return Fail("Either PostId or ParentCommentId must be provided, but not both.");
-
-            if (hasPostId)
-            {
-                var post = await _postRepo.GetByIdAsync(request.PostId);
-                if (post == null)
-                    return Fail("Post does not exist.");
-            }
-
-            if (hasParentId)
-            {
-                var parent = await _postCommentRepo.GetByIdAsync(request.ParentCommentId);
-
-                if (parent == null)
-                    return Fail("Parent comment not found.");
-
-                if (!string.IsNullOrEmpty(parent.parent_comment_id))
-                    return Fail("Only 1-level replies are allowed.");
-            }
-
-            ForumCommentEntity comment = new()
+            var comment = new ForumCommentEntity
             {
                 id = SystemHelper.RandomId(),
                 post_id = request.PostId,
@@ -73,7 +53,9 @@ namespace Application.Features.Forum.Commands
                 created_at = TimeHelper.NowTicks
             };
 
-            await _postCommentRepo.CreateAsync(comment);
+            var created = await _postCommentRepo.CreateAsync(comment);
+            if (created == null)
+                return Fail("Failed to create comment.");
 
             var response = _mapper.Map<PostCommentCreatedResponse>(comment);
 
@@ -94,12 +76,14 @@ namespace Application.Features.Forum.Commands
                 var parentComment = await _postCommentRepo.GetByIdAsync(comment.parent_comment_id);
                 if (parentComment != null && !string.IsNullOrEmpty(parentComment.post_id))
                 {
-                    await _postRepo.IncrementCommentsAsync(parentComment.post_id);
+                    var incResult = await IncrementCommentCount(parentComment.post_id);
+                    if (incResult != null) return incResult;
                 }
             }
             else if (!string.IsNullOrEmpty(comment.post_id))
             {
-                await _postRepo.IncrementCommentsAsync(comment.post_id);
+                var incResult = await IncrementCommentCount(comment.post_id);
+                if (incResult != null) return incResult;
             }
 
             return new ApiResponse
@@ -112,10 +96,41 @@ namespace Application.Features.Forum.Commands
             };
         }
 
-        private ApiResponse Fail(string msg) => new()
+        private async Task<ApiResponse?> ValidateCommand(CreatePostCommentCommand request)
+        {
+            bool hasPostId = !string.IsNullOrEmpty(request.PostId);
+            bool hasParentId = !string.IsNullOrEmpty(request.ParentCommentId);
+
+            if (!(hasPostId ^ hasParentId))
+                return Fail("Either PostId or ParentCommentId must be provided, but not both.");
+
+            if (hasPostId)
+            {
+                var post = await _postRepo.GetByIdAsync(request.PostId);
+                if (post == null) return Fail("Post does not exist.");
+            }
+
+            if (hasParentId)
+            {
+                var parentComment = await _postCommentRepo.GetByIdAsync(request.ParentCommentId);
+                if (parentComment == null) return Fail("Parent comment not found.");
+                if (!string.IsNullOrEmpty(parentComment.parent_comment_id))
+                    return Fail("Only 1-level replies are allowed.");
+            }
+
+            return null;
+        }
+
+        private async Task<ApiResponse?> IncrementCommentCount(string postId)
+        {
+            var success = await _postRepo.IncrementCommentsAsync(postId);
+            return success ? null : Fail("Failed to update post comment count.");
+        }
+
+        private ApiResponse Fail(string message) => new()
         {
             Success = false,
-            Message = msg
+            Message = message
         };
     }
 }

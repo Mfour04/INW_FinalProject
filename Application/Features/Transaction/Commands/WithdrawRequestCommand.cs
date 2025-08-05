@@ -11,7 +11,6 @@ namespace Application.Features.Transaction.Commands
     {
         public string? UserId { get; set; }
         public int CoinAmount { get; set; }
-        public string PaymentMethod { get; set; }
         public string BankAccountId { get; set; }
     }
 
@@ -47,7 +46,7 @@ namespace Application.Features.Transaction.Commands
                 requester_id = request.UserId,
                 amount = request.CoinAmount,
                 type = PaymentType.WithdrawCoin,
-                payment_method = request.PaymentMethod,
+                payment_method = "Banking",
                 status = PaymentStatus.Pending,
                 completed_at = 0,
                 bank_account_id = request.BankAccountId,

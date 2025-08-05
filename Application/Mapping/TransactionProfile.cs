@@ -14,11 +14,11 @@ namespace Application.Mapping
 
             CreateMap<TransactionEntity, AdminWithdrawTransactionResponse>()
                 .IncludeBase<TransactionEntity, AdminTransactionResponse>()
-                .ForMember(dest => dest.BankAccountId, opt => opt.MapFrom(src => src.bank_account_id))
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.payment_method))
                 .ForMember(dest => dest.ActionById, opt => opt.Ignore())
                 .ForMember(dest => dest.ActionType, opt => opt.Ignore())
-                .ForMember(dest => dest.Message, opt => opt.Ignore());
+                .ForMember(dest => dest.Message, opt => opt.Ignore())
+                .ForMember(dest => dest.BankInfo, opt => opt.Ignore());
 
             CreateMap<TransactionEntity, AdminBuyNovelTransactionResponse>()
                 .IncludeBase<TransactionEntity, AdminTransactionResponse>()

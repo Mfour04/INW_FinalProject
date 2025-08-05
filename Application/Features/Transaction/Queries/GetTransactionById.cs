@@ -18,15 +18,18 @@ namespace Application.Features.Transaction.Queries
     {
         private readonly ITransactionRepository _transactionRepo;
         private readonly ITransactionLogRepository _logRepo;
+        private readonly IUserBankAccountRepository _userBankAccountRepo;
         private readonly IMapper _mapper;
 
         public GetTransactionByIdHandler(
-            ITransactionRepository transactionRepo,
-            ITransactionLogRepository logRepo,
-            IMapper mapper)
+           ITransactionRepository transactionRepo,
+           ITransactionLogRepository logRepo,
+           IUserBankAccountRepository userBankAccountRepo,
+           IMapper mapper)
         {
             _transactionRepo = transactionRepo;
             _logRepo = logRepo;
+            _userBankAccountRepo = userBankAccountRepo;
             _mapper = mapper;
         }
 
@@ -59,6 +62,21 @@ namespace Application.Features.Transaction.Queries
                             withdraw.Message = log.message;
                             withdraw.ActionById = log.action_by_id;
                         }
+
+                        if (!string.IsNullOrEmpty(transaction.bank_account_id))
+                        {
+                            var bank = await _userBankAccountRepo.GetByIdAsync(transaction.bank_account_id);
+                            if (bank != null)
+                            {
+                                withdraw.BankInfo = new AdminWithdrawTransactionResponse.UserBankInfomation
+                                {
+                                    BankBin = bank.bank_bin,
+                                    BankAccountNumber = bank.bank_account_number,
+                                    BankAccountName = bank.bank_account_name
+                                };
+                            }
+                        }
+
                         mapped = withdraw;
                     }
                     else

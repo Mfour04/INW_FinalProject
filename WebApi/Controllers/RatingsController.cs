@@ -1,13 +1,12 @@
 ﻿using Application.Features.Rating.Command;
 using Application.Features.Rating.Queries;
 using MediatR;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Contracts.Response.Rating;
 
 namespace WebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/novels/{novelId}/ratings")]
     [ApiController]
     public class RatingsController : ControllerBase
     {
@@ -19,108 +18,58 @@ namespace WebApi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetRatings([FromQuery] string novelId = null)
+        public async Task<ActionResult> GetRatings([FromRoute] string novelId, [FromQuery] GetRatingByNovelId query)
         {
-            try
-            {
-                var query = new GetRatings { NovelId = novelId };
-                var result = await _mediator.Send(query);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            query.NovelId = novelId;
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetRatingById(string id)
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> GetRatingDetail(string id)
         {
-            try
+            GetRatingById query = new()
             {
-                var query = new GetRatingById { RatingId = id };
-                var result = await _mediator.Send(query);
+                RatingId = id,
+            };
 
-                if (result == null)
-                    return NotFound("Rating not found");
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _mediator.Send(query);
+            return Ok(result);
         }
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateRating([FromBody] CreateRatingCommand command)
+        [HttpPost]
+        [Authorize]
+        public async Task<ActionResult> CreateRating([FromRoute] string novelId, [FromBody] CreateRatingCommand command)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-                if (command == null)
-                {
-                    return BadRequest("Invalid rating data.");
-                }
-                var result = await _mediator.Send(command);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            command.NovelId = novelId;
+
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
 
-        [HttpPut("update")]
-        public async Task<IActionResult> UpdateRating([FromBody] UpdateRatingCommand command)
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<ActionResult> UpdateRating(string id, [FromBody] UpdateRatingCommand command)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+            command.RatingId = id;
 
-                if (command == null)
-                {
-                    return BadRequest("Invalid rating data.");
-                }
-
-                var result = await _mediator.Send(command);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRating(string id)
+        [Authorize]
+        public async Task<IActionResult> DeletePost(string id)
         {
-            try
+            DeleteRatingCommand command = new()
             {
-                var command = new DeleteRatingCommand { RatingId = id };
-                var result = await _mediator.Send(command);
+                RatingId = id,
+            };
 
-                if (result.Success)
-                {
-                    return Ok(result);
-                }
-                return BadRequest(result.Message);
-
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
     }
 }

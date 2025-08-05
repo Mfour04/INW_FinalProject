@@ -22,6 +22,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task UpdateHideNovelAsync(string novelId, bool isPublic);
         Task<bool> IncrementCommentsAsync(string novelId);
         Task<bool> DecrementCommentsAsync(string novelId, int count = 1);
+        Task UpdateRatingStatsAsync(string novelId, double avg, int count);
         Task<bool> IsSlugExistsAsync(string slug, string? excludeId = null);
         Task<List<NovelEntity>> GetManyByIdsAsync(List<string> ids);
         Task<int> CountAsync(Expression<Func<NovelEntity, bool>> filter = null);

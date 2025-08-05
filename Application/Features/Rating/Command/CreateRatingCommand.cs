@@ -1,77 +1,87 @@
-﻿using AutoMapper;
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using Shared.Contracts.Response.Rating;
 using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Application.Features.Rating.Command
 {
     public class CreateRatingCommand : IRequest<ApiResponse>
     {
-        public string UserId { get; set; }
-        public string NovelId { get; set; }
+        public string? NovelId { get; set; }
         public int Score { get; set; }
+        public string? Content { get; set; }
     }
+
     public class CreateRatingCommandHandler : IRequestHandler<CreateRatingCommand, ApiResponse>
     {
         private readonly IRatingRepository _ratingRepository;
-        private readonly IUserRepository _userRepository;
         private readonly INovelRepository _novelRepository;
-        private readonly IMapper _mapper;
+        private readonly ICurrentUserService _currentUser;
 
-        public CreateRatingCommandHandler(IRatingRepository ratingRepository, IUserRepository userRepository, INovelRepository novelRepository, IMapper mapper)
+        public CreateRatingCommandHandler(
+            IRatingRepository ratingRepository,
+            INovelRepository novelRepository,
+            ICurrentUserService currentUser)
         {
             _ratingRepository = ratingRepository;
-            _userRepository = userRepository;
             _novelRepository = novelRepository;
-            _mapper = mapper;
+            _currentUser = currentUser;
         }
 
         public async Task<ApiResponse> Handle(CreateRatingCommand request, CancellationToken cancellationToken)
         {
-            var existingRating = await _ratingRepository.GetByUserAndNovelAsync(request.UserId, request.NovelId);
-            if (existingRating != null)
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "Bạn đã đánh giá truyện này rồi."
-                };
-            }
-            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
-            if (novel == null)
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "Không tìm thấy truyện."
-                };
-            }
+            var validation = await ValidateRequestAsync(request);
+            if (!validation.IsValid)
+                return validation.Response!;
 
-            var createdRating = new RatingEntity
+            var rating = new RatingEntity
             {
                 id = SystemHelper.RandomId(),
-                novel_id = novel.id,
-                user_id = request.UserId,
-                score = request.Score
+                novel_id = request.NovelId,
+                user_id = _currentUser.UserId,
+                content = request.Content,
+                score = request.Score,
+                created_at = TimeHelper.NowTicks
             };
 
-            await _ratingRepository.CreateAsync(createdRating);
-            var response = _mapper.Map<RatingResponse>(createdRating);
+            await _ratingRepository.CreateAsync(rating);
+
+            var avg = await _ratingRepository.GetAverageRatingByNovelIdAsync(request.NovelId);
+            var count = await _ratingRepository.GetRatingCountByNovelIdAsync(request.NovelId);
+            
+            await _novelRepository.UpdateRatingStatsAsync(request.NovelId!, avg, count);
+
             return new ApiResponse
             {
                 Success = true,
-                Message = "Đánh giá thành công.",
-                Data = response
+                Message = "Rating created successfully."
             };
         }
+
+        private async Task<(bool IsValid, ApiResponse? Response)> ValidateRequestAsync(CreateRatingCommand request)
+        {
+            if (string.IsNullOrWhiteSpace(request.NovelId))
+                return (false, Fail("Novel ID is required."));
+
+            if (request.Score < 1 || request.Score > 5)
+                return (false, Fail("Score must be between 1 and 5."));
+
+            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
+            if (novel == null)
+                return (false, Fail("Novel not found."));
+
+            var hasRated = await _ratingRepository.HasUserRatedNovelAsync(_currentUser.UserId, request.NovelId);
+            if (hasRated)
+                return (false, Fail("You have already rated this novel."));
+
+            return (true, null);
+        }
+        private ApiResponse Fail(string message) => new()
+        {
+            Success = false,
+            Message = message
+        };
     }
 }

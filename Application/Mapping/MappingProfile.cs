@@ -208,12 +208,10 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.score))
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.content))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
 
-            CreateMap<RatingEntity, UpdateRatingResponse>()
-                .ForMember(dest => dest.RatingId, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.score));
             //Novel Follower
             CreateMap<NovelFollowerEntity, NovelFollowResponse>()
                 .ForMember(dest => dest.NovelFollowId, opt => opt.MapFrom(src => src.id))
