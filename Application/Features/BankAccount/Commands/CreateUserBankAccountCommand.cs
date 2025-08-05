@@ -14,7 +14,7 @@ namespace Application.Features.BankAccount.Commands
         public int BankBin { get; set; }
         public string BankCode { get; set; }
         public string BankShortName { get; set; }
-        public string BankAccountNumber { get; set; }
+        public long BankAccountNumber { get; set; }
         public string BankAccountName { get; set; }
         public bool IsDefault { get; set; }
     }
@@ -41,11 +41,11 @@ namespace Application.Features.BankAccount.Commands
             if (request.BankBin <= 0)
                 return new ApiResponse { Success = false, Message = "Bank bin is invalid." };
 
-            if (!request.BankAccountNumber.All(char.IsDigit))
-                return new ApiResponse { Success = false, Message = "Bank account number must be numeric." };
+            //if (!request.BankAccountNumber.All(char.IsDigit))
+            //    return new ApiResponse { Success = false, Message = "Bank account number must be numeric." };
 
-            if (request.BankAccountNumber.Length < 6 || request.BankAccountNumber.Length > 20)
-                return new ApiResponse { Success = false, Message = "Bank account number length must be between 6 and 20 digits." };
+            //if (request.BankAccountNumber.Length < 6 || request.BankAccountNumber.Length > 20)
+            //    return new ApiResponse { Success = false, Message = "Bank account number length must be between 6 and 20 digits." };
 
             UserBankAccountEntity entity = new()
             {

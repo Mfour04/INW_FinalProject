@@ -35,6 +35,23 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<List<UserBankAccountEntity>> GetByIdsAsync(List<string> ids)
+        {
+            try
+            {
+                if (ids == null || ids.Count == 0)
+                    return new List<UserBankAccountEntity>();
+
+                return await _collection
+                    .Find(a => ids.Contains(a.id))
+                    .ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         /// <summary>
         /// Lấy danh sách tài khoản ngân hàng của 1 user
         /// </summary>

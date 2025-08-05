@@ -277,6 +277,25 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task UpdateRatingStatsAsync(string novelId, double avg, int count)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(n => n.id, novelId);
+                var update = Builders<NovelEntity>.Update
+                    .Set(n => n.rating_avg, avg)
+                    .Set(n => n.rating_count, count);
+
+                var result = await _collection.UpdateOneAsync(filter, update);
+
+                return;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task UpdateHideNovelAsync(string novelId, bool isPublic)
         {
             try

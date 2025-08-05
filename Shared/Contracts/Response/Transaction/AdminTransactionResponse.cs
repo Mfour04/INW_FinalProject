@@ -21,11 +21,18 @@ namespace Shared.Contracts.Response.Transaction
 
     public class AdminWithdrawTransactionResponse : AdminTransactionResponse
     {
-        public string BankAccountId { get; set; }
+        public UserBankInfomation BankInfo { get; set; }
         public string ActionById { get; set; }
         public string ActionType { get; set; }
         public string Message { get; set; }
         public string PaymentMethod { get; set; }
+
+        public class UserBankInfomation
+        {
+            public int BankBin { get; set; }
+            public long BankAccountNumber { get; set; }
+            public string BankAccountName { get; set; }
+        }
     }
 
     public class AdminBuyNovelTransactionResponse : AdminTransactionResponse

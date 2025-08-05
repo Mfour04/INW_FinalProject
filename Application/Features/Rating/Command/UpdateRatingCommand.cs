@@ -1,65 +1,69 @@
-﻿using AutoMapper;
+﻿using Application.Services.Interfaces;
+using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using Shared.Contracts.Response.Rating;
-using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Rating.Command
 {
     public class UpdateRatingCommand : IRequest<ApiResponse>
     {
-        public string RatingId { get; set; }
+        public string? RatingId { get; set; }
         public int Score { get; set; }
-        public string? RatingContent { get; set; }
+        public string? Content { get; set; }
     }
+
     public class UpdateRatingCommandHandler : IRequestHandler<UpdateRatingCommand, ApiResponse>
     {
         private readonly IRatingRepository _ratingRepository;
-        private readonly IMapper _mapper;
+        private readonly INovelRepository _novelRepository;
+        private readonly ICurrentUserService _currentUser;
 
-        public UpdateRatingCommandHandler(IRatingRepository ratingRepository, IMapper mapper)
+        public UpdateRatingCommandHandler(
+            IRatingRepository ratingRepository,
+            INovelRepository novelRepository,
+            ICurrentUserService currentUser)
         {
             _ratingRepository = ratingRepository;
-            _mapper = mapper;
+            _novelRepository = novelRepository;
+            _currentUser = currentUser;
         }
 
         public async Task<ApiResponse> Handle(UpdateRatingCommand request, CancellationToken cancellationToken)
         {
-            var input = request;
-            var rating = await _ratingRepository.GetByIdAsync(input.RatingId);
+            var rating = await _ratingRepository.GetByIdAsync(request.RatingId);
             if (rating == null)
+                return Fail("Rating not found.");
+
+            if (rating.user_id != _currentUser.UserId)
+                return Fail("You are not authorized to update this rating.");
+
+            RatingEntity updated = new()
             {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "Không tìm thấy đánh giá."
-                };
-            }
-            rating.score = input.Score;
-            rating.rating_content = input.RatingContent;
-            rating.updated_at = TimeHelper.NowTicks;
-            var updatedRating = await _ratingRepository.UpdateAsync(rating);
-            var response = _mapper.Map<UpdateRatingResponse>(updatedRating);
-            if (updatedRating == null)
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "Không tìm thấy đánh giá hoặc gặp lỗi khi cập nhật đánh giá."
-                };
-            }
+                score = request.Score,
+                content = request.Content,
+            };
+
+            var success = await _ratingRepository.UpdateAsync(request.RatingId, updated);
+            if (!success)
+                return Fail("Failed to update the rating.");
+
+            var avg = await _ratingRepository.GetAverageRatingByNovelIdAsync(rating.novel_id);
+            var count = await _ratingRepository.GetRatingCountByNovelIdAsync(rating.novel_id);
+            
+            await _novelRepository.UpdateRatingStatsAsync(rating.novel_id, avg, count);
+
             return new ApiResponse
             {
                 Success = true,
-                Message = "Cập nhật đánh giá thành công.",
-                Data = response
+                Message = "Rating updated successfully."
             };
         }
+
+        private ApiResponse Fail(string message) => new()
+        {
+            Success = false,
+            Message = message
+        };
     }
 }

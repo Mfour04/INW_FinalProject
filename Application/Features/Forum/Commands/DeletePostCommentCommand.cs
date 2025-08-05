@@ -1,4 +1,5 @@
 using Application.Services.Interfaces;
+using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -28,19 +29,16 @@ namespace Application.Features.Forum.Commands
 
         public async Task<ApiResponse> Handle(DeletePostCommentCommand request, CancellationToken cancellationToken)
         {
-            var comment = await _commentRepo.GetByIdAsync(request.Id);
-            if (comment == null)
-                return Fail("Comment not found.");
+            var validation = await ValidateCommand(request.Id);
+            if (!validation.IsValid)
+                return validation.FailResponse!;
 
-            if (!_currentUser.IsAdmin() && comment.user_id != _currentUser.UserId)
-                return Fail("User is not allowed to delete this comment.");
+            var comment = validation.Comment!;
 
-            var childIds = await _commentRepo.GetReplyIdsByCommentIdAsync(comment.id);
+            var replyIds = await _commentRepo.GetReplyIdsByCommentIdAsync(comment.id);
 
-            if (childIds.Any())
-            {
-                await _commentRepo.DeleteManyAsync(childIds);
-            }
+            if (replyIds.Any())
+                await _commentRepo.DeleteManyAsync(replyIds);
 
             var deleted = await _commentRepo.DeleteAsync(request.Id);
             if (!deleted)
@@ -48,7 +46,7 @@ namespace Application.Features.Forum.Commands
 
             if (!string.IsNullOrWhiteSpace(comment.post_id))
             {
-                var totalDeleted = 1 + childIds.Count;
+                var totalDeleted = 1 + replyIds.Count;
                 await _postRepo.DecrementCommentsAsync(comment.post_id, totalDeleted);
             }
 
@@ -57,6 +55,18 @@ namespace Application.Features.Forum.Commands
                 Success = true,
                 Message = "Comment deleted successfully."
             };
+        }
+
+        private async Task<(bool IsValid, ApiResponse? FailResponse, ForumCommentEntity? Comment)> ValidateCommand(string commentId)
+        {
+            var comment = await _commentRepo.GetByIdAsync(commentId);
+            if (comment == null)
+                return (false, Fail("Comment not found."), null);
+
+            if (!_currentUser.IsAdmin() && comment.user_id != _currentUser.UserId)
+                return (false, Fail("User is not allowed to delete this comment."), null);
+
+            return (true, null, comment);
         }
 
         private ApiResponse Fail(string message) => new()
