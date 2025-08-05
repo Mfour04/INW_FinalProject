@@ -16,6 +16,7 @@ namespace Application.Features.Rating.Queries
         public int Limit { get; set; } = int.MaxValue;
     }
 
+
     public class GetRatingByNovelIdHandler : IRequestHandler<GetRatingByNovelId, ApiResponse>
     {
         private readonly IRatingRepository _ratingRepository;
@@ -30,15 +31,9 @@ namespace Application.Features.Rating.Queries
         public async Task<ApiResponse> Handle(GetRatingByNovelId request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.NovelId))
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "Novel ID is required."
-                };
-            }
+                return Fail("Novel ID is required.");
 
-            FindCreterias findCreterias = new()
+            FindCreterias findCriterias = new()
             {
                 Limit = request.Limit,
                 Page = request.Page
@@ -46,32 +41,25 @@ namespace Application.Features.Rating.Queries
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            var ratings = await _ratingRepository.GetByNovelIdAsync(request.NovelId, findCreterias, sortBy);
-            var count = ratings.Count;
-            var avg = count > 0 ? Math.Round(ratings.Average(r => r.score), 2) : 0;
+            var getRatingsTask = _ratingRepository.GetByNovelIdAsync(request.NovelId, findCriterias, sortBy);
+            var getCountTask = _ratingRepository.GetRatingCountByNovelIdAsync(request.NovelId);
 
-            if (count == 0)
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "No ratings found for this novel."
-                };
-            }
+            await Task.WhenAll(getRatingsTask, getCountTask);
 
-            var scoreCounts = ratings
-                .GroupBy(r => r.score)
-                .Select(g => new { Score = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Score)
-                .ToDictionary(x => x.Score, x => x.Count);
+            var ratings = getRatingsTask.Result;
+            var totalCount = getCountTask.Result;
+
+            if (totalCount == 0)
+                return Fail("No ratings found for this novel.");
+
+            var totalPage = (int)Math.Ceiling(totalCount / (double)request.Limit);
 
             var ratingResponses = _mapper.Map<List<RatingResponse>>(ratings);
 
             var result = new
             {
-                ratingCount = count,
-                ratingAvg = avg,
-                scoreDistribution = scoreCounts,
+                totalCount,
+                totalPage,
                 ratings = ratingResponses
             };
 
@@ -82,5 +70,11 @@ namespace Application.Features.Rating.Queries
                 Data = result
             };
         }
+
+        private ApiResponse Fail(string message) => new()
+        {
+            Success = false,
+            Message = message
+        };
     }
 }

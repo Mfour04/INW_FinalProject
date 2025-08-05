@@ -1,6 +1,5 @@
 using Domain.Entities;
 using Domain.Entities.System;
-using Domain.Entities.System;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
@@ -183,7 +182,7 @@ namespace Infrastructure.Repositories.Implements
 
                 return result;
             }
-            catch 
+            catch
             {
                 throw new InternalServerException();
             }

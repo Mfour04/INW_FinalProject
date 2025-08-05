@@ -11,7 +11,7 @@ namespace WebApi.Controllers
     public class RatingsController : ControllerBase
     {
         private readonly IMediator _mediator;
-     
+
         public RatingsController(IMediator mediator)
         {
             _mediator = mediator;
@@ -21,6 +21,18 @@ namespace WebApi.Controllers
         public async Task<ActionResult> GetRatings([FromRoute] string novelId, [FromQuery] GetRatingByNovelId query)
         {
             query.NovelId = novelId;
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
+        [HttpGet("summary")]
+        public async Task<ActionResult> GetRatingSummary([FromRoute] string novelId)
+        {
+            GetRatingSummaryByNovelId query = new()
+            {
+                NovelId = novelId,
+            };
 
             var result = await _mediator.Send(query);
             return Ok(result);
