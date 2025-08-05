@@ -11,7 +11,7 @@ namespace WebApi.Controllers
     public class RatingsController : ControllerBase
     {
         private readonly IMediator _mediator;
-
+     
         public RatingsController(IMediator mediator)
         {
             _mediator = mediator;

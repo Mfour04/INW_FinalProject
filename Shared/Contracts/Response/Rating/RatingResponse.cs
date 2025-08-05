@@ -2,8 +2,9 @@
 {
     public class RatingResponse
     {
-        public string Id { get; set; }
+        public string RatingId { get; set; }
         public string UserId { get; set; }
+        public string DisplayName { get; set; }
         public string NovelId { get; set; }
         public int Score { get; set; }
         public string Content { get; set; }
