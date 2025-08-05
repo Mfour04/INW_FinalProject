@@ -14,11 +14,13 @@ namespace Application.Features.Rating.Queries
     public class GetRatingByIdHandler : IRequestHandler<GetRatingById, ApiResponse>
     {
         private readonly IRatingRepository _ratingRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
 
-        public GetRatingByIdHandler(IRatingRepository ratingRepository, IMapper mapper)
+        public GetRatingByIdHandler(IRatingRepository ratingRepository, IUserRepository userRepository, IMapper mapper)
         {
             _ratingRepository = ratingRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
         }
 
@@ -44,6 +46,21 @@ namespace Application.Features.Rating.Queries
             }
 
             var ratingResponse = _mapper.Map<RatingResponse>(rating);
+
+            if (!string.IsNullOrEmpty(rating.user_id))
+            {
+                var user = await _userRepository.GetById(rating.user_id);
+                if (user != null)
+                {
+                    ratingResponse.Author = new RatingResponse.UserInfo
+                    {
+                        Id = user.id,
+                        Username = user.username,
+                        DisplayName = user.displayname,
+                        Avatar = user.avata_url
+                    };
+                }
+            }
 
             return new ApiResponse
             {

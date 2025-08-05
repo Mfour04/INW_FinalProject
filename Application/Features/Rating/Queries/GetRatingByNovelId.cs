@@ -20,11 +20,13 @@ namespace Application.Features.Rating.Queries
     public class GetRatingByNovelIdHandler : IRequestHandler<GetRatingByNovelId, ApiResponse>
     {
         private readonly IRatingRepository _ratingRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
 
-        public GetRatingByNovelIdHandler(IRatingRepository ratingRepository, IMapper mapper)
+        public GetRatingByNovelIdHandler(IRatingRepository ratingRepository, IUserRepository userRepository, IMapper mapper)
         {
             _ratingRepository = ratingRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
         }
 
@@ -55,6 +57,26 @@ namespace Application.Features.Rating.Queries
             var totalPage = (int)Math.Ceiling(totalCount / (double)request.Limit);
 
             var ratingResponses = _mapper.Map<List<RatingResponse>>(ratings);
+
+            foreach (var ratingResponse in ratingResponses)
+            {
+                var ratingEntity = ratings.First(r => r.id == ratingResponse.RatingId);
+
+                if (!string.IsNullOrEmpty(ratingEntity.user_id))
+                {
+                    var user = await _userRepository.GetById(ratingEntity.user_id);
+                    if (user != null)
+                    {
+                        ratingResponse.Author = new RatingResponse.UserInfo
+                        {
+                            Id = user.id,
+                            Username = user.username,
+                            DisplayName = user.displayname,
+                            Avatar = user.avata_url
+                        };
+                    }
+                }
+            }
 
             var result = new
             {
