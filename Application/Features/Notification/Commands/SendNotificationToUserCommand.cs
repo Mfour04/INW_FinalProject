@@ -58,7 +58,11 @@ namespace Application.Features.Notification.Commands
                 or NotificationType.CommentNovelNotification
                 or NotificationType.ReportComment
                 or NotificationType.RelyCommentNovel
-                or NotificationType.RelyCommentChapter)
+                or NotificationType.RelyCommentChapter
+                or NotificationType.LockNovel
+                or NotificationType.UnLockNovel
+                or NotificationType.LockChapter
+                or NotificationType.UnLockChapter)
             {
                 if (!string.IsNullOrWhiteSpace(request.NovelId))
                 {
@@ -184,7 +188,24 @@ namespace Application.Features.Notification.Commands
                 case NotificationType.UnBanUser:
                     receiverId = request.UserId;
                     break;
-
+                case NotificationType.LockNovel:
+                    receiverId = novel.author_id;
+                    break;
+                case NotificationType.UnLockNovel:
+                    receiverId = novel.author_id;
+                    break;
+                case NotificationType.LockChapter:
+                    {
+                        var chapterAuthor = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
+                        receiverId = chapterAuthor;
+                        break;
+                    }
+                case NotificationType.UnLockChapter:
+                    {
+                        var chapterAuthor = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
+                        receiverId = chapterAuthor;
+                        break;
+                    }
                 default:
                     return new ApiResponse
                     {

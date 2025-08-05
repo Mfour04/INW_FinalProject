@@ -21,5 +21,9 @@ namespace Domain.Enums
         NovelFollow,
         BanUser,
         UnBanUser,
+        LockNovel,
+        UnLockNovel,
+        LockChapter,
+        UnLockChapter,
     }
 }

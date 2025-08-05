@@ -1,6 +1,8 @@
 ﻿using Application.Auth.Commands;
+using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Entities.OpenAIEntity;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -27,11 +29,16 @@ namespace Application.Features.Chapter.Commands
         private readonly IChapterRepository _chapterRepository;
         private readonly INovelRepository _novelRepository;
         private readonly IMapper _mapper;
-        public CreateChapterHandler(IChapterRepository chapterRepository, IMapper mapper, INovelRepository novelRepository)
+        private readonly IOpenAIService _openAIService;
+        private readonly IOpenAIRepository _openAIRepository;
+        public CreateChapterHandler(IChapterRepository chapterRepository, IMapper mapper
+            , INovelRepository novelRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService)
         {
             _chapterRepository = chapterRepository;
             _mapper = mapper;
             _novelRepository = novelRepository;
+            _openAIRepository = openAIRepository;
+            _openAIService = openAIService;
         }
         public async Task<ApiResponse> Handle(CreateChapterCommand request, CancellationToken cancellationToken)
         {
@@ -111,6 +118,26 @@ namespace Application.Features.Chapter.Commands
                 chapter.is_draft = true;
                 chapter.is_public = false;
                 await _chapterRepository.CreateAsync(chapter);
+            }
+
+            if (!string.IsNullOrWhiteSpace(chapter.content))
+            {
+                try
+                {
+                    var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
+                    var embeddingEntity = new ChapterContentEmbeddingEntity
+                    {
+                        chapter_id = chapter.id,
+                        vector_chapter_content = embedding[0],
+                        updated_at = TimeHelper.NowTicks
+                    };
+                    await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi embedding cho chapter {chapter.id}: {ex.Message}");
+                    // Optional: ghi log, không throw
+                }
             }
 
             var response = _mapper.Map<CreateChapterResponse>(chapter);
