@@ -22,5 +22,11 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpPost("plagiarism")]
+        public async Task<IActionResult> CheckPlagiarism([FromBody] PlagiarismChapterConent command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
     }
 }

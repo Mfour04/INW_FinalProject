@@ -54,7 +54,7 @@ namespace Application.Features.User.Feature
                 "7 ngày" => 7 * 24 * 60,
                 "15 ngày" => 15 * 24 * 60,
                 "30 ngày" => 30 * 24 * 60,
-                "Vĩnh viễn" => 0,
+                "vĩnh viễn" => 0,
                 _ => -1
             };
 

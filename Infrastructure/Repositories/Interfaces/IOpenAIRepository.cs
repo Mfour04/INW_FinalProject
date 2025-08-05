@@ -17,9 +17,11 @@ namespace Infrastructure.Repositories.Interfaces
         //Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<float> vector);
         Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<List<float>> vectors, List<List<string>> tagsList);
         Task<List<string>> GetExistingNovelEmbeddingIdsAsync(List<string> novelIds);
-        //Task SaveListNovelEmbeddingAsync(List<NovelEmbeddingEntity> embeddings);
+        Task SaveChapterContentEmbeddingAsync(ChapterContentEmbeddingEntity embedding);
         Task DeleteUserEmbeddingAsync(string userId);
         Task DeleteNovelEmbeddingAsync(string novelId);
+        Task<bool> ChapterContentEmbeddingExistsAsync(string chapterId);
+        Task<List<ChapterContentEmbeddingEntity>> GetAllChapterContentEmbedding();
         /// <summary>
         /// End Embedding methods
         /// </summary>
