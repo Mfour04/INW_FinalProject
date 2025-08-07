@@ -11,7 +11,7 @@ using Shared.Helpers;
 
 namespace Application.Features.Novel.Queries
 {
-    public class GetNovel : IRequest<ApiResponse>
+    public class GetNovels : IRequest<ApiResponse>
     {
         public string SortBy { get; set; } = "created_at:desc";
         public int Page { get; set; } = 0;
@@ -20,7 +20,7 @@ namespace Application.Features.Novel.Queries
         public List<string>? SearchTagTerm { get; set; } = new();
     }
 
-    public class GetNovelHandler : IRequestHandler<GetNovel, ApiResponse>
+    public class GetNovelsHandler : IRequestHandler<GetNovels, ApiResponse>
     {
         private readonly INovelRepository _novelRepository;
         private readonly IMapper _mapper;
@@ -28,7 +28,8 @@ namespace Application.Features.Novel.Queries
         private readonly IUserRepository _userRepository;
         private readonly IOpenAIService _openAIService;
         private readonly IOpenAIRepository _openAIRepository;
-        public GetNovelHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository
+
+        public GetNovelsHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository
             , IUserRepository userRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService)
         {
             _novelRepository = novelRepository;
@@ -39,7 +40,7 @@ namespace Application.Features.Novel.Queries
             _openAIService = openAIService;
         }
 
-        public async Task<ApiResponse> Handle(GetNovel request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(GetNovels request, CancellationToken cancellationToken)
         {
             var result = SystemHelper.ParseSearchQuerySmart(request.SearchTerm);
             var exact = result.Exact;

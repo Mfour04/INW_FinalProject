@@ -1,7 +1,6 @@
 using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities.System;
-using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -65,6 +64,7 @@ namespace Application.Features.Novel.Queries
                 novelResponse.AuthorName = author?.displayname;
 
                 // Lấy danh sách tagId
+                novel.tags ??= new List<string>();
                 var allTags = await _tagRepository.GetTagsByIdsAsync(novel.tags.Distinct().ToList());
                 novelResponse.Tags = allTags
                     .Where(t => novel.tags.Contains(t.id))
@@ -72,7 +72,7 @@ namespace Application.Features.Novel.Queries
                     .ToList();
 
                 // Kiểm tra quyền
-                var chapterIds = await _chapterRepository.GetIdsByNovelIdAsync(request.NovelId);
+                var chapterIds = await _chapterRepository.GetIdsByNovelIdAsync(novel.id) ?? new List<string>();
 
                 var currentUserId = _currentUser.UserId;
                 bool isGuest = string.IsNullOrEmpty(currentUserId);
