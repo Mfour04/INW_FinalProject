@@ -1,12 +1,15 @@
 ﻿using Application.Auth.Commands;
+using Application.Features.Notification.Commands;
 using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Entities.OpenAIEntity;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
+using Shared.Contracts.Response.Notification;
 using Shared.Helpers;
 
 namespace Application.Features.Chapter.Commands
@@ -31,14 +34,19 @@ namespace Application.Features.Chapter.Commands
         private readonly IMapper _mapper;
         private readonly IOpenAIService _openAIService;
         private readonly IOpenAIRepository _openAIRepository;
+        private readonly INovelFollowRepository _novelFollowRepository;
+        private readonly IMediator _mediator;
         public CreateChapterHandler(IChapterRepository chapterRepository, IMapper mapper
-            , INovelRepository novelRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService)
+            , INovelRepository novelRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService
+            , INovelFollowRepository novelFollowRepository, IMediator mediator)
         {
             _chapterRepository = chapterRepository;
             _mapper = mapper;
             _novelRepository = novelRepository;
             _openAIRepository = openAIRepository;
             _openAIService = openAIService;
+            _novelFollowRepository = novelFollowRepository;
+            _mediator = mediator;
         }
         public async Task<ApiResponse> Handle(CreateChapterCommand request, CancellationToken cancellationToken)
         {
@@ -141,12 +149,41 @@ namespace Application.Features.Chapter.Commands
             }
 
             var response = _mapper.Map<CreateChapterResponse>(chapter);
+            var userfollowNovel = await _novelFollowRepository.GetFollowersByNovelIdAsync(novel.id);
+
+            bool anySignalRSuccess = false;
+
+            foreach (var follower in userfollowNovel)
+            {
+                var notificationCommand = new SendNotificationToUserCommand
+                {
+                    UserId = follower.user_id,
+                    SenderId = novel.author_id,
+                    ChapterId = chapter.id,
+                    NovelId = novel.id,
+                    Message = $"Chương truyện \"{chapter.title}\" của Tiểu thuyết \"{novel.title}\" mới được tạo thành công ",
+                    Type = NotificationType.CreateChapter
+                };
+
+                var notificationResponse = await _mediator.Send(notificationCommand);
+
+                if (notificationResponse.Success &&
+                    notificationResponse.Data is not null &&
+                    (bool)(notificationResponse.Data as dynamic).SignalRSent)
+                {
+                    anySignalRSuccess = true;
+                }
+            }
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Chapter created successfully",
-                Data = response
+                Data = new
+                {
+                    Chapter = response,
+                    SignalRSent = anySignalRSuccess
+                }
             };
         }
     }

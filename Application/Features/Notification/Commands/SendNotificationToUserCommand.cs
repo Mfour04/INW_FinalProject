@@ -62,7 +62,8 @@ namespace Application.Features.Notification.Commands
                 or NotificationType.LockNovel
                 or NotificationType.UnLockNovel
                 or NotificationType.LockChapter
-                or NotificationType.UnLockChapter)
+                or NotificationType.UnLockChapter
+                or NotificationType.CreateChapter)
             {
                 if (!string.IsNullOrWhiteSpace(request.NovelId))
                 {
@@ -206,6 +207,8 @@ namespace Application.Features.Notification.Commands
                         receiverId = chapterAuthor;
                         break;
                     }
+                case NotificationType.CreateChapter:
+                    break;
                 default:
                     return new ApiResponse
                     {
