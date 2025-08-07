@@ -57,7 +57,7 @@ namespace Application.Features.User.Feature
             user.badge_id = request.BadgeId;
             user.favourite_type = request.FavouriteType;
 
-            if (request.AvataUrl != null && request.CoverUrl != null)
+            if (request.AvataUrl != null)
             {
                 var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvataUrl, CloudFolders.Users);
                 user.avata_url = imageAUrl;
