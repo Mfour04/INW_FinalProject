@@ -1,16 +1,13 @@
 ﻿using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
-using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Shared.Contracts.Response;
-using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.User;
 using Shared.Helpers;
-using static Domain.Entities.UserEntity;
 
 namespace Application.Features.User.Feature
 {

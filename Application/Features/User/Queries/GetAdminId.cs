@@ -5,12 +5,10 @@ using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.User;
 
-
 namespace Application.Features.User.Queries
 {
-    public class GetAdminId : IRequest<ApiResponse>
-    {
-    }
+    public class GetAdminId : IRequest<ApiResponse> { }
+
     public class GetAdminIdHandler : IRequestHandler<GetAdminId, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
@@ -28,10 +26,21 @@ namespace Application.Features.User.Queries
 
             if (adminUser == null)
             {
-                return new ApiResponse { Success = false, Message = "Not found admin" };
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Admin user not found."
+                };
             }
-            var response = _mapper.Map<UserResponse>(adminUser);
-            return new ApiResponse { Success = true, Message = " found admin", Data = response};
+
+            var adminResponse = _mapper.Map<UserResponse>(adminUser);
+
+            return new ApiResponse
+            {
+                Success = true,
+                Message = "Admin user retrieved successfully.",
+                Data = adminResponse
+            };
         }
     }
 }

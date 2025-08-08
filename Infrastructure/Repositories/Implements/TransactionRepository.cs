@@ -178,15 +178,12 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                // 1. Tạo filter cơ bản theo userId
                 var builder = Builders<TransactionEntity>.Filter;
                 var filter = builder.Eq(t => t.requester_id, userId);
 
-                // 2. Nếu có filter theo type thì thêm vào
                 if (type.HasValue)
                     filter &= builder.Eq(t => t.type, type.Value);
 
-                // 3. Xây dựng phần sort
                 var sortBuilder = Builders<TransactionEntity>.Sort;
                 var sortDefinitions = new List<SortDefinition<TransactionEntity>>();
 
@@ -209,12 +206,10 @@ namespace Infrastructure.Repositories.Implements
                         sortDefinitions.Add(sortDef);
                 }
 
-                // Nếu không có sort cụ thể → fallback sort theo created_at desc
                 var combinedSort = sortDefinitions.Any()
                     ? sortBuilder.Combine(sortDefinitions)
                     : sortBuilder.Descending(t => t.created_at);
 
-                // 4. Tạo 2 task song song: count và get data
                 var countTask = _collection.CountDocumentsAsync(filter);
 
                 var dataTask = _collection.Find(filter)
@@ -223,10 +218,8 @@ namespace Infrastructure.Repositories.Implements
                     .Limit(creterias.Limit)
                     .ToListAsync();
 
-                // 5. Chạy song song, chờ cả 2 task hoàn thành
                 await Task.WhenAll(countTask, dataTask);
 
-                // 6. Trả tuple gồm danh sách và tổng số record
                 return (dataTask.Result, (int)countTask.Result);
             }
             catch
