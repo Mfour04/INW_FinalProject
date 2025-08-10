@@ -2,7 +2,9 @@
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
+using Infrastructure.SignalRHub;
 using MediatR;
+using Microsoft.AspNetCore.SignalR;
 using Shared.Contracts.Response;
 using Shared.Helpers;
 
@@ -23,18 +25,21 @@ namespace Application.Features.Notification.Commands
 
     public class SendNotificationToUserHandler : IRequestHandler<SendNotificationToUserCommand, ApiResponse>
     {
-        private readonly INotificationRepository _notificationRepository;
         private readonly INotificationService _notificationService;
         private readonly IUserRepository _userRepository;
         private readonly INovelRepository _novelRepository;
         private readonly IChapterRepository _chapterRepository;
         private readonly ICommentRepository _commentRepository;
         private readonly IChapterHelperService _chapterHelperService;
-        public SendNotificationToUserHandler(INotificationRepository notificationRepository, INotificationService notificationService
-            , IUserRepository userRepository, INovelRepository novelRepository, IChapterRepository chapterRepository
-            , ICommentRepository commentRepository, IChapterHelperService chapterHelperService)
+
+        public SendNotificationToUserHandler(
+            INotificationService notificationService,
+            IUserRepository userRepository,
+            INovelRepository novelRepository,
+            IChapterRepository chapterRepository,
+            ICommentRepository commentRepository,
+            IChapterHelperService chapterHelperService)
         {
-            _notificationRepository = notificationRepository;
             _notificationService = notificationService;
             _userRepository = userRepository;
             _novelRepository = novelRepository;
@@ -42,213 +47,150 @@ namespace Application.Features.Notification.Commands
             _commentRepository = commentRepository;
             _chapterHelperService = chapterHelperService;
         }
+
         public async Task<ApiResponse> Handle(SendNotificationToUserCommand request, CancellationToken cancellationToken)
         {
-            // Lấy người gửi
+            // 1. Validate sender
             var senderUser = await _userRepository.GetById(request.SenderId);
             if (senderUser == null)
-                return new ApiResponse { Success = false, Message = "Unauthorized. You must be login." };
-            NovelEntity novel = null;
-            ChapterEntity chapter = null;
-            CommentEntity comment = null;
-            CommentEntity replycomment = null;
-            if (request.Type is NotificationType.ChapterReportNotification
-                or NotificationType.NovelReportNofitication
-                or NotificationType.CommentChapterNotification
-                or NotificationType.CommentNovelNotification
-                or NotificationType.ReportComment
-                or NotificationType.RelyCommentNovel
-                or NotificationType.RelyCommentChapter
-                or NotificationType.LockNovel
-                or NotificationType.UnLockNovel
-                or NotificationType.LockChapter
-                or NotificationType.UnLockChapter
-                or NotificationType.CreateChapter)
-            {
-                if (!string.IsNullOrWhiteSpace(request.NovelId))
-                {
-                    novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
-                    if (novel == null)
-                        return new ApiResponse
-                        {
-                            Success = false,
-                            Message = "Not found this novel."
-                        };
-                }
+                return Fail("Unauthorized. You must be login.");
 
-                if (!string.IsNullOrWhiteSpace(request.ChapterId))
-                {
-                    chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
-                    if (chapter == null)
-                        return new ApiResponse
-                        {
-                            Success = false,
-                            Message = "Not found this chapter."
-                        };
-                }
-
-                if (!string.IsNullOrWhiteSpace(request.CommentId))
-                {
-                    comment = await _commentRepository.GetByIdAsync(request.CommentId);
-                    if (comment == null)
-                        return new ApiResponse
-                        {
-                            Success = false,
-                            Message = "Not found this Comment."
-                        };
-                }
-                if (!string.IsNullOrWhiteSpace(request.ParentCommentId))
-                {
-                    replycomment = await _commentRepository.GetByIdAsync(request.ParentCommentId);
-                    if (replycomment == null)
-                        return new ApiResponse
-                        {
-                            Success = false,
-                            Message = "Not found this Comment."
-                        };
-                }
-            }
-            var admin = await _userRepository.GetFirstUserByRoleAsync(Role.Admin);
-            string senderName = senderUser.displayname;
-            string receiverId = request.UserId; // fallback nếu cần dùng trực tiếp
+            var senderName = senderUser.displayname;
+            var receiverId = request.UserId;
             string novelTitle = null;
             string chapterTitle = null;
             string userNameReported = null;
-            // Lấy receiver theo loại thông báo
+
+            var admin = await _userRepository.GetFirstUserByRoleAsync(Role.Admin);
+
+            // 2. Xác định receiver và load data tùy theo loại notification
             switch (request.Type)
             {
                 case NotificationType.CommentNovelNotification:
-                    receiverId = novel.author_id;
-                    novelTitle = novel.title;
-                    break;
-                case NotificationType.NovelReportNofitication:               
-                    receiverId = admin.id;
-                    novelTitle = novel.title;
-                    break;
-                case NotificationType.CommentChapterNotification:
-                    var author = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
-                    receiverId = author;
-                    chapterTitle = chapter.title;
-                    novelTitle = novel.title;
-                    break;
-                case NotificationType.ChapterReportNotification:                 
-                    var chapterNovel = await _novelRepository.GetByNovelIdAsync(chapter.novel_id);
-                    if (chapterNovel == null)
-                        return new ApiResponse
-                        {
-                            Success = false,
-                            Message = "Novel of this chapter not found."
-                        };
-                    receiverId = admin.id;
-                    chapterTitle = chapter.title;
-                    novelTitle = chapterNovel.title;
-                    break;
-                case NotificationType.RelyCommentNovel:
-                    receiverId = replycomment.user_id;
-                    if (receiverId == request.SenderId)
-                    {
-                        // Không gửi nếu tự reply chính mình
-                        return new ApiResponse { Success = false, Message = "Cannot send notification when reply to yourself." };
-                    }
-                    chapterTitle = chapter?.title;
-                    novelTitle = novel?.title;
+                    var novelComment = await RequireNovel(request.NovelId);
+                    if (novelComment == null) return Fail("Not found this novel.");
+                    receiverId = novelComment.author_id;
+                    novelTitle = novelComment.title;
                     break;
 
+                case NotificationType.NovelReportNofitication:
+                    var novelReport = await RequireNovel(request.NovelId);
+                    if (novelReport == null) return Fail("Not found this novel.");
+                    receiverId = admin.id;
+                    novelTitle = novelReport.title;
+                    break;
+
+                case NotificationType.CommentChapterNotification:
+                    var chapterComment = await RequireChapter(request.ChapterId);
+                    if (chapterComment == null) return Fail("Not found this chapter.");
+                    var novelOfChapterComment = await RequireNovel(chapterComment.novel_id);
+                    if (novelOfChapterComment == null) return Fail("Novel of this chapter not found.");
+                    receiverId = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
+                    chapterTitle = chapterComment.title;
+                    novelTitle = novelOfChapterComment.title;
+                    break;
+
+                case NotificationType.ChapterReportNotification:
+                    var chapterReport = await RequireChapter(request.ChapterId);
+                    if (chapterReport == null) return Fail("Not found this chapter.");
+                    var novelOfChapterReport = await RequireNovel(chapterReport.novel_id);
+                    if (novelOfChapterReport == null) return Fail("Novel of this chapter not found.");
+                    receiverId = admin.id;
+                    chapterTitle = chapterReport.title;
+                    novelTitle = novelOfChapterReport.title;
+                    break;
+
+                case NotificationType.RelyCommentNovel:
                 case NotificationType.RelyCommentChapter:
-                    receiverId = replycomment.user_id;
-                    if (receiverId == request.SenderId)
+                    var replyComment = await RequireComment(request.ParentCommentId);
+                    if (replyComment == null) return Fail("Not found this comment.");
+                    if (replyComment.user_id == request.SenderId)
+                        return Fail("Cannot send notification when reply to yourself.");
+                    receiverId = replyComment.user_id;
+                    if (!string.IsNullOrWhiteSpace(request.NovelId))
                     {
-                        // Không gửi nếu tự reply chính mình
-                        return new ApiResponse { Success = false, Message = "Cannot send notification when reply to yourself." };
+                        var novelReply = await RequireNovel(request.NovelId);
+                        novelTitle = novelReply?.title;
                     }
-                    chapterTitle = chapter?.title;
-                    novelTitle = novel?.title;
+                    if (!string.IsNullOrWhiteSpace(request.ChapterId))
+                    {
+                        var chapterReply = await RequireChapter(request.ChapterId);
+                        chapterTitle = chapterReply?.title;
+                    }
                     break;
 
                 case NotificationType.LikeNovelComment:
                 case NotificationType.LikeChapterComment:
-                case NotificationType.ReportComment:                
+                case NotificationType.ReportComment:
                     receiverId = admin.id;
                     break;
+
                 case NotificationType.UserReport:
                     var reportedUser = await _userRepository.GetById(request.UserReportedId);
-                    if (reportedUser == null)
-                    {
-                        return new ApiResponse
-                        {
-                            Success = false,
-                            Message = "Reported user not found."
-                        };
-                    }
+                    if (reportedUser == null) return Fail("Reported user not found.");
                     receiverId = admin.id;
                     userNameReported = reportedUser.username;
                     break;
+
                 case NotificationType.BanUser:
-                    receiverId = request.UserId;
-                    break;
                 case NotificationType.UnBanUser:
-                    receiverId = request.UserId;
-                    break;
                 case NotificationType.LockNovel:
-                    receiverId = novel.author_id;
-                    break;
                 case NotificationType.UnLockNovel:
-                    receiverId = novel.author_id;
+                    var novelLock = await RequireNovel(request.NovelId);
+                    receiverId = novelLock?.author_id ?? request.UserId;
                     break;
+
                 case NotificationType.LockChapter:
-                    {
-                        var chapterAuthor = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
-                        receiverId = chapterAuthor;
-                        break;
-                    }
                 case NotificationType.UnLockChapter:
-                    {
-                        var chapterAuthor = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
-                        receiverId = chapterAuthor;
-                        break;
-                    }
-                case NotificationType.CreateChapter:
+                    receiverId = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
                     break;
                 default:
-                    return new ApiResponse
-                    {
-                        Success = false,
-                        Message = "This notification type is not supported."
-                    };
+                    return Fail("This notification type is not supported.");
             }
 
             if (receiverId == null || receiverId == request.SenderId)
-            return new ApiResponse { Success = false, Message = "Cannot send notification to yourself." };
+                return Fail("Cannot send notification to yourself.");
 
-            // Lấy message nếu chưa có
-            string message = !string.IsNullOrWhiteSpace(request.Message)
-                ? request.Message
-                : GenerateMessage(request.Type, senderName, novelTitle, chapterTitle, userNameReported);
+            // 3. Tạo message
+            var message = string.IsNullOrWhiteSpace(request.Message)
+                ? GenerateMessage(request.Type, senderName, novelTitle, chapterTitle, userNameReported)
+                : request.Message;
 
-            var notification = new NotificationEntity
-            {
-                id = SystemHelper.RandomId(),
-                user_id = receiverId,
-                message = message,
-                type = request.Type,
-                is_read = false,
-                created_at = DateTime.UtcNow.Ticks
-            };
+            // 4. Gọi NotificationService (tự lưu DB + gửi SignalR)
+            var notifications = await _notificationService.SendNotificationToUsersAsync(
+                new[] { receiverId }, // chỉ 1 user
+                message,
+                request.Type
+            );
 
-            await _notificationRepository.CreateAsync(notification);
-            await _notificationService.SendNotificationAsync(receiverId, message, request.Type);
+            bool success = notifications.Any();
+
             return new ApiResponse
             {
-                Success = true,
-                Message = "Notification sent successfully",
+                Success = success,
+                Message = success ? "Notification sent successfully" : "Failed to send notification",
                 Data = new
                 {
                     Receiver = receiverId,
                     NotificationMessage = message,
-                    SignalRSent = true
+                    SignalRSent = success,
+                    Notifications = notifications // trả nguyên payload list từ service
                 }
             };
+
         }
+
+        private ApiResponse Fail(string message) =>
+            new ApiResponse { Success = false, Message = message };
+
+        private async Task<NovelEntity> RequireNovel(string novelId) =>
+            string.IsNullOrWhiteSpace(novelId) ? null : await _novelRepository.GetByNovelIdAsync(novelId);
+
+        private async Task<ChapterEntity> RequireChapter(string chapterId) =>
+            string.IsNullOrWhiteSpace(chapterId) ? null : await _chapterRepository.GetByIdAsync(chapterId);
+
+        private async Task<CommentEntity> RequireComment(string commentId) =>
+            string.IsNullOrWhiteSpace(commentId) ? null : await _commentRepository.GetByIdAsync(commentId);
 
         public static string GenerateMessage(NotificationType type, string senderUserName, string novelTitle = null, string chapterTitle = null, string userNameReported = null)
         {
@@ -268,5 +210,5 @@ namespace Application.Features.Notification.Commands
             };
         }
     }
+
 }
-    

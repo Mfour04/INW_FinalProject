@@ -19,12 +19,17 @@ namespace Infrastructure.Repositories.Implements
             mongoDBHelper.CreateCollectionIfNotExistsAsync("notification").Wait();
             _collection = mongoDBHelper.GetCollection<NotificationEntity>("notification");
         }
-        public async Task<NotificationEntity> CreateAsync(NotificationEntity notification)
+        public async Task CreateAsync(List<NotificationEntity> notifications)
         {
+            if (notifications == null || notifications.Count == 0)
+                return;
+
             try
             {
-                await _collection.InsertOneAsync(notification);
-                return notification;
+                await _collection.InsertManyAsync(
+                    notifications,
+                    new InsertManyOptions { IsOrdered = false } // Cho phép tiếp tục nếu 1 phần tử lỗi
+                );
             }
             catch
             {

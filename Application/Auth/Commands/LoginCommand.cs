@@ -62,18 +62,8 @@ namespace Application.Auth.Commands
                     user.is_banned = false;
                     user.banned_until = null;
                     await _userRepository.UpdateLockvsUnLockUser(user.id, false, null);
-                    await _notificationRepository.CreateAsync(new NotificationEntity
-                    {
-                        id = SystemHelper.RandomId(),
-                        user_id = user.id,
-                        type = NotificationType.UnBanUser,
-                        message = "Tài khoản của bạn đã được mở khóa tự động sau thời gian khóa.",
-                        is_read = false,
-                        created_at = TimeHelper.NowVN.Ticks
-                    });
-
-                    await _notificationService.SendNotificationAsync(user.id, "Tài khoản của bạn đã được mở khóa tự động sau thời gian khóa.", NotificationType.UnBanUser);
-                }
+                    await _notificationService.SendNotificationToUsersAsync(new List<string> { user.id }, "Your account has been automatically unlocked after the lock period.", NotificationType.UnBanUser);
+                }               
                 else
                 {
                     // Ban chưa hết hạn => chặn đăng nhập
