@@ -1,5 +1,6 @@
 ﻿using Application.Auth.Commands;
 using Application.Features.Notification.Commands;
+using Application.Services.Implements;
 using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
@@ -36,9 +37,10 @@ namespace Application.Features.Chapter.Commands
         private readonly IOpenAIRepository _openAIRepository;
         private readonly INovelFollowRepository _novelFollowRepository;
         private readonly IMediator _mediator;
+        private readonly INotificationService _notificationService;
         public CreateChapterHandler(IChapterRepository chapterRepository, IMapper mapper
             , INovelRepository novelRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService
-            , INovelFollowRepository novelFollowRepository, IMediator mediator)
+            , INovelFollowRepository novelFollowRepository, IMediator mediator, INotificationService notificationService)
         {
             _chapterRepository = chapterRepository;
             _mapper = mapper;
@@ -47,6 +49,7 @@ namespace Application.Features.Chapter.Commands
             _openAIService = openAIService;
             _novelFollowRepository = novelFollowRepository;
             _mediator = mediator;
+            _notificationService = notificationService;
         }
         public async Task<ApiResponse> Handle(CreateChapterCommand request, CancellationToken cancellationToken)
         {
@@ -91,17 +94,12 @@ namespace Application.Features.Chapter.Commands
                 created_at = nowTicks,
                 updated_at = nowTicks
             };
-
-            // 🟨 Trường hợp 1: Lên lịch xuất bản
             if (isScheduled)
             {
                 chapter.is_draft = false;
                 chapter.is_public = false;
                 chapter.is_lock = true;
-                // is_public = false (chưa được public cho đến khi background job xử lý)
-                await _chapterRepository.CreateAsync(chapter);
             }
-            // 🟩 Trường hợp 2: Xuất bản ngay
             else if (!isDraft && isPublic)
             {
                 chapter.is_draft = false;
@@ -109,8 +107,19 @@ namespace Application.Features.Chapter.Commands
 
                 var lastChapter = await _chapterRepository.GetLastPublishedAsync(chapter.novel_id);
                 chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
+            }
+            else
+            {
+                chapter.is_draft = true;
+                chapter.is_public = false;
+            }
 
-                await _chapterRepository.CreateAsync(chapter);
+            // ✅ Chỉ lưu 1 lần duy nhất
+            await _chapterRepository.CreateAsync(chapter);
+
+            // Update số chương nếu xuất bản ngay
+            if (!chapter.is_draft && chapter.is_public)
+            {
                 await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
 
                 var publicChapters = await _chapterRepository.GetPublishedByNovelIdAsync(chapter.novel_id);
@@ -120,14 +129,6 @@ namespace Application.Features.Chapter.Commands
                     await _novelRepository.UpdateNovelAsync(novel);
                 }
             }
-            // 🟥 Trường hợp 3: Bản nháp
-            else
-            {
-                chapter.is_draft = true;
-                chapter.is_public = false;
-                await _chapterRepository.CreateAsync(chapter);
-            }
-
             if (!string.IsNullOrWhiteSpace(chapter.content))
             {
                 try
@@ -149,31 +150,21 @@ namespace Application.Features.Chapter.Commands
             }
 
             var response = _mapper.Map<CreateChapterResponse>(chapter);
+            // Lấy danh sách follower
             var userfollowNovel = await _novelFollowRepository.GetFollowersByNovelIdAsync(novel.id);
 
-            bool anySignalRSuccess = false;
-
-            foreach (var follower in userfollowNovel)
-            {
-                var notificationCommand = new SendNotificationToUserCommand
-                {
-                    UserId = follower.user_id,
-                    SenderId = novel.author_id,
-                    ChapterId = chapter.id,
-                    NovelId = novel.id,
-                    Message = $"Chương truyện \"{chapter.title}\" của Tiểu thuyết \"{novel.title}\" mới được tạo thành công ",
-                    Type = NotificationType.CreateChapter
-                };
-
-                var notificationResponse = await _mediator.Send(notificationCommand);
-
-                if (notificationResponse.Success &&
-                    notificationResponse.Data is not null &&
-                    (bool)(notificationResponse.Data as dynamic).SignalRSent)
-                {
-                    anySignalRSuccess = true;
-                }
-            }
+            // Loại bỏ tác giả và loại bỏ trùng user_id
+            var distinctFollowers = userfollowNovel
+                .Select(f => f.user_id)
+                .Where(uid => uid != novel.author_id)
+                .Distinct()
+                .ToList();
+            // Gửi thông báo đến tất cả người theo dõi trừ tác giả
+            var message = $"Chương truyện mới: {chapter.title}";
+            await _notificationService.SendNotificationToUsersAsync(
+                distinctFollowers,
+                message,
+                NotificationType.CreateChapter);
 
             return new ApiResponse
             {
@@ -182,7 +173,13 @@ namespace Application.Features.Chapter.Commands
                 Data = new
                 {
                     Chapter = response,
-                    SignalRSent = anySignalRSuccess
+                    SignalRTest = new
+                    {
+                        SentToUsers = distinctFollowers.Count,
+                        SentUserIds = distinctFollowers,
+                        NotificationType = NotificationType.CreateChapter.ToString(),
+                        NotificationMessage = $"Tiểu thuyết \"{novel.title}\" vừa có chương mới: {chapter.title}"
+                    }
                 }
             };
         }
