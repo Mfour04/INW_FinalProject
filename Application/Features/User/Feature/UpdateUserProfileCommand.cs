@@ -10,6 +10,7 @@ using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.User;
 using Shared.Helpers;
+using System.ComponentModel.DataAnnotations;
 using static Domain.Entities.UserEntity;
 
 namespace Application.Features.User.Feature
@@ -17,8 +18,13 @@ namespace Application.Features.User.Feature
     public class UpdateUserProfileCommand : IRequest<ApiResponse>
     {
         public string UserId { get; set; }
+        [Required(ErrorMessage = "DisplayName is required")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "DisplayName must be between 2 and 100 characters")]
         public string DisplayName { get; set; }
+
+        [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
         public string Bio { get; set; }
+
         public IFormFile? AvataUrl { get; set; }
         public IFormFile? CoverUrl { get; set; }
         public List<string> BadgeId { get; set; } = new();

@@ -19,7 +19,6 @@ namespace WebApi.Controllers
     {
         private readonly IMediator _mediator;
         private readonly JwtHelpers _jwtHelpers;
-
         public UsersController(IMediator mediator, JwtHelpers jwtHelpers)
         {
             _mediator = mediator;
@@ -168,8 +167,26 @@ namespace WebApi.Controllers
         }
 
         [HttpPut("update-user-profile")]
+        [Authorize]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateUserProfileCommand command)
         {
+            // Add this validation
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                return BadRequest(new
+                {
+                    message = "Validation failed",
+                    errors = errors
+                });
+            }
+
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))
