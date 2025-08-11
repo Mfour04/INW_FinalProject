@@ -54,7 +54,7 @@ namespace Application.Features.Chapter.Commands
             {
                 chapter.scheduled_at = request.ScheduledAt.Value.ToUniversalTime().Ticks;
             }
-            chapter.updated_at = DateTime.UtcNow.Ticks;
+            chapter.updated_at = TimeHelper.NowTicks;
 
             bool wasDraftBefore = chapter.is_draft;
             chapter.is_draft = request.IsDraft;

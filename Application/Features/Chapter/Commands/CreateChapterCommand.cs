@@ -1,7 +1,4 @@
-﻿using Application.Auth.Commands;
-using Application.Features.Notification.Commands;
-using Application.Services.Implements;
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Entities.OpenAIEntity;
@@ -10,7 +7,6 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Chapter;
-using Shared.Contracts.Response.Notification;
 using Shared.Helpers;
 
 namespace Application.Features.Chapter.Commands
@@ -57,11 +53,11 @@ namespace Application.Features.Chapter.Commands
             if (novel == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy novel này" };
 
-            var nowTicks = DateTime.UtcNow.Ticks;
+            var nowTicks = TimeHelper.NowTicks;
             var isDraft = request.IsDraft ?? true;
             var isPublic = request.IsPublic ?? false;
-            var today = DateTime.UtcNow.Date;
-            var scheduleAt = request.ScheduleAt.GetValueOrDefault(DateTime.UtcNow.Ticks);
+            var today = TimeHelper.NowVN;
+            var scheduleAt = request.ScheduleAt.GetValueOrDefault(TimeHelper.NowTicks);
             var isScheduled = !isDraft && !isPublic && scheduleAt > nowTicks;
             var hasSchedule = !isDraft && !isPublic && scheduleAt > 0;
             if (hasSchedule)
@@ -91,8 +87,7 @@ namespace Application.Features.Chapter.Commands
                 is_public = isPublic,
                 allow_comment = request.AllowComment ?? true,
                 comment_count = 0,
-                created_at = nowTicks,
-                updated_at = nowTicks
+                created_at = nowTicks
             };
             if (isScheduled)
             {

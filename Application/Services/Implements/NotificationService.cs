@@ -1,10 +1,8 @@
 ﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
-using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using Infrastructure.SignalRHub;
-using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver;
 using Shared.Helpers;
@@ -29,7 +27,7 @@ namespace Application.Services.Implements
             if (userIds == null || !userIds.Any())
                 return Enumerable.Empty<NotificationEntity>();
 
-            var nowTicks = DateTime.UtcNow.Ticks;
+            var nowTicks = TimeHelper.NowTicks;
             var notifications = userIds.Select(uid => new NotificationEntity
             {
                 id = SystemHelper.RandomId(),
