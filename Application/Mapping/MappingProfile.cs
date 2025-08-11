@@ -244,6 +244,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.FollowId, opt => opt.MapFrom(src => src.follow.id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel.id))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.novel.title))
+                .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.novel.slug))
                 .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel.novel_image))
                 .ForMember(dest => dest.NovelBanner, opt => opt.MapFrom(src => src.novel.novel_banner))
                 .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author.id))

@@ -47,6 +47,7 @@ namespace Shared.Contracts.Response.Follow
         public string FollowId { get; set; }         // id của bản ghi follow
         public string NovelId { get; set; }
         public string Title { get; set; }
+        public string Slug { get; set; }
         public string NovelImage { get; set; }
         public string NovelBanner { get; set; }
         public string AuthorId { get; set; }

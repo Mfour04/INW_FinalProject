@@ -111,7 +111,7 @@ namespace Application.Features.Chapter.Commands
 
             // ✅ Chỉ lưu 1 lần duy nhất
             await _chapterRepository.CreateAsync(chapter);
-
+            var response = _mapper.Map<CreateChapterResponse>(chapter);
             // Update số chương nếu xuất bản ngay
             if (!chapter.is_draft && chapter.is_public)
             {
@@ -123,43 +123,58 @@ namespace Application.Features.Chapter.Commands
                     novel.is_public = true;
                     await _novelRepository.UpdateNovelAsync(novel);
                 }
-            }
-            if (!string.IsNullOrWhiteSpace(chapter.content))
-            {
-                try
+                // Lấy danh sách follower
+                var userfollowNovel = await _novelFollowRepository.GetFollowersByNovelIdAsync(novel.id);
+
+                // Loại bỏ tác giả và loại bỏ trùng user_id
+                var distinctFollowers = userfollowNovel
+                    .Select(f => f.user_id)
+                    .Where(uid => uid != novel.author_id)
+                    .Distinct()
+                    .ToList();
+                // Gửi thông báo đến tất cả người theo dõi trừ tác giả
+                var message = $"Chương truyện mới: {chapter.title} của novel {novel.title} đã được phát hành.";
+                await _notificationService.SendNotificationToUsersAsync(
+                    distinctFollowers,
+                    message,
+                    NotificationType.CreateChapter);
+
+                if (!string.IsNullOrWhiteSpace(chapter.content))
                 {
-                    var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
-                    var embeddingEntity = new ChapterContentEmbeddingEntity
+                    try
                     {
-                        chapter_id = chapter.id,
-                        vector_chapter_content = embedding[0],
-                        updated_at = TimeHelper.NowTicks
-                    };
-                    await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);
+                        var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
+                        var embeddingEntity = new ChapterContentEmbeddingEntity
+                        {
+                            chapter_id = chapter.id,
+                            vector_chapter_content = embedding[0],
+                            updated_at = TimeHelper.NowTicks
+                        };
+                        await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi embedding cho chapter {chapter.id}: {ex.Message}");
+                        // Optional: ghi log, không throw
+                    }
                 }
-                catch (Exception ex)
+                return new ApiResponse
                 {
-                    Console.WriteLine($"Lỗi embedding cho chapter {chapter.id}: {ex.Message}");
-                    // Optional: ghi log, không throw
-                }
+                    Success = true,
+                    Message = "Chapter created successfully",
+                    Data = new
+                    {
+                        Chapter = response,
+                        SignalRTest = new
+                        {
+                            SentToUsers = distinctFollowers.Count,
+                            SentUserIds = distinctFollowers,
+                            NotificationType = NotificationType.CreateChapter.ToString(),
+                            NotificationMessage = $"Tiểu thuyết \"{novel.title}\" vừa có chương mới: {chapter.title}"
+                        }
+                    }
+                };
             }
-
-            var response = _mapper.Map<CreateChapterResponse>(chapter);
-            // Lấy danh sách follower
-            var userfollowNovel = await _novelFollowRepository.GetFollowersByNovelIdAsync(novel.id);
-
-            // Loại bỏ tác giả và loại bỏ trùng user_id
-            var distinctFollowers = userfollowNovel
-                .Select(f => f.user_id)
-                .Where(uid => uid != novel.author_id)
-                .Distinct()
-                .ToList();
-            // Gửi thông báo đến tất cả người theo dõi trừ tác giả
-            var message = $"Chương truyện mới: {chapter.title}";
-            await _notificationService.SendNotificationToUsersAsync(
-                distinctFollowers,
-                message,
-                NotificationType.CreateChapter);
 
             return new ApiResponse
             {
@@ -167,16 +182,10 @@ namespace Application.Features.Chapter.Commands
                 Message = "Chapter created successfully",
                 Data = new
                 {
-                    Chapter = response,
-                    SignalRTest = new
-                    {
-                        SentToUsers = distinctFollowers.Count,
-                        SentUserIds = distinctFollowers,
-                        NotificationType = NotificationType.CreateChapter.ToString(),
-                        NotificationMessage = $"Tiểu thuyết \"{novel.title}\" vừa có chương mới: {chapter.title}"
-                    }
+                    Chapter = response
                 }
             };
+
         }
     }
 }

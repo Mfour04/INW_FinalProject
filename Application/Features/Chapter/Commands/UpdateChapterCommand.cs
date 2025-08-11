@@ -1,6 +1,9 @@
-﻿using Application.Services.Interfaces;
+﻿using Application.Services.Implements;
+using Application.Services.Interfaces;
 using AutoMapper;
+using Domain.Entities;
 using Domain.Entities.OpenAIEntity;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -29,14 +32,19 @@ namespace Application.Features.Chapter.Commands
         private readonly IMapper _mapper;
         private readonly IOpenAIRepository _openAIRepository;
         private readonly IOpenAIService _openAIService;
+        public readonly INovelFollowRepository _novelFollowRepository;
+        private readonly INotificationService _notificationService;
         public UpdateChapterHandler(IChapterRepository chapterRepository, IMapper mapper
-            , INovelRepository novelRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService)
+            , INovelRepository novelRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService
+            , INotificationService notificationService, INovelFollowRepository novelFollowRepository)
         {
             _chapterRepository = chapterRepository;
             _mapper = mapper;
             _novelRepository = novelRepository;
             _openAIRepository = openAIRepository;
             _openAIService = openAIService;
+            _notificationService = notificationService;
+            _novelFollowRepository = novelFollowRepository;
         }
         public async Task<ApiResponse> Handle(UpdateChapterCommand request, CancellationToken cancellationToken)
         {
@@ -63,11 +71,14 @@ namespace Application.Features.Chapter.Commands
             // Nếu từ bản nháp chuyển thành public và chưa có chapter_number
             if (wasDraftBefore && request.IsPublic && chapter.chapter_number == null)
             {
-                    var lastChapter = await _chapterRepository.GetLastPublishedAsync(chapter.novel_id);
-                    chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
+                 var lastChapter = await _chapterRepository.GetLastPublishedAsync(chapter.novel_id);
+                 chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
             }
             await _chapterRepository.UpdateAsync(chapter);
 
+            // Biến để trả thông tin SignalR test
+            List<string> distinctFollowers = new();
+            NovelEntity novel = null;
             // Nếu chương này là public và không phải bản nháp → luôn cập nhật total_chapters
             if (chapter.is_public && !chapter.is_draft)
             {
@@ -76,34 +87,49 @@ namespace Application.Features.Chapter.Commands
 
                 // Nếu đây là chương public đầu tiên, thì public luôn cả novel
                 var publicChapters = await _chapterRepository.GetPublishedByNovelIdAsync(chapter.novel_id);
+                novel = await _novelRepository.GetByNovelIdAsync(chapter.novel_id);
                 if (publicChapters.Count == 1)
-                {
-                    var novel = await _novelRepository.GetByNovelIdAsync(chapter.novel_id);
+                {           
                     if (novel != null && !novel.is_public)
                     {
                         novel.is_public = true;
                         await _novelRepository.UpdateNovelAsync(novel);
                     }
                 }
-            }
+                // Lấy danh sách follower
+                var userfollowNovel = await _novelFollowRepository.GetFollowersByNovelIdAsync(novel.id);
 
-            if (!string.IsNullOrWhiteSpace(chapter.content))
-            {
-                try
+                // Loại bỏ tác giả và loại bỏ trùng user_id
+                distinctFollowers = userfollowNovel
+                    .Select(f => f.user_id)
+                    .Where(uid => uid != novel.author_id)
+                    .Distinct()
+                    .ToList();
+                // Gửi thông báo đến tất cả người theo dõi trừ tác giả
+                var message = $"Chương truyện mới: {chapter.title} của novel {novel.title} đã được phát hành.";
+                await _notificationService.SendNotificationToUsersAsync(
+                    distinctFollowers,
+                    message,
+                    NotificationType.CreateChapter);
+
+                if (!string.IsNullOrWhiteSpace(chapter.content))
                 {
-                    var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
-                    var embeddingEntity = new ChapterContentEmbeddingEntity
+                    try
                     {
-                        chapter_id = chapter.id,
-                        vector_chapter_content = embedding[0],
-                        updated_at = TimeHelper.NowTicks
-                    };
-                    await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Lỗi embedding cho chapter {chapter.id}: {ex.Message}");
-                    // Optional: ghi log, không throw
+                        var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
+                        var embeddingEntity = new ChapterContentEmbeddingEntity
+                        {
+                            chapter_id = chapter.id,
+                            vector_chapter_content = embedding[0],
+                            updated_at = TimeHelper.NowTicks
+                        };
+                        await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi embedding cho chapter {chapter.id}: {ex.Message}");
+                        // Optional: ghi log, không throw
+                    }
                 }
             }
 
@@ -113,7 +139,16 @@ namespace Application.Features.Chapter.Commands
             {
                 Success = true,
                 Message = "Chapter updated successfully",
-                Data = response
+                Data = new
+                {
+                    Chapter = response,
+                    SignalRTest = new
+                    {
+                        SentToUsers = distinctFollowers.Count,
+                        SentUserIds = distinctFollowers,
+                        NotificationType = NotificationType.CreateChapter.ToString()
+                    }
+                }
             };
         }
     }
