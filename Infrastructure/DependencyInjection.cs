@@ -1,13 +1,14 @@
 ﻿using Domain.Entities.System;
-using Infrastructure.Common;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
-using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Shared.Contracts.Response;
 using Shared.SystemHelpers.TokenGenerate;
+using System.Text;
 
 namespace Infrastructure
 {
@@ -20,7 +21,6 @@ namespace Infrastructure
         {
             services
                 .AddHttpContextAccessor()
-                .AddServices()
                 .AddAuthentication(configuration)
                 .AddAuthorization()
                 .AddPersistence();
@@ -31,23 +31,15 @@ namespace Infrastructure
             return services;
         }
 
-        private static IServiceCollection AddServices(this IServiceCollection services)
-        {
-            services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
-            services.AddSignalR();
-            return services;
-        }
-
         private static IServiceCollection AddPersistence(this IServiceCollection services)
         {
             services.AddSingleton<MongoDBHelper>();
             services.AddSingleton<JwtHelpers>();
-            // services.AddScoped<IRoomFeatureRepository, RoomFeatureRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<INovelRepository, NovelRepository>();
             services.AddScoped<IChapterRepository, ChapterRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
-            services.AddTransient<IEmailService, EmailService>();
+
 
             services.AddScoped<IBadgeRepository, BadgeRepository>();
             services.AddScoped<IBadgeProgressRepository, BadgeProgressRepository>();
@@ -55,47 +47,74 @@ namespace Infrastructure
             services.AddScoped<IForumPostLikeRepository, ForumPostLikeRepository>();
             services.AddScoped<IForumCommentRepository, ForumCommentRepository>();
             services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
+            services.AddScoped<IAuthorEarningRepository, AuthorEarningRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
+            services.AddScoped<ITransactionLogRepository, TransactionLogRepository>();
             services.AddScoped<IPurchaserRepository, PurchaserRepository>();
+            services.AddScoped<IUserBankAccountRepository, UserBankAccountRepository>();
+            services.AddScoped<IUserFollowRepository, UserFollowRepository>();
 
             services.AddScoped<ICommentRepository, CommentRepository>();
-            services.AddScoped<ICloudDinaryService, CloudDinaryService>();
             services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<IReadingProcessRepository, ReadingProcessRepository>();
             services.AddScoped<INovelFollowRepository, NovelFollowRepository>();
             services.AddScoped<IRatingRepository, RatingRepository>();
-            services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<INovelViewTrackingRepository, NovelViewTrackingRepository>();
-            services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IOpenAIRepository, OpenAIRepository>();
             return services;
         }
 
         private static IServiceCollection AddAuthentication(
-            this IServiceCollection services,
-            IConfiguration configuration
-        )
+    this IServiceCollection services,
+    IConfiguration configuration
+)
         {
+            var jwtSettings = configuration.GetSection(JwtSettings.Section).Get<JwtSettings>();
+
+            var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+
             services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.Section));
 
             services
-            .ConfigureOptions<JwtBearerTokenValidationConfiguration>()
-            .AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                // 👇 Thêm đoạn này để lấy JWT từ Cookie "jwt"
-                options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+                .AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
                 {
-                    OnMessageReceived = context =>
+                    options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        if (context.Request.Cookies.ContainsKey("jwt"))
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings.Issuer,
+                        ValidAudience = jwtSettings.Audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(key)
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
                         {
-                            context.Token = context.Request.Cookies["jwt"];
+                            // Lấy token từ query string cho SignalR
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+
+                            if (!string.IsNullOrEmpty(accessToken) &&
+                                path.StartsWithSegments("/hubs/notification"))
+                            {
+                                context.Token = accessToken;
+                            }
+
+                            // Nếu token trong cookie "jwt"
+                            if (string.IsNullOrEmpty(context.Token) &&
+                                context.Request.Cookies.ContainsKey("jwt"))
+                            {
+                                context.Token = context.Request.Cookies["jwt"];
+                            }
+
+                            return Task.CompletedTask;
                         }
-                        return Task.CompletedTask;
-                    }
-                };
-            });
+                    };
+                });
 
             return services;
         }

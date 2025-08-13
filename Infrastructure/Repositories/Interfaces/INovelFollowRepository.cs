@@ -1,6 +1,5 @@
-﻿
-
-using Domain.Entities;
+﻿using Domain.Entities;
+using Domain.Entities.System;
 
 namespace Infrastructure.Repositories.Interfaces
 {
@@ -11,6 +10,9 @@ namespace Infrastructure.Repositories.Interfaces
         Task<NovelFollowerEntity> CreateNovelFollowAsync(NovelFollowerEntity entity);
         Task<NovelFollowerEntity> UpdateNovelFollowAsync(NovelFollowerEntity entity);
         Task<bool> DeleteNovelFollowAsync(string id);
-        Task<IEnumerable<NovelFollowerEntity>> GetByNovelIdAsync(string novelId);
+        Task<List<NovelFollowerEntity>> GetFollowersByNovelIdAsync(string novelId);
+        Task<(List<NovelFollowerEntity> NovelFollows, int TotalCount)> GetFollowedNovelsByUserIdAsync(string userId, FindCreterias findCreterias);
+        Task<NovelFollowerEntity?> GetByUserAndNovelIdAsync(string userId, string novelId);
+
     }
 }

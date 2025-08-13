@@ -14,8 +14,8 @@ namespace Infrastructure.Repositories.Implements
 
         public TransactionRepository(MongoDBHelper mongoDBHelper)
         {
-            mongoDBHelper.CreateCollectionIfNotExistsAsync("transactions").Wait();
-            _collection = mongoDBHelper.GetCollection<TransactionEntity>("transactions");
+            mongoDBHelper.CreateCollectionIfNotExistsAsync("transaction").Wait();
+            _collection = mongoDBHelper.GetCollection<TransactionEntity>("transaction");
         }
 
         /// <summary>
@@ -77,6 +77,9 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        /// <summary>
+        /// Tạo mới một giao dịch.
+        /// </summary>
         public async Task AddAsync(TransactionEntity transaction)
         {
             try
@@ -89,6 +92,44 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        /// <summary>
+        /// Cập nhật trạng thái (status) của giao dịch theo id.
+        /// </summary>
+        public async Task<bool> UpdateStatusAsync(string id, TransactionEntity entity)
+        {
+            try
+            {
+                var filter = Builders<TransactionEntity>.Filter.Eq(x => x.id, id);
+
+                var transaction = await _collection.Find(filter).FirstOrDefaultAsync();
+
+                var update = Builders<TransactionEntity>
+                   .Update.Set(x => x.status, entity?.status ?? transaction.status)
+                   .Set(x => x.completed_at, entity.completed_at)
+                   .Set(x => x.updated_at, entity.updated_at);
+
+                await _collection.UpdateOneAsync(t => t.id == id, update);
+
+                var updated = await _collection.FindOneAndUpdateAsync(
+                   filter,
+                   update,
+                   new FindOneAndUpdateOptions<TransactionEntity>
+                   {
+                       ReturnDocument = ReturnDocument.After,
+                   }
+               );
+
+                return updated != null;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Lấy giao dịch theo mã đơn hàng (orderCode) nạp PayOS.
+        /// </summary>
         public async Task<TransactionEntity> GetByOrderCodeAsync(long orderCode)
         {
             try
@@ -101,26 +142,23 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task UpdateStatusAsync(string id, PaymentStatus newStatus)
-        {
-            try
-            {
-                var update = Builders<TransactionEntity>.Update.Set(t => t.status, newStatus);
-                await _collection.UpdateOneAsync(t => t.id == id, update);
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
+        /// <summary>
+        /// Lấy danh sách giao dịch nạp tiền có trạng thái Pending nhưng đã quá thời gian timeout.
+        /// </summary>
         public async Task<List<TransactionEntity>> GetExpiredPendingTransactionsAsync(long timeoutTimestamp)
         {
 
             try
             {
-                var result = await _collection.Find(t => t.status == PaymentStatus.Pending
-                    && t.created_at < timeoutTimestamp).ToListAsync();
+                var builder = Builders<TransactionEntity>.Filter;
+
+                var filter = builder.And(
+                    builder.Eq(t => t.status, PaymentStatus.Pending),
+                    builder.Eq(t => t.type, PaymentType.TopUp),
+                    builder.Lt(t => t.created_at, timeoutTimestamp)
+                );
+
+                var result = await _collection.Find(filter).ToListAsync();
                 return result;
             }
             catch
@@ -132,7 +170,7 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Lấy danh sách giao dịch của người dùng theo loại giao dịch.
         /// </summary>
-        public async Task<List<TransactionEntity>> GetUserTransactionsAsync(
+        public async Task<(List<TransactionEntity> Transactions, int TotalCount)> GetUserTransactionsAsync(
             string userId,
             PaymentType? type,
             FindCreterias creterias,
@@ -140,16 +178,15 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
+                // 1. Tạo filter cơ bản theo userId
                 var builder = Builders<TransactionEntity>.Filter;
-                var filter = builder.Eq(t => t.user_id, userId);
+                var filter = builder.Eq(t => t.requester_id, userId);
 
+                // 2. Nếu có filter theo type thì thêm vào
                 if (type.HasValue)
-                {
                     filter &= builder.Eq(t => t.type, type.Value);
-                }
 
-                var query = _collection.Find(filter);
-
+                // 3. Xây dựng phần sort
                 var sortBuilder = Builders<TransactionEntity>.Sort;
                 var sortDefinitions = new List<SortDefinition<TransactionEntity>>();
 
@@ -172,14 +209,89 @@ namespace Infrastructure.Repositories.Implements
                         sortDefinitions.Add(sortDef);
                 }
 
-                if (sortDefinitions.Any())
+                // Nếu không có sort cụ thể → fallback sort theo created_at desc
+                var combinedSort = sortDefinitions.Any()
+                    ? sortBuilder.Combine(sortDefinitions)
+                    : sortBuilder.Descending(t => t.created_at);
+
+                // 4. Tạo 2 task song song: count và get data
+                var countTask = _collection.CountDocumentsAsync(filter);
+
+                var dataTask = _collection.Find(filter)
+                    .Sort(combinedSort)
+                    .Skip(creterias.Page * creterias.Limit)
+                    .Limit(creterias.Limit)
+                    .ToListAsync();
+
+                // 5. Chạy song song, chờ cả 2 task hoàn thành
+                await Task.WhenAll(countTask, dataTask);
+
+                // 6. Trả tuple gồm danh sách và tổng số record
+                return (dataTask.Result, (int)countTask.Result);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Lấy chi tiết thông tin 1 giao dịch
+        /// </summary>
+        public async Task<TransactionEntity> GetByIdAsync(string id)
+        {
+            try
+            {
+                var result = await _collection.Find(x => x.id == id).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách yêu cầu rút tiền (withdraw) đang chờ xử lý (Pending).
+        /// </summary>
+        public async Task<List<TransactionEntity>> GetPendingWithdrawRequestsAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
+        {
+            try
+            {
+                var builder = Builders<TransactionEntity>.Filter;
+
+                var filtered = builder.And(
+                    builder.Eq(x => x.type, PaymentType.WithdrawCoin),
+                    builder.Eq(x => x.status, PaymentStatus.Pending)
+                );
+
+                var query = _collection
+                  .Find(filtered)
+                  .Skip(creterias.Page * creterias.Limit)
+                  .Limit(creterias.Limit);
+
+                var sortBuilder = Builders<TransactionEntity>.Sort;
+                var sortDefinitions = new List<SortDefinition<TransactionEntity>>();
+
+                foreach (var criterion in sortCreterias)
                 {
-                    query = query.Sort(sortBuilder.Combine(sortDefinitions));
+                    SortDefinition<TransactionEntity>? sortDef = criterion.Field switch
+                    {
+                        "created_at" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.created_at)
+                            : sortBuilder.Ascending(x => x.created_at),
+                        _ => null
+                    };
+
+                    if (sortDef != null)
+                        sortDefinitions.Add(sortDef);
                 }
 
-                query = query
-                    .Skip(creterias.Page * creterias.Limit)
-                    .Limit(creterias.Limit);
+                if (sortDefinitions.Count >= 1)
+                {
+                    var combinedSort = sortBuilder.Combine(sortDefinitions);
+                    query = query.Sort(combinedSort);
+                }
 
                 return await query.ToListAsync();
             }
@@ -187,6 +299,43 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        /// <summary>
+        /// Lấy danh sách transaction hoàn tất trong khoảng thời gian
+        /// </summary>
+        public async Task<List<TransactionEntity>> GetCompletedTransactionsInRangeAsync(long startDate, long endDate)
+        {
+            var filter = Builders<TransactionEntity>.Filter.And(
+                Builders<TransactionEntity>.Filter.Gte(x => x.completed_at, startDate),
+                Builders<TransactionEntity>.Filter.Lte(x => x.completed_at, endDate),
+                Builders<TransactionEntity>.Filter.Eq(x => x.status, PaymentStatus.Completed)
+            );
+
+            return await _collection.Find(filter).ToListAsync();
+        }
+
+        public async Task<List<TransactionEntity>> GetTransactionsByNovelIdsAsync(List<string> novelIds, long startTicks, long endTicks, int[] types)
+        {
+            var filterBuilder = Builders<TransactionEntity>.Filter;
+
+            var filter = filterBuilder.In(x => x.novel_id, novelIds) &
+						 filterBuilder.In(x => (int)x.type, types) &
+                         filterBuilder.Eq(x => x.status, PaymentStatus.Completed) &
+                         filterBuilder.Gte(x => x.completed_at, startTicks) &
+                         filterBuilder.Lte(x => x.completed_at, endTicks);
+
+            var projection = Builders<TransactionEntity>.Projection
+                .Include(x => x.id)
+                .Include(x => x.novel_id)
+                .Include(x => x.amount)
+                .Include(x => x.type)
+                .Include(x => x.completed_at);
+
+            return await _collection
+                .Find(filter)
+                .Project<TransactionEntity>(projection)
+                .ToListAsync();
         }
     }
 }

@@ -1,3 +1,4 @@
+using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -7,7 +8,7 @@ namespace Application.Features.Forum.Commands
     public class UpdatePostCommentCommand : IRequest<ApiResponse>
     {
         public string? Id { get; set; }
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public string Content { get; set; }
     }
 
@@ -32,10 +33,12 @@ namespace Application.Features.Forum.Commands
             if (comment.user_id != request.UserId)
                 return Fail("You are not allowed to edit this comment.");
 
-            comment.content = request.Content;
-            comment.updated_at = DateTime.Now.Ticks;
+            ForumCommentEntity updated = new()
+            {
+                content = request.Content
+            };
 
-            var success = await _commentRepo.UpdateAsync(request.Id, comment);
+            var success = await _commentRepo.UpdateAsync(request.Id, updated);
             if (!success)
                 return Fail("Failed to update the comment.");
 
@@ -43,7 +46,6 @@ namespace Application.Features.Forum.Commands
             {
                 Success = true,
                 Message = "Comment updated successfully.",
-                Data = comment
             };
         }
 

@@ -21,46 +21,56 @@ namespace Application.Features.Novel.Commands
         private readonly ITransactionRepository _transactionRepo;
         private readonly INovelRepository _novelRepo;
         private readonly IChapterRepository _chapterRepo;
+        private readonly IAuthorEarningRepository _authorEarningRepo;
 
         public BuyNovelCommandHandler(
            IUserRepository userRepo,
            IPurchaserRepository purchaserRepo,
            ITransactionRepository transactionRepo,
            INovelRepository novelRepo,
-           IChapterRepository chapterRepo)
+           IChapterRepository chapterRepo,
+           IAuthorEarningRepository authorEarningRepo)
         {
             _userRepo = userRepo;
             _purchaserRepo = purchaserRepo;
             _transactionRepo = transactionRepo;
             _novelRepo = novelRepo;
             _chapterRepo = chapterRepo;
+            _authorEarningRepo = authorEarningRepo;
         }
 
         public async Task<ApiResponse> Handle(BuyNovelCommand request, CancellationToken cancellationToken)
         {
-            if (await _purchaserRepo.HasPurchasedFullAsync(request.UserId, request.NovelId))
-                return Fail("User already owns this novel.");
-
-            var user = await _userRepo.GetById(request.UserId);
-            if (user == null || user.coin < request.CoinCost)
-                return Fail("Not enough coins.");
-
-            if (!await _userRepo.DecreaseCoinAsync(request.UserId, request.CoinCost))
-                return Fail("Failed to deduct coins.");
+            if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.NovelId))
+                return Fail("Missing user or novel ID.");
 
             var novel = await _novelRepo.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
                 return Fail("Novel not found.");
+
             if (!novel.is_paid)
                 return Fail("This novel is free and does not need to be purchased.");
 
-            var nowTicks = DateTime.Now.Ticks;
-            var chapterIds = await _chapterRepo.GetChapterIdsByNovelIdAsync(request.NovelId);
+            if (novel.status != NovelStatus.Completed)
+                return Fail("Only completed novels can be purchased in full.");
 
-            var transaction = new TransactionEntity
+            var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, request.NovelId);
+            if (existing?.is_full == true)
+                return Fail("User already owns this novel.");
+
+            var user = await _userRepo.GetById(request.UserId);
+            if (user == null)
+                return Fail("User not found.");
+            if (user.coin < request.CoinCost)
+                return Fail("Insufficient coins.");
+
+            var chapterIds = await _chapterRepo.GetIdsByNovelIdAsync(request.NovelId);
+            var nowTicks = TimeHelper.NowTicks;
+
+            TransactionEntity transaction = new()
             {
                 id = SystemHelper.RandomId(),
-                user_id = request.UserId,
+                requester_id = request.UserId,
                 novel_id = request.NovelId,
                 type = PaymentType.BuyNovel,
                 amount = request.CoinCost,
@@ -69,25 +79,62 @@ namespace Application.Features.Novel.Commands
                 created_at = nowTicks,
                 completed_at = nowTicks
             };
+
+            if (!await _userRepo.DecreaseCoinAsync(request.UserId, request.CoinCost))
+                return Fail("Failed to deduct coins.");
+
             await _transactionRepo.AddAsync(transaction);
 
-            var purchaser = new PurchaserEntity
+            if (!string.IsNullOrEmpty(novel.author_id))
             {
-                id = SystemHelper.RandomId(),
-                user_id = request.UserId,
-                novel_id = request.NovelId,
-                is_full = true,
-                full_chap_count = novel.total_chapters,
-                chapter_ids = chapterIds,
-                created_at = nowTicks
-            };
-            await _purchaserRepo.AddFullNovelPurchaseAsync(purchaser);
+                await _userRepo.IncreaseCoinAsync(novel.author_id, request.CoinCost);
+
+                AuthorEarningEntity authorEarning = new()
+                {
+                    id = SystemHelper.RandomId(),
+                    author_id = novel.author_id,
+                    novel_id = novel.id,
+                    amount = request.CoinCost,
+                    type = PaymentType.BuyNovel,
+                    source_transaction_id = transaction.id,
+                    created_at = nowTicks
+                };
+                await _authorEarningRepo.AddAsync(authorEarning);
+            }
+
+            if (existing == null)
+            {
+                // Chưa có → tạo mới
+                PurchaserEntity newPurchaser = new()
+                {
+                    id = SystemHelper.RandomId(),
+                    user_id = request.UserId,
+                    novel_id = request.NovelId,
+                    is_full = true,
+                    chap_snapshot = chapterIds.Count,
+                    chapter_ids = chapterIds,
+                    created_at = nowTicks
+                };
+                await _purchaserRepo.CreateAsync(newPurchaser);
+
+                return new ApiResponse
+                {
+                    Success = true,
+                    Message = "Purchase novel successfully.",
+                    Data = new { Purchaser = newPurchaser, Transaction = transaction }
+                };
+            }
+
+            existing.is_full = true;
+            existing.chap_snapshot = chapterIds.Count;
+            existing.chapter_ids = chapterIds;
+            await _purchaserRepo.UpdateAsync(existing.id, existing);
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Purchase novel successfully.",
-                Data = new { Purchaser = purchaser, Transaction = transaction }
+                Message = "Upgraded to full novel purchase.",
+                Data = new { Purchaser = existing, Transaction = transaction }
             };
         }
 

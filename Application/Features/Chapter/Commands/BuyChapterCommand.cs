@@ -21,24 +21,30 @@ namespace Application.Features.Chapter.Commands
         private readonly ITransactionRepository _transactionRepo;
         private readonly INovelRepository _novelRepo;
         private readonly IChapterRepository _chapterRepo;
+        private readonly IAuthorEarningRepository _authorEarningRepo; 
 
-        public BuyChapterCommandHandler(
+         public BuyChapterCommandHandler(
             IUserRepository userRepo,
             IPurchaserRepository purchaserRepo,
             ITransactionRepository transactionRepo,
             INovelRepository novelRepo,
-            IChapterRepository chapterRepo)
+            IChapterRepository chapterRepo,
+            IAuthorEarningRepository authorEarningRepo)
         {
             _userRepo = userRepo;
             _purchaserRepo = purchaserRepo;
             _transactionRepo = transactionRepo;
             _novelRepo = novelRepo;
             _chapterRepo = chapterRepo;
+            _authorEarningRepo = authorEarningRepo;
         }
 
         public async Task<ApiResponse> Handle(BuyChapterCommand request, CancellationToken cancellationToken)
         {
-            var chapter = await _chapterRepo.GetByChapterIdAsync(request.ChapterId);
+            if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.ChapterId))
+                return Fail("Missing user or chapter ID.");
+
+            var chapter = await _chapterRepo.GetByIdAsync(request.ChapterId);
             if (chapter == null)
                 return Fail("Chapter not found.");
             if (!chapter.is_paid)
@@ -51,6 +57,10 @@ namespace Application.Features.Chapter.Commands
             if (await _purchaserRepo.HasPurchasedChapterAsync(request.UserId, novel.id, request.ChapterId))
                 return Fail("Chapter already purchased.");
 
+            var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, novel.id);
+            if (existing?.is_full == true)
+                return Fail("You have already purchased the full novel.");
+
             var user = await _userRepo.GetById(request.UserId);
             if (user == null || user.coin < request.CoinCost)
                 return Fail("Not enough coins.");
@@ -58,26 +68,59 @@ namespace Application.Features.Chapter.Commands
             if (!await _userRepo.DecreaseCoinAsync(request.UserId, request.CoinCost))
                 return Fail("Failed to deduct coins.");
 
-            await _purchaserRepo.AddChapterPurchaseAsync(request.UserId, novel.id, request.ChapterId);
+            if (existing == null)
+            {
+                PurchaserEntity newPurchaser = new()
+                {
+                    id = SystemHelper.RandomId(),
+                    user_id = request.UserId,
+                    novel_id = novel.id,
+                    is_full = false,
+                    chapter_ids = new List<string> { request.ChapterId },
+                    chap_snapshot = 1,
+                    created_at = TimeHelper.NowTicks
+                };
+                await _purchaserRepo.CreateAsync(newPurchaser);
+            }
+            else
+            {
+                await _purchaserRepo.AddChapterAsync(request.UserId!, novel.id, request.ChapterId);
+            }
 
-            var nowTicks = DateTime.Now.Ticks;
-
-            var transaction = new TransactionEntity
+            TransactionEntity transaction = new()
             {
                 id = SystemHelper.RandomId(),
-                user_id = request.UserId,
+                requester_id = request.UserId,
                 novel_id = novel.id,
                 chapter_id = request.ChapterId,
                 type = PaymentType.BuyChapter,
                 amount = request.CoinCost,
                 payment_method = "Coin",
                 status = PaymentStatus.Completed,
-                created_at = nowTicks,
-                completed_at = nowTicks
+                created_at = TimeHelper.NowTicks,
+                completed_at = TimeHelper.NowTicks
             };
+
             await _transactionRepo.AddAsync(transaction);
 
-            await _purchaserRepo.TryMarkFullAsync(request.UserId, novel.id, novel.total_chapters);
+            if (!string.IsNullOrEmpty(novel.author_id))
+            {
+                await _userRepo.IncreaseCoinAsync(novel.author_id, request.CoinCost);
+
+                AuthorEarningEntity authorEarning = new()
+                {
+                    id = SystemHelper.RandomId(),
+                    author_id = novel.author_id,
+                    novel_id = novel.id,
+                    chapter_id = request.ChapterId,
+                    amount = request.CoinCost,
+                    type = PaymentType.BuyChapter,
+                    source_transaction_id = transaction.id,
+                    created_at = TimeHelper.NowTicks
+                };
+
+                await _authorEarningRepo.AddAsync(authorEarning);
+            }
 
             return new ApiResponse
             {

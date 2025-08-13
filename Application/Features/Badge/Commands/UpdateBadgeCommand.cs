@@ -1,3 +1,4 @@
+using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -31,11 +32,13 @@ namespace Application.Features.Badge.Commands
             if (badge == null)
                 return Fail("Post not found.");
 
-            badge.name = request.Name;
-            badge.required_count = request.RequiredCount;
-            badge.updated_at = DateTime.Now.Ticks;
+            BadgeEntity updated = new()
+            {
+                name = request.Name,
+                required_count = request.RequiredCount
+            };
 
-            var success = await _badgeRepo.UpdateAsync(request.Id, badge);
+            var success = await _badgeRepo.UpdateAsync(request.Id, updated);
             if (!success)
                 return Fail("Failed to update the badge.");
 

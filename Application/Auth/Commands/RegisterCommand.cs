@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.Services.Interfaces;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -10,11 +11,11 @@ namespace Application.Auth.Commands
 {
     public class RegisterCommand : IRequest<ApiResponse>
     {
-        public string Username { get; set; }
+        public string UserName { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
     }
-    
+
     public class RegisterUserHandler : IRequestHandler<RegisterCommand, ApiResponse>
     {
         private readonly IUserRepository _userRepository;
@@ -41,14 +42,13 @@ namespace Application.Auth.Commands
             var newUser = new UserEntity
             {
                 id = SystemHelper.RandomId(),
-                username = request.Username,
-                displayname = request.Username,
+                username = request.UserName,
+                displayname = request.UserName,
                 email = request.Email,
                 password = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                role = Role.Reader,
+                role = Role.User,
                 is_verified = false,
-                created_at = DateTime.Now.Ticks,
-                updated_at = DateTime.Now.Ticks
+                created_at = TimeHelper.NowTicks
             };
 
             await _userRepository.CreateUser(newUser);

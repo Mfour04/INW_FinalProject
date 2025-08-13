@@ -8,9 +8,13 @@ namespace Infrastructure.Repositories.Interfaces
     {
         Task<List<TransactionEntity>> GetAllAsync(PaymentType? type, FindCreterias creterias, List<SortCreterias> sortCreterias);
         Task AddAsync(TransactionEntity transaction);
+        Task<bool> UpdateStatusAsync(string id, TransactionEntity entity);
         Task<TransactionEntity> GetByOrderCodeAsync(long orderCode);
-        Task UpdateStatusAsync(string id, PaymentStatus newStatus);
         Task<List<TransactionEntity>> GetExpiredPendingTransactionsAsync(long timeoutTimestamp);
-        Task<List<TransactionEntity>> GetUserTransactionsAsync(string userId, PaymentType? type, FindCreterias creterias, List<SortCreterias> sortCreterias);
+        Task<(List<TransactionEntity> Transactions, int TotalCount)> GetUserTransactionsAsync(string userId, PaymentType? type, FindCreterias creterias, List<SortCreterias> sortCreterias);
+        Task<TransactionEntity> GetByIdAsync(string id);
+        Task<List<TransactionEntity>> GetPendingWithdrawRequestsAsync(FindCreterias creterias, List<SortCreterias> sortCreterias);
+        Task<List<TransactionEntity>> GetCompletedTransactionsInRangeAsync(long startDate, long endDate);
+        Task<List<TransactionEntity>> GetTransactionsByNovelIdsAsync(List<string> novelIds, long startTicks, long endTicks, int[] types);
     }
 }

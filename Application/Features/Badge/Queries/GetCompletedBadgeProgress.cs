@@ -6,21 +6,38 @@ namespace Application.Features.Badge.Queries
 {
     public class GetCompletedBadgeProgress : IRequest<ApiResponse>
     {
-        public string UserId { get; set; }
+        public string Username { get; set; }
     }
 
     public class GetCompletedBadgeProgressHandler : IRequestHandler<GetCompletedBadgeProgress, ApiResponse>
     {
         private readonly IBadgeProgressRepository _progressRepo;
+        private readonly IUserRepository _userRepo;
 
-        public GetCompletedBadgeProgressHandler(IBadgeProgressRepository progressRepo)
+        public GetCompletedBadgeProgressHandler(IBadgeProgressRepository progressRepo, IUserRepository userRepo)
         {
             _progressRepo = progressRepo;
+            _userRepo = userRepo;
         }
 
         public async Task<ApiResponse> Handle(GetCompletedBadgeProgress request, CancellationToken cancellationToken)
         {
-            var progresses = await _progressRepo.GetCompletedByUserIdAsync(request.UserId);
+            if (string.IsNullOrWhiteSpace(request.Username))
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Username is required."
+                };
+
+            var user = await _userRepo.GetByName(request.Username);
+            if (user == null)
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "User not found."
+                };
+
+            var progresses = await _progressRepo.GetCompletedByUserIdAsync(user.id);
 
             if (progresses == null || progresses.Count == 0)
             {

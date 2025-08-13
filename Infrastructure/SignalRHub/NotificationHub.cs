@@ -4,9 +4,14 @@ namespace Infrastructure.SignalRHub
 {
     public class NotificationHub: Hub
     {
-        public async Task SendNotificationToUser(string userId, string message)
+        public override async Task OnConnectedAsync()
         {
-            await Clients.User(userId).SendAsync("ReceiveNotification", message);
+            Console.WriteLine($"UserIdentifier = {Context.UserIdentifier}");
+            foreach (var claim in Context.User.Claims)
+            {
+                Console.WriteLine($"{claim.Type} = {claim.Value}");
+            }
+            await base.OnConnectedAsync();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Application.Services.Interfaces;
+using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -17,8 +18,6 @@ namespace Application.Features.NovelFollower.Commands
     public class CreateNovelFollowerCommand: IRequest<ApiResponse>
     {
         public string NovelId { get; set; }
-        public string UserId { get; set; }
-        public string UserName { get; set; }
     }
 
     public class CreateNovelFollowerHandler : IRequestHandler<CreateNovelFollowerCommand, ApiResponse>
@@ -27,36 +26,53 @@ namespace Application.Features.NovelFollower.Commands
         private readonly INovelFollowRepository _novelFollowRepository;
         private readonly IUserRepository _userRepository;
         private readonly INovelRepository _novelRepository;
-        
-        public CreateNovelFollowerHandler(IMapper mapper, INovelFollowRepository novelFollowRepository, IUserRepository userRepository, INovelRepository novelRepository)
+        private readonly ICurrentUserService _currentUserService;
+
+        public CreateNovelFollowerHandler(IMapper mapper, INovelFollowRepository novelFollowRepository
+            , IUserRepository userRepository, INovelRepository novelRepository
+            , ICurrentUserService currentUserService)
         {
             _mapper = mapper;
             _novelFollowRepository = novelFollowRepository;
             _userRepository = userRepository;
             _novelRepository = novelRepository;
+            _currentUserService = currentUserService;
         }
         public async Task<ApiResponse> Handle(CreateNovelFollowerCommand request, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetById(request.UserId);
+
+            var userId = _currentUserService.UserId;
+            if (string.IsNullOrEmpty(userId))
+                return new ApiResponse { Success = false, Message = "Unauthorized" };
+
+            var user = await _userRepository.GetById(userId);
             if (user == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy người dùng này" };
 
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy novel này" };
-
+            var existingFollow = await _novelFollowRepository.GetByUserAndNovelIdAsync(user.id, request.NovelId);
+            if (existingFollow != null)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "User đã follow novel này rồi"
+                };
+            }
             var novelfollower = new NovelFollowerEntity
             {
                 id = SystemHelper.RandomId(),
                 novel_id = novel.id,
                 user_id = user.id,
                 username = user.displayname,
-                followed_at = DateTime.UtcNow.Ticks
+                followed_at = TimeHelper.NowTicks
             };
 
             await _novelFollowRepository.CreateNovelFollowAsync(novelfollower);
             await _novelRepository.IncrementFollowersAsync(request.NovelId);
-            var response = _mapper.Map<CreateNovelFollowReponse>(novelfollower);
+            var response = _mapper.Map<CreateNovelFollowReponse>((novelfollower, user));
 
             return new ApiResponse
             {

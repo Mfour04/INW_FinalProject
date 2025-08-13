@@ -1,3 +1,4 @@
+using Application.Services.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -13,10 +14,12 @@ namespace Application.Features.Forum.Commands
     public class DeletePostCommandHandler : IRequestHandler<DeletePostCommand, ApiResponse>
     {
         private readonly IForumPostRepository _postRepo;
+        private readonly ICloudDinaryService _cloudDinaryService;
 
-        public DeletePostCommandHandler(IForumPostRepository postRepo)
+        public DeletePostCommandHandler(IForumPostRepository postRepo, ICloudDinaryService cloudDinaryService)
         {
             _postRepo = postRepo;
+            _cloudDinaryService = cloudDinaryService;
         }
 
         public async Task<ApiResponse> Handle(DeletePostCommand request, CancellationToken cancellationToken)
@@ -31,6 +34,14 @@ namespace Application.Features.Forum.Commands
             var deleted = await _postRepo.DeleteAsync(request.Id);
             if (!deleted)
                 return Fail("Failed to delete the post.");
+
+            if (post.img_urls != null && post.img_urls.Any())
+            {
+                foreach (var imgUrl in post.img_urls)
+                {
+                    await _cloudDinaryService.DeleteImageAsync(imgUrl);
+                }
+            }
 
             return new ApiResponse
             {

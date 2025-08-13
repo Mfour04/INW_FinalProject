@@ -11,13 +11,13 @@ namespace Application.Features.Forum.Queries
         public string Id { get; set; }
     }
 
-    public class GetPostByIdHanlder : IRequestHandler<GetPostById, ApiResponse>
+    public class GetPostByIdHandler : IRequestHandler<GetPostById, ApiResponse>
     {
         private readonly IForumPostRepository _postRepo;
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
 
-        public GetPostByIdHanlder(IForumPostRepository postRepo, IUserRepository userRepo, IMapper mapper)
+        public GetPostByIdHandler(IForumPostRepository postRepo, IUserRepository userRepo, IMapper mapper)
         {
             _postRepo = postRepo;
             _userRepo = userRepo;
@@ -39,15 +39,20 @@ namespace Application.Features.Forum.Queries
             var user = await _userRepo.GetById(post.user_id);
             if (user != null)
             {
-                response.Author = new ForumPostAuthorResponse
+                response.Author = new BasePostResponse.PostAuthorResponse
                 {
                     Id = user.id,
                     Username = user.username,
                     Avatar = user.avata_url
                 };
             }
-            
-            return new ApiResponse { Success = true, Data = response };
+
+            return new ApiResponse
+            {
+                Success = true,
+                Message = "Post retrieved successfully.",
+                Data = response
+            };
         }
     }
 }

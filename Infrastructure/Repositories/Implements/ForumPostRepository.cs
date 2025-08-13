@@ -4,13 +4,14 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
     public class ForumPostRepository : IForumPostRepository
     {
         private readonly IMongoCollection<ForumPostEntity> _collection;
-        
+
         public ForumPostRepository(MongoDBHelper mongoDBHelper)
         {
             mongoDBHelper.CreateCollectionIfNotExistsAsync("forum_post").Wait();
@@ -96,7 +97,7 @@ namespace Infrastructure.Repositories.Implements
 
                 var update = Builders<ForumPostEntity>
                     .Update.Set(x => x.content, entity.content ?? post.content)
-                    .Set(x => x.updated_at, DateTime.Now.Ticks);
+                    .Set(x => x.updated_at, TimeHelper.NowTicks);
 
                 var updated = await _collection.FindOneAndUpdateAsync(
                     filter,
@@ -123,6 +124,56 @@ namespace Infrastructure.Repositories.Implements
                 var deleted = await _collection.FindOneAndDeleteAsync(filter);
 
                 return deleted != null;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> IncrementLikesAsync(string id)
+        {
+            var update = Builders<ForumPostEntity>.Update.Inc(x => x.like_count, 1);
+            var result = await _collection.UpdateOneAsync(
+                x => x.id == id,
+                update
+            );
+            return result.ModifiedCount > 0;
+        }
+
+        public async Task<bool> DecrementLikesAsync(string id)
+        {
+            var update = Builders<ForumPostEntity>.Update.Inc(x => x.like_count, -1);
+            var result = await _collection.UpdateOneAsync(
+                x => x.id == id,
+                update
+            );
+            return result.ModifiedCount > 0;
+        }
+
+        public async Task<bool> IncrementCommentsAsync(string id)
+        {
+            try
+            {
+                var update = Builders<ForumPostEntity>.Update.Inc(x => x.comment_count, 1);
+                var result = await _collection.UpdateOneAsync(x => x.id == id, update);
+
+                return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> DecrementCommentsAsync(string id, int count = 1)
+        {
+            try
+            {
+                var update = Builders<ForumPostEntity>.Update.Inc(x => x.comment_count, -count);
+                var result = await _collection.UpdateOneAsync(x => x.id == id, update);
+
+                return result.ModifiedCount > 0;
             }
             catch
             {

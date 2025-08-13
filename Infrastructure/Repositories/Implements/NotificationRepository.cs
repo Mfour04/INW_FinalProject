@@ -19,12 +19,17 @@ namespace Infrastructure.Repositories.Implements
             mongoDBHelper.CreateCollectionIfNotExistsAsync("notification").Wait();
             _collection = mongoDBHelper.GetCollection<NotificationEntity>("notification");
         }
-        public async Task<NotificationEntity> CreateAsync(NotificationEntity notification)
+        public async Task CreateAsync(List<NotificationEntity> notifications)
         {
+            if (notifications == null || notifications.Count == 0)
+                return;
+
             try
             {
-                await _collection.InsertOneAsync(notification);
-                return notification;
+                await _collection.InsertManyAsync(
+                    notifications,
+                    new InsertManyOptions { IsOrdered = false } // Cho phép tiếp tục nếu 1 phần tử lỗi
+                );
             }
             catch
             {
@@ -72,13 +77,20 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                return await _collection.Find(x => x.user_id == userId).SortByDescending(x => x.created_at).ToListAsync();
+                var filter = Builders<NotificationEntity>.Filter.Eq(x => x.user_id, userId);
+                var sort = Builders<NotificationEntity>.Sort.Descending("created_at"); // dùng string thay vì biểu thức
+
+                return await _collection.Find(filter).Sort(sort).ToListAsync();
             }
-            catch
+            catch (Exception ex)
             {
-                throw new InternalServerException();
+                // Ghi log lỗi chi tiết ra Console hoặc logger
+                Console.WriteLine($"[ERROR][GetUserNotificationsAsync] {ex.Message}");
+                throw new InternalServerException($"Error fetching notifications: {ex.Message}");
             }
         }
+
+
 
         public async Task MarkAsReadAsync(string notificationId)
         {

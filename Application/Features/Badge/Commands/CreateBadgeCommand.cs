@@ -49,7 +49,7 @@ namespace Application.Features.Badge.Commands
                 trigger_type = (BadgeTriggerType)request.TriggerType,
                 target_action = (BadgeAction)request.TargetAction,
                 required_count = request.RequiredCount,
-                created_at = DateTime.Now.Ticks
+                created_at = TimeHelper.NowTicks
             };
 
             await _badgeRepo.CreateAsync(badge);

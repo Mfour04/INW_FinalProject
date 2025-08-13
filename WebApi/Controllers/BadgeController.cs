@@ -1,6 +1,7 @@
 using Application.Features.Badge.Commands;
 using Application.Features.Badge.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
@@ -17,7 +18,7 @@ namespace WebApi.Controllers
         }
 
         [HttpGet]
-        // [Authorize]
+        [Authorize]
         public async Task<IActionResult> GetBadges([FromQuery] GetBadges request)
         {
             var result = await _mediator.Send(request);
@@ -25,7 +26,7 @@ namespace WebApi.Controllers
         }
 
         [HttpGet("{id}")]
-        // [Authorize]
+        [Authorize]
         public async Task<IActionResult> GetBadgeById(string id)
         {
             var result = await _mediator.Send(new GetBadgeById { Id = id });
@@ -33,7 +34,7 @@ namespace WebApi.Controllers
         }
 
         [HttpPost]
-        // [Authorize]
+        [Authorize(Roles = "System")]
         public async Task<IActionResult> CreateBadge([FromBody] CreateBadgeCommand command)
         {
             var result = await _mediator.Send(command);
@@ -41,7 +42,7 @@ namespace WebApi.Controllers
         }
 
         [HttpPut("{id}")]
-        // [Authorize]
+        [Authorize(Roles = "System")]
         public async Task<IActionResult> EditBadge(string id, [FromBody] UpdateBadgeCommand command)
         {
             command.Id = id;
@@ -50,8 +51,8 @@ namespace WebApi.Controllers
         }
 
         [HttpDelete("{id}")]
-        // [Authorize]
-        public async Task<IActionResult> DeletePost(string id)
+        [Authorize(Roles = "System")]
+        public async Task<IActionResult> DeleteBadge(string id)
         {
             var result = await _mediator.Send(new DeleteBadgeCommand { Id = id });
             return Ok(result);

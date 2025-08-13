@@ -1,123 +1,24 @@
-﻿using Application.Features.Chapter.Commands;
-using Application.Features.Comment.Command;
+using Application.Features.Comment.Commands;
 using Application.Features.Comment.Queries;
-using Domain.Entities.System;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Contracts.Response;
-using Shared.Contracts.Response.Comment;
 using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/comments")]
     [ApiController]
     public class CommentsController : ControllerBase
     {
         private readonly IMediator _mediator;
-        public FindCreterias findCreterias { get; private set; }
+        private string currentUserId =>
+           User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+           ?? throw new UnauthorizedAccessException("User ID not found in token");
 
         public CommentsController(IMediator mediator)
         {
             _mediator = mediator;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] int page = 0,
-            [FromQuery] int limit = 10,
-            [FromQuery] string novelId = null,
-            [FromQuery] string chapterId = null,
-            [FromQuery] bool includeReplies = true)
-        {
-            var query = new GetComments
-            {
-                Page = page,
-                Limit = limit,
-                NovelId = novelId,
-                ChapterId = chapterId,
-                IncludeReplies = includeReplies
-            };
-
-            var result = await _mediator.Send(query);
-
-            return Ok(result);
-        }
-
-        [HttpGet("novel/{novelId}")]
-        public async Task<ActionResult<List<CommentResponse>>> GetCommentsByNovel(
-            string novelId,
-            [FromQuery] int page = 0,
-            [FromQuery] int limit = 10,
-            [FromQuery] bool includeReplies = true)
-        {
-            try
-            {
-                var query = new GetComments
-                {
-                    Page = page,
-                    Limit = limit,
-                    NovelId = novelId,
-                    ChapterId = null,
-                    IncludeReplies = includeReplies
-                };
-                var result = await _mediator.Send(query);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpGet("chapter/{chapterId}")]
-        public async Task<ActionResult<List<CommentResponse>>> GetCommentsByChapter(
-            string chapterId,
-            [FromQuery] string novelId,
-            [FromQuery] int page = 0,
-            [FromQuery] int limit = 10,
-            [FromQuery] bool includeReplies = true)
-        {
-            try
-            {
-                var query = new GetComments
-                {
-                    Page = page,
-                    Limit = limit,
-                    NovelId = novelId,
-                    ChapterId = chapterId,
-                    IncludeReplies = includeReplies
-                };
-                var result = await _mediator.Send(query);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateComment([FromBody] CreateCommentCommand comment)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new ApiResponse
-                {
-                    Success = false,
-                    Message = "User not authenticated."
-                });
-            comment.UserId = userId;
-            var result = await _mediator.Send(comment);
-            return Ok(result);
-        }
-
-        [HttpPut("update")]
-        public async Task<IActionResult> UpdateComment([FromBody] UpdateCommentCommand comment)
-        {
-            var result = await _mediator.Send(comment);
-            return Ok(result);
         }
 
         [HttpGet("{id}")]
@@ -127,47 +28,70 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("{id}/reply")]
+        public async Task<IActionResult> GetRepliesAsync(string id)
+        {
+            var result = await _mediator.Send(new GetRepliesComment { CommentId = id });
+            return Ok(result);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CreateComment([FromBody] CreateCommentCommand command)
+        {
+            command.UserId = currentUserId;
+
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateComment(string id, [FromBody] UpdateCommentCommand command)
+        {
+            command.CommentId = id;
+            command.UserId = currentUserId;
+
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteComment(string id)
         {
-            var result = await _mediator.Send(new DeleteCommentCommand { CommentId = id });
+            DeleteCommentCommand command = new()
+            {
+                CommentId = id
+            };
+
+            var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpPost("{id}/likes")]
-        public async Task<IActionResult> LikeComment(string id, [FromBody] LikeChapterCommentCommand command)
+        [Authorize]
+        public async Task<IActionResult> LikeComment(string id, [FromBody] LikeCommentCommand command)
         {
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            // if (string.IsNullOrEmpty(userId))
-            //     return Unauthorized(new ApiResponse
-            //     {
-            //         Success = false,
-            //         Message = "User not authenticated."
-            //     });
-            // command.UserId = userId;
-
             command.CommentId = id;
-            command.UserId = "user_002";
+            command.UserId = currentUserId;
 
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpDelete("{id}/likes")]
+        [Authorize]
         public async Task<IActionResult> UnlikeComment(string id)
         {
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            UnlikeCommentCommand command = new()
+            {
+                CommentId = id,
+                UserId = currentUserId
+            };
 
-            // if (string.IsNullOrEmpty(userId))
-            //     return Unauthorized(new ApiResponse
-            //     {
-            //         Success = false,
-            //         Message = "User not authenticated."
-            //     });
-            // command.UserId = userId;
-
-            var result = await _mediator.Send(new UnlikeChapterCommentCommand { CommentId = id, UserId = "user_002" });
+            var result = await _mediator.Send(command);
             return Ok(result);
         }
     }

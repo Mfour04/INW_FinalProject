@@ -1,14 +1,10 @@
-﻿using Infrastructure.Repositories.Interfaces;
+﻿using Application.Services.Interfaces;
+using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.SystemHelpers.TokenGenerate;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Auth.Commands
 {

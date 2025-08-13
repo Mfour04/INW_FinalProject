@@ -1,10 +1,12 @@
 ﻿using Application.Auth.Commands;
+using Application.Features.Novel.Queries;
 using Application.Features.User.Feature;
 using Application.Features.User.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Contracts.Response.User;
+using Shared.Helpers;
 using Shared.SystemHelpers.TokenGenerate;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -17,7 +19,6 @@ namespace WebApi.Controllers
     {
         private readonly IMediator _mediator;
         private readonly JwtHelpers _jwtHelpers;
-
         public UsersController(IMediator mediator, JwtHelpers jwtHelpers)
         {
             _mediator = mediator;
@@ -92,14 +93,13 @@ namespace WebApi.Controllers
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             var role = identity?.FindFirst(ClaimTypes.Role)?.Value;
-            var email = identity?.FindFirst("Email")?.Value;
 
-            return Ok(new { role, email });
+            return Ok(new { role });
         }
 
         [Authorize]
-        [HttpGet("user-infor")]
-        public async Task<IActionResult> GetUserInfo()
+        [HttpGet("my-infor")]
+        public async Task<IActionResult> GetCurrentUserInfo()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -115,6 +115,23 @@ namespace WebApi.Controllers
             return Ok(result.Data);
         }
 
+        [Authorize]
+        [HttpGet("user-infor")]
+        public async Task<IActionResult> GetUserInfor(string userId)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            var result = await _mediator.Send(new GetUserById
+            {
+                UserId = userId,
+                CurrentUserId = currentUserId
+            });
+
+            if (!result.Success)
+                return NotFound(result.Message);
+
+            return Ok(result.Data);
+        }
 
 
         // Đăng xuất người dùng
@@ -149,9 +166,27 @@ namespace WebApi.Controllers
             }
         }
 
-        [HttpPut("update-user")]
+        [HttpPut("update-user-profile")]
+        [Authorize]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateUserProfileCommand command)
         {
+            // Add this validation
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                return BadRequest(new
+                {
+                    message = "Validation failed",
+                    errors = errors
+                });
+            }
+
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))
@@ -220,22 +255,48 @@ namespace WebApi.Controllers
         [HttpGet("coin")]
         public async Task<IActionResult> GetUserCoin()
         {
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            // if (string.IsNullOrEmpty(userId))
-            //     return Unauthorized(new ApiResponse
-            //     {
-            //         Success = false,
-            //         Message = "User not authenticated."
-            //     });
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var result = await _mediator.Send(new GetUserCoin
             {
-                UserId = "user_002"
+                UserId = userId
             });
 
             return Ok(result);
         }
 
+        [HttpPut("update-to-admin")]
+        public async Task<IActionResult> UpdateUserToAdmin(string userId)
+        {
+            var result = await _mediator.Send(new UpdateUserToAdminCommand { UserId = userId });
+            return Ok(result);
+        }
+
+        [HttpGet("admin-id")]
+        public async Task<IActionResult> GetAdminId()
+        {
+            var response = await _mediator.Send(new GetAdminId());
+            return Ok(response);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] GetAllUser query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+        
+        [HttpPut("ban-vs-unban")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateBanStatus([FromBody] UpdateLockvsUnLockUserCommand command)
+        {
+            var result = await _mediator.Send(command);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
     }
 }

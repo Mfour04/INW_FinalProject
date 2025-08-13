@@ -15,13 +15,13 @@ namespace Application.Features.Forum.Queries
         public int Limit { get; set; } = int.MaxValue;
     }
 
-    public class GetPostsHanlder : IRequestHandler<GetPosts, ApiResponse>
+    public class GetPostsHandler : IRequestHandler<GetPosts, ApiResponse>
     {
         private readonly IForumPostRepository _postRepo;
         private readonly IUserRepository _userRepo;
         private readonly IMapper _mapper;
 
-        public GetPostsHanlder(IForumPostRepository postRepo, IUserRepository userRepo, IMapper mapper)
+        public GetPostsHandler(IForumPostRepository postRepo, IUserRepository userRepo, IMapper mapper)
         {
             _postRepo = postRepo;
             _userRepo = userRepo;
@@ -41,21 +41,29 @@ namespace Application.Features.Forum.Queries
             if (postList == null || postList.Count == 0)
                 return new ApiResponse { Success = false, Message = "No forum posts found." };
 
+            var userIds = postList.Select(p => p.user_id).Distinct().ToList();
+            var users = await _userRepo.GetUsersByIdsAsync(userIds);
+            var userDict = users.ToDictionary(u => u.id);
+
             var response = new List<PostResponse>();
 
             foreach (var post in postList)
             {
                 var mapped = _mapper.Map<PostResponse>(post);
+                mapped.ImgUrls ??= new List<string>();
 
-                var user = await _userRepo.GetById(post.user_id);
-                if (user != null)
+                if (userDict.TryGetValue(post.user_id, out var user))
                 {
-                    mapped.Author = new ForumPostAuthorResponse
+                    mapped.Author = new BasePostResponse.PostAuthorResponse
                     {
                         Id = user.id,
                         Username = user.username,
                         Avatar = user.avata_url
                     };
+                }
+                else
+                {
+                    mapped.Author = new BasePostResponse.PostAuthorResponse();
                 }
 
                 response.Add(mapped);

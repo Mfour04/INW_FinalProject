@@ -1,15 +1,17 @@
-using Application;
+﻿using Application;
 using Application.Mapping;
-using Application.Services;
+using Application.Services.Implements;
+using Application.Services.Interfaces;
 using Infrastructure;
 using Infrastructure.InwContext;
 using Infrastructure.SignalRHub;
 using Microsoft.Extensions.Options;
 using Net.payOS;
 using Shared;
+using Shared.Contracts.Response.OpenAI;
+
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -20,7 +22,7 @@ builder.Services.Configure<MongoSetting>(
     builder.Configuration.GetSection("MongoDB"));
 
 builder.Services.AddInfrastructure(builder.Configuration);
-//builder.Services.AddApplication();
+builder.Services.AddApplication();
 
 builder.Services.AddMediatR(config =>
 {
@@ -43,12 +45,15 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.Configure<PayOSConfig>(builder.Configuration.GetSection("PayOS"));
 builder.Services.AddSingleton<PayOS>(sp =>
 {
-	var config = sp.GetRequiredService<IOptions<PayOSConfig>>().Value;
-	return new PayOS(config.ClientId, config.ApiKey, config.ChecksumKey);
+    var config = sp.GetRequiredService<IOptions<PayOSConfig>>().Value;
+    return new PayOS(config.ClientId, config.ApiKey, config.ChecksumKey);
 });
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddHostedService<TransactionCleanupService>();
 
+builder.Services.Configure<OpenAIConfig>(builder.Configuration.GetSection("OpenAI"));
+builder.Services.AddHttpClient<IOpenAIService, OpenAIService>(); 
+
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -1,5 +1,8 @@
+using System.Security.Claims;
 using Application.Features.Forum.Commands;
+using Application.Features.Forum.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
@@ -9,81 +12,95 @@ namespace WebApi.Controllers
     public class ForumCommentController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private string currentUserId =>
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? throw new UnauthorizedAccessException("User ID not found in token");
 
         public ForumCommentController(IMediator mediator)
         {
             _mediator = mediator;
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPostCommentDetail(string id)
+        {
+            GetPostCommentById query = new()
+            {
+                Id = id,
+            };
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
         [HttpGet("{id}/replies")]
+        public async Task<IActionResult> GetPostCommentReplies(string id, [FromQuery] GetPostCommentReplies query)
+        {
+            query.ParentId = id;
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
 
         [HttpPost]
-        // [Authorize]
+        [Authorize]
         public async Task<IActionResult> CreateComment([FromBody] CreatePostCommentCommand command)
         {
+            command.UserId = currentUserId;
+
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpPut("{id}")]
-        // [Authorize]
+        [Authorize]
         public async Task<IActionResult> EditComment(string id, [FromBody] UpdatePostCommentCommand command)
         {
+            command.UserId = currentUserId;
             command.Id = id;
+
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        // [Authorize]
+        [Authorize]
         public async Task<IActionResult> DeleteComment(string id)
         {
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            DeletePostCommentCommand command = new()
+            {
+                Id = id,
+            };
 
-            // if (string.IsNullOrEmpty(userId))
-            //     return Unauthorized(new ApiResponse
-            //     {
-            //         Success = false,
-            //         Message = "User not authenticated."
-            //     });
-            // command.UserId = userId;
-
-            var result = await _mediator.Send(new DeletePostCommentCommand { Id = id, UserId = "user_002" });
+            var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpPost("{id}/likes")]
-        // [Authorize]
+        [Authorize]
         public async Task<IActionResult> LikeComment(string id)
         {
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            LikePostCommentCommand command = new()
+            {
+                CommentId = id,
+                UserId = currentUserId
+            };
 
-            // if (string.IsNullOrEmpty(userId))
-            //     return Unauthorized(new ApiResponse
-            //     {
-            //         Success = false,
-            //         Message = "User not authenticated."
-            //     });
-            // command.UserId = userId;
-
-            var result = await _mediator.Send(new LikePostCommentCommand { CommentId = id, UserId = "user_002" });
+            var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpDelete("{id}/likes")]
+        [Authorize]
         public async Task<IActionResult> UnlikeComment(string id)
         {
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            UnlikePostCommentCommand command = new()
+            {
+                CommentId = id,
+                UserId = currentUserId
+            };
 
-            // if (string.IsNullOrEmpty(userId))
-            //     return Unauthorized(new ApiResponse
-            //     {
-            //         Success = false,
-            //         Message = "User not authenticated."
-            //     });
-            // command.UserId = userId;
-
-            var result = await _mediator.Send(new UnlikePostCommentCommand { CommentId = id, UserId = "user_002" });
+            var result = await _mediator.Send(command);
             return Ok(result);
         }
     }

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Application.Services.Interfaces;
+using AutoMapper;
 using Domain.Entities.System;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -7,17 +8,16 @@ using Shared.Contracts.Response;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Tag;
 using Shared.Helpers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Features.Novel.Queries
 {
-    public class GetNovel: IRequest<ApiResponse>
+    public class GetNovel : IRequest<ApiResponse>
     {
-        public string SortBy = "created_at:desc";
-        public int Page = 0;
-        public int Limit = int.MaxValue;
-        public string? SearchTerm = "";
-        public List<string>? SearchTagTerm = new();
+        public string SortBy { get; set; } = "created_at:desc";
+        public int Page { get; set; } = 0;
+        public int Limit { get; set; } = int.MaxValue;
+        public string? SearchTerm { get; set; } = "";
+        public List<string>? SearchTagTerm { get; set; } = new();
     }
 
     public class GetNovelHandler : IRequestHandler<GetNovel, ApiResponse>
@@ -25,55 +25,107 @@ namespace Application.Features.Novel.Queries
         private readonly INovelRepository _novelRepository;
         private readonly IMapper _mapper;
         private readonly ITagRepository _tagRepository;
-        public GetNovelHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository)
+        private readonly IUserRepository _userRepository;
+        private readonly IOpenAIService _openAIService;
+        private readonly IOpenAIRepository _openAIRepository;
+        public GetNovelHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository
+            , IUserRepository userRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
             _tagRepository = tagRepository;
+            _userRepository = userRepository;
+            _openAIRepository = openAIRepository;
+            _openAIService = openAIService;
         }
+
         public async Task<ApiResponse> Handle(GetNovel request, CancellationToken cancellationToken)
         {
-            FindCreterias findCreterias = new();
             var result = SystemHelper.ParseSearchQuerySmart(request.SearchTerm);
             var exact = result.Exact;
             var fuzzyTerms = result.FuzzyTerms;
-
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            // ----- THỬ EXACT MATCH -----
-            var findExact = new FindCreterias
+            // Exact match trước
+            var findCriteria = new FindCreterias
             {
                 Page = request.Page,
                 Limit = request.Limit,
-                SearchTerm = string.IsNullOrEmpty(exact) ? new() : new List<string> { exact },
+                SearchTerm = string.IsNullOrWhiteSpace(exact) ? new() : new List<string> { exact },
                 SearchTagTerm = request.SearchTagTerm
             };
 
-            var novel = await _novelRepository.GetAllNovelAsync(findExact, sortBy);
-
-            // ----- NẾU KHÔNG CÓ KẾT QUẢ, THỬ FUZZY MATCH -----
-            if ((novel == null || novel.Count == 0) && fuzzyTerms.Count > 0)
+            var (novels, totalCount) = await _novelRepository.GetAllNovelAsync(findCriteria, sortBy);
+            
+            // Fallback: nếu không có, thử fuzzy
+            if ((novels == null || novels.Count == 0) && fuzzyTerms.Any())
             {
-                var findFuzzy = new FindCreterias
-                {
-                    Page = request.Page,
-                    Limit = request.Limit,
-                    SearchTerm = fuzzyTerms,
-                    SearchTagTerm = request.SearchTagTerm
-                };
-
-                novel = await _novelRepository.GetAllNovelAsync(findFuzzy, sortBy);
+                findCriteria.SearchTerm = fuzzyTerms;
+                (novels, totalCount) = await _novelRepository.GetAllNovelAsync(findCriteria, sortBy);
             }
 
-            if (novel == null || novel.Count == 0)
-                return new ApiResponse { Success = false, Message = "Novel not found" };
-            var novelResponse = _mapper.Map<List<NovelResponse>>(novel);
-            var allTagIds = novel.SelectMany(n => n.tags).Distinct().ToList();
-            var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
-
-            for (int i = 0; i < novel.Count; i++)
+            if (novels == null || novels.Count == 0)
             {
-                var tags = novel[i].tags;
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "No novels found."
+                };
+            }
+
+            var novelResponse = _mapper.Map<List<NovelResponse>>(novels);
+            // Lấy thông tin tác giả và tag
+            var authorIds = novels.Select(n => n.author_id).Distinct().ToList();
+            var authors = await _userRepository.GetUsersByIdsAsync(authorIds);
+
+            var allTagIds = novels.SelectMany(n => n.tags).Distinct().ToList();
+            var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
+            var tagDict = allTags.ToDictionary(t => t.id, t => t.name);
+
+            // Xử lý embedding nếu cần
+            var novelIds = novels.Select(n => n.id).ToList();
+            var existingEmbeddingIds = await _openAIRepository.GetExistingNovelEmbeddingIdsAsync(novelIds);
+
+            var novelsToEmbed = novels.Where(n => !existingEmbeddingIds.Contains(n.id)).ToList();
+
+            // Chỉ lấy các novel có tags hợp lệ (có trong tagDict)
+            var validEmbeddingData = novelsToEmbed
+                .Select(novel =>
+                {
+                    var validTags = novel.tags
+                        .Where(tagId => tagDict.ContainsKey(tagId))
+                        .Select(tagId => tagDict[tagId])
+                        .ToList();
+
+                    return new
+                    {
+                        NovelId = novel.id,
+                        TagNames = validTags
+                    };
+                })
+                .Where(x => x.TagNames.Any()) // loại bỏ novel không có tag hợp lệ
+                .ToList();
+
+            if (validEmbeddingData.Any())
+            {
+                var embeddingIds = validEmbeddingData.Select(x => x.NovelId).ToList();
+                var tagNamesList = validEmbeddingData.Select(x => string.Join(", ", x.TagNames)).ToList();
+                var tagLists = validEmbeddingData.Select(x => x.TagNames).ToList();
+
+                var vectors = await _openAIService.GetEmbeddingAsync(tagNamesList);
+
+                await _openAIRepository.SaveListNovelEmbeddingAsync(embeddingIds, vectors, tagLists);
+            }
+
+            for (int i = 0; i < novels.Count; i++)
+            {
+                var author = authors.FirstOrDefault(a => a.id == novels[i].author_id);
+                if (author != null)
+                {
+                    novelResponse[i].AuthorName = author.displayname; // hoặc author.FullName, tùy DB bạn lưu
+                }
+
+                var tags = novels[i].tags;
                 novelResponse[i].Tags = allTags
                     .Where(t => tags.Contains(t.id))
                     .Select(t => new TagListResponse
@@ -83,11 +135,25 @@ namespace Application.Features.Novel.Queries
                     }).ToList();
             }
 
+            int totalPages = (int)Math.Ceiling((double)totalCount / request.Limit);
+
             return new ApiResponse
             {
                 Success = true,
                 Message = "Retrieved novels successfully.",
-                Data = novelResponse
+                Data = new
+                {
+                    Novels = novelResponse,
+                    TotalNovels = totalCount,
+                    TotalPages = totalPages,
+                    EmbeddingStats = new
+                    {
+                        TotalRequested = novelIds.Count,
+                        AlreadyExist = existingEmbeddingIds.Count,
+                        NewlyEmbedded = validEmbeddingData.Count,
+                        NewlyEmbeddedIds = validEmbeddingData.Select(x => x.NovelId).ToList()
+                    }
+                }
             };
         }
     }

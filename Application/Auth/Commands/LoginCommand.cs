@@ -1,9 +1,16 @@
 ﻿using Application.Exceptions;
+using Application.Features.Notification.Commands;
+using Application.Services.Interfaces;
 using AutoMapper;
+using Domain.Entities;
+using Domain.Enums;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.User;
+using Shared.Helpers;
 using Shared.SystemHelpers.TokenGenerate;
 
 namespace Application.Auth.Commands
@@ -19,12 +26,19 @@ namespace Application.Auth.Commands
         private readonly IUserRepository _userRepository;
         private readonly JwtHelpers _jwtHelpers;
         private readonly IMapper _mapper;
-
-        public LoginHandler(IUserRepository userRepository, JwtHelpers jwtHelpers, IMapper mapper)
+        private readonly INotificationRepository _notificationRepository;
+        private readonly INotificationService _notificationService;
+        private readonly ITagRepository _tagRepository;
+        public LoginHandler(IUserRepository userRepository, JwtHelpers jwtHelpers, IMapper mapper
+            , INotificationRepository notificationRepository, INotificationService notificationService
+            , ITagRepository tagRepository)
         {
             _userRepository = userRepository;
             _jwtHelpers = jwtHelpers;
             _mapper = mapper;
+            _notificationRepository = notificationRepository;
+            _notificationService = notificationService;
+            _tagRepository = tagRepository;
         }
         
         public async Task<ApiResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -40,6 +54,24 @@ namespace Application.Auth.Commands
                 throw new ApiException("Invalid userName or password.");
             }
 
+            if (user.is_banned)
+            {
+                if (TimeHelper.IsBanExpired(user.banned_until))
+                {
+                    // Ban đã hết hạn => tự động gỡ ban
+                    user.is_banned = false;
+                    user.banned_until = null;
+                    await _userRepository.UpdateLockvsUnLockUser(user.id, false, null);
+                    await _notificationService.SendNotificationToUsersAsync(new List<string> { user.id }, "Your account has been automatically unlocked after the lock period.", NotificationType.UnBanUser);
+                }               
+                else
+                {
+                    // Ban chưa hết hạn => chặn đăng nhập
+                    var bannedUntilText = TimeHelper.FromTicks(user.banned_until.Value).ToString("HH:mm dd/MM/yyyy");
+                    throw new ApiException($"This account will be banned until {bannedUntilText}.");
+                }
+            }
+
             // Kiểm tra mật khẩu
             var isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.password);
             if (!isValidPassword)
@@ -47,14 +79,21 @@ namespace Application.Auth.Commands
                 throw new ApiException("Invalid email or password.");
             }
 
-            //var token = _jwtHelpers.Generate(user);
-
             var accessToken = _jwtHelpers.Generate(user.id, user.username, user.role.ToString());
             var refreshToken = _jwtHelpers.GenerateRefreshToken(user.id);
 
-
+            List<TagEntity> tagEntities = new();
+            if (user.favourite_type != null && user.favourite_type.Any())
+            {
+                tagEntities = await _tagRepository.GetTagsByIdsAsync(user.favourite_type);
+            }
             var userResponse = _mapper.Map<UserResponse>(user);
-
+            userResponse.FavouriteType = tagEntities.Select(tag => new TagListResponse
+            {
+                TagId = tag.id,
+                Name = tag.name
+            }).ToList();
+            userResponse.LastLogin = TimeHelper.NowVN.Ticks;
             return new ApiResponse
             {
                 Success = true,

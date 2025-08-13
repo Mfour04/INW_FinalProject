@@ -1,6 +1,6 @@
 using Domain.Entities.System;
 using System.Globalization;
-using System.Net.NetworkInformation;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Shared.Helpers
@@ -68,7 +68,7 @@ namespace Shared.Helpers
                     Field = parts[0].Trim(),
                     IsDescending = parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase),
                 })
-                .ToList();  
+                .ToList();
         }
 
         public static List<string> ParseTagNames(string? raw)
@@ -81,6 +81,31 @@ namespace Shared.Helpers
                 .Select(tag => tag.Trim())
                 .Where(tag => !string.IsNullOrWhiteSpace(tag))
                 .ToList();
+        }
+
+        public static string ComputeSha256(string raw)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(raw));
+            return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+        }
+
+        public static double CalculateCosineSimilarity(List<float> vectorA, List<float> vectorB)
+        {
+            if (vectorA.Count != vectorB.Count) throw new InvalidOperationException("Vectors must be the same length");
+
+            double dot = 0.0, magA = 0.0, magB = 0.0;
+
+            for (int i = 0; i < vectorA.Count; i++)
+            {
+                dot += vectorA[i] * vectorB[i];
+                magA += vectorA[i] * vectorA[i];
+                magB += vectorB[i] * vectorB[i];
+            }
+
+            if (magA == 0 || magB == 0) return 0.0;
+
+            return dot / (Math.Sqrt(magA) * Math.Sqrt(magB));
         }
     }
 }

@@ -8,8 +8,8 @@ namespace Application.Features.Forum.Commands
 {
     public class LikePostCommand : IRequest<ApiResponse>
     {
-        public string? PostId { get; set; }
-        public string? UserId { get; set; }
+        public string PostId { get; set; }
+        public string UserId { get; set; }
     }
 
     public class LikePostCommandHandler : IRequestHandler<LikePostCommand, ApiResponse>
@@ -43,16 +43,16 @@ namespace Application.Features.Forum.Commands
                 id = SystemHelper.RandomId(),
                 post_id = request.PostId,
                 user_id = request.UserId,
-                like_at = DateTime.Now.Ticks
+                like_at = TimeHelper.NowTicks
             };
 
             await _postLikeRepo.LikePostAsync(like);
+            await _postRepo.IncrementLikesAsync(request.PostId);
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Like successfully.",
-                Data = like
             };
         }
 

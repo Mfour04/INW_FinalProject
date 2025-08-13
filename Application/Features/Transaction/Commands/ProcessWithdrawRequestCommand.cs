@@ -1,0 +1,110 @@
+using Domain.Entities;
+using Domain.Enums;
+using Infrastructure.Repositories.Interfaces;
+using MediatR;
+using Shared.Contracts.Response;
+using Shared.Helpers;
+
+namespace Application.Features.Transaction.Commands
+{
+    public class ProcessWithdrawRequestCommand : IRequest<ApiResponse>
+    {
+        public string? TransactionId { get; set; }
+        public string? ApproverId { get; set; }
+        public bool IsApproved { get; set; }
+        public string? Message { get; set; }
+    }
+
+    public class ProcessWithdrawRequestCommandCommandHandler : IRequestHandler<ProcessWithdrawRequestCommand, ApiResponse>
+    {
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly ITransactionLogRepository _logRepository;
+        private readonly IUserRepository _userRepository;
+
+        public ProcessWithdrawRequestCommandCommandHandler(
+            ITransactionRepository transactionRepository,
+            IUserRepository userRepository,
+            ITransactionLogRepository logRepository)
+        {
+            _transactionRepository = transactionRepository;
+            _userRepository = userRepository;
+            _logRepository = logRepository;
+        }
+
+        public async Task<ApiResponse> Handle(ProcessWithdrawRequestCommand request, CancellationToken cancellationToken)
+        {
+            var transaction = await _transactionRepository.GetByIdAsync(request.TransactionId);
+
+            if (transaction == null)
+                return Fail("Transaction not found.");
+
+            if (transaction.type != PaymentType.WithdrawCoin)
+                return Fail("Not a withdraw transaction.");
+
+            if (transaction.status != PaymentStatus.Pending)
+                return Fail("Transaction already processed.");
+
+            var user = await _userRepository.GetById(transaction.requester_id);
+
+            if (!request.IsApproved && string.IsNullOrWhiteSpace(request.Message))
+                return Fail("Rejection reason is required.");
+
+            if (request.IsApproved)
+            {
+                // admin approve
+                user.coin -= transaction.amount;
+                user.block_coin -= transaction.amount;
+
+                TransactionEntity updated = new()
+                {
+                    status = PaymentStatus.Completed,
+                    completed_at = TimeHelper.NowTicks,
+                };
+
+                await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
+                await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
+            }
+            else
+            {
+                // admin deny
+                user.block_coin -= transaction.amount;
+
+                TransactionEntity updated = new()
+                {
+                    status = PaymentStatus.Rejected,
+                    updated_at = TimeHelper.NowTicks,
+                };
+
+                await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
+                await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
+            }
+
+            TransactionLogEntity log = new()
+            {
+                id = SystemHelper.RandomId(),
+                transaction_id = transaction.id,
+                action_by_id = request.ApproverId,
+                action_type = request.IsApproved ? "approve" : "reject",
+                message = request.IsApproved ? "Approved by admin." : request.Message,
+                created_at = TimeHelper.NowTicks
+            };
+
+            await _logRepository.AddAsync(log);
+
+            return new ApiResponse
+            {
+                Success = true,
+                Message = request.IsApproved
+                ? "Withdraw approved and coin deducted successfully."
+                : "Withdraw denied and coin unblocked successfully.",
+                Data = transaction
+            };
+        }
+
+        private ApiResponse Fail(string message) => new()
+        {
+            Success = false,
+            Message = message
+        };
+    }
+}

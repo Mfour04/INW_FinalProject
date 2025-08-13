@@ -6,6 +6,6 @@ namespace Domain.Enums
         Completed,
         Cancelled,
         Failed,
-        Refunded
+        Rejected
     }
 }

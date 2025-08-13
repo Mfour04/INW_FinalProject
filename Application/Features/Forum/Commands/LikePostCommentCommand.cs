@@ -9,8 +9,8 @@ namespace Application.Features.Forum.Commands
 {
     public class LikePostCommentCommand : IRequest<ApiResponse>
     {
-        public string? CommentId { get; set; }
-        public string? UserId { get; set; }
+        public string CommentId { get; set; }
+        public string UserId { get; set; }
     }
 
     public class LikePostCommentCommandHandler : IRequestHandler<LikePostCommentCommand, ApiResponse>
@@ -45,7 +45,7 @@ namespace Application.Features.Forum.Commands
                 comment_id = request.CommentId,
                 user_id = request.UserId,
                 type = CommentType.Forum,
-                like_at = DateTime.Now.Ticks
+                like_at = TimeHelper.NowTicks
             };
 
             await _commentLikeRepo.LikeCommentAsync(like);
@@ -54,7 +54,6 @@ namespace Application.Features.Forum.Commands
             {
                 Success = true,
                 Message = "Like successfully.",
-                Data = like
             };
         }
 

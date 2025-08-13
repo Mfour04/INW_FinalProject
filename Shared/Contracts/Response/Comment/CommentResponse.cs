@@ -1,24 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Shared.Contracts.Response.Comment
+﻿namespace Shared.Contracts.Response.Comment
 {
-    public class CommentResponse
+    public abstract class BaseCommentResponse
     {
         public string Id { get; set; }
-        public string UserId { get; set; }
+        public UserInfo Author { get; set; }
         public string NovelId { get; set; }
         public string ChapterId { get; set; }
         public string Content { get; set; }
-        public string ParentCommentId { get; set; }
-        public int LikeCount { get; set; }
         public long CreatedAt { get; set; }
-        public long UpdatedAt { get; set; }
 
-        public string UserName { get; set; } 
-        public List<CommentResponse> Replies { get; set; } = new List<CommentResponse>(); 
+        public class UserInfo
+        {
+            public string Id { get; set; }
+            public string Username { get; set; }
+            public string DisplayName { get; set; }
+            public string Avatar { get; set; }
+        }
+    }
+
+    public class CommentResponse : BaseCommentResponse
+    {
+        public long UpdatedAt { get; set; }
+        public int LikeCount { get; set; }
+        public int ReplyCount { get; set; }
+    }
+
+    public class CommentReplyResponse : BaseCommentResponse
+    {
+        public long UpdatedAt { get; set; }
+        public int LikeCount { get; set; }
+        public string ParentCommentId { get; set; }
+    }
+
+    public class CommentCreatedResponse : BaseCommentResponse
+    {
+        public string ParentCommentId { get; set; }
+        public SignalRResult SignalR { get; set; }
+
+        public class SignalRResult
+        {
+            public bool Sent { get; set; }
+            public string NotificationType { get; set; }
+        }
     }
 }

@@ -1,8 +1,9 @@
 ﻿using Domain.Entities;
+using Domain.Entities.System;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
+using MongoDB.Bson;
 using MongoDB.Driver;
-using Org.BouncyCastle.Crypto;
 using Shared.Exceptions;
 
 namespace Infrastructure.Repositories.Implements
@@ -68,7 +69,29 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<IEnumerable<NovelFollowerEntity>> GetByNovelIdAsync(string novelId)
+        public async Task<(List<NovelFollowerEntity> NovelFollows, int TotalCount)> GetFollowedNovelsByUserIdAsync(string userId, FindCreterias findCreterias)
+        {
+            try
+            {
+                var filter = Builders<NovelFollowerEntity>.Filter.Eq(x => x.user_id, userId);
+
+                var totalCount = await _collection.CountDocumentsAsync(filter);
+
+                var follows = await _collection.Find(filter)
+                    .Skip(findCreterias.Page * findCreterias.Limit)
+                    .Limit(findCreterias.Limit)
+                    .ToListAsync();
+
+                return (follows, (int)totalCount);
+            }
+            catch (Exception ex)
+            {
+                throw new InternalServerException("Failed to retrieve followed novels");
+            }
+        }
+
+
+        public async Task<List<NovelFollowerEntity>> GetFollowersByNovelIdAsync(string novelId)
         {
             try
             {
@@ -78,6 +101,21 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task<NovelFollowerEntity?> GetByUserAndNovelIdAsync(string userId, string novelId)
+        {
+            try
+            {
+                return await _collection
+                .Find(x => x.user_id == userId && x.novel_id == novelId)
+                .FirstOrDefaultAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+            
         }
 
         public async Task<NovelFollowerEntity> UpdateNovelFollowAsync(NovelFollowerEntity entity)

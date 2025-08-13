@@ -1,6 +1,8 @@
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
+using Shared.Helpers;
 
 namespace Application.Features.Transaction.Commands
 {
@@ -28,13 +30,17 @@ namespace Application.Features.Transaction.Commands
             if (transaction == null || transaction.status == PaymentStatus.Completed)
                 return;
 
-            transaction.completed_at = DateTime.Now.Ticks;
+            TransactionEntity updated = new()
+            {
+                status = PaymentStatus.Completed,
+                completed_at = TimeHelper.NowTicks,
+            };
 
-            await _transactionRepo.UpdateStatusAsync(transaction.id, PaymentStatus.Completed);
+            await _transactionRepo.UpdateStatusAsync(transaction.id, updated);
 
             if (transaction.type == PaymentType.TopUp)
             {
-                await _userRepo.IncreaseCoinAsync(transaction.user_id, transaction.amount);
+                await _userRepo.IncreaseCoinAsync(transaction.requester_id, transaction.amount);
             }
         }
     }

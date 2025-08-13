@@ -1,4 +1,5 @@
 using AutoMapper;
+using Domain.Entities;
 using Domain.Entities.System;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -34,6 +35,9 @@ namespace Application.Features.Forum.Queries
 
         public async Task<ApiResponse> Handle(GetPostComments request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(request.PostId))
+                return new ApiResponse { Success = false, Message = "PostId is required." };
+
             FindCreterias findCreterias = new()
             {
                 Limit = request.Limit,
@@ -42,41 +46,44 @@ namespace Application.Features.Forum.Queries
 
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            var postCommentList = await _postCommentRepo.GetAllByPostIdAsync(request.PostId, findCreterias, sortBy);
+            var commentList = await _postCommentRepo.GetRootCommentsByPostIdAsync(request.PostId, findCreterias, sortBy);
 
-            if (postCommentList == null || postCommentList.Count == 0)
+            if (commentList == null || commentList.Count == 0)
             {
                 return new ApiResponse
                 {
-                    Success = false,
-                    Message = "No forum post comments found."
+                    Success = true,
+                    Message = "No Post's comments found.",
                 };
             }
 
-            var response = new List<PostCommentResponse>();
+            var userIds = commentList.Select(c => c.user_id).Distinct().ToList();
+            var users = await _userRepo.GetUsersByIdsAsync(userIds);
+            var userDict = users.ToDictionary(u => u.id);
 
-            foreach (var comment in postCommentList)
+            var response = new List<PostRootCommentResponse>();
+
+            foreach (var comment in commentList)
             {
-                var mapped = _mapper.Map<PostCommentResponse>(comment);
+                var mapped = _mapper.Map<PostRootCommentResponse>(comment);
 
-                var user = await _userRepo.GetById(comment.user_id);
-                if (user != null)
+                if (userDict.TryGetValue(comment.user_id, out var user))
                 {
-                    mapped.Author = new ForumPostCommentAuthorResponse
+                    mapped.Author = new BasePostCommentResponse.PostCommentAuthorResponse
                     {
                         Id = user.id,
                         Username = user.username,
+                        DisplayName = user.displayname,
                         Avatar = user.avata_url
                     };
                 }
-
                 response.Add(mapped);
             }
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Retrieved forum post comments successfully.",
+                Message = "Retrieved comments successfully.",
                 Data = response
             };
         }

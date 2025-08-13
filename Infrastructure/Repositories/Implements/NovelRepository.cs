@@ -4,8 +4,10 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Shared.Contracts.Response.Admin;
 using Shared.Exceptions;
-using ZstdSharp.Unsafe;
+using Shared.Helpers;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -56,7 +58,7 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<List<NovelEntity>> GetAllNovelAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
+        public async Task<(List<NovelEntity> Novels, int TotalCount)> GetAllNovelAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
         {
             try
             {
@@ -97,7 +99,7 @@ namespace Infrastructure.Repositories.Implements
                     else
                     {
                         // Không có tag phù hợp → trả về rỗng
-                        return new List<NovelEntity>();
+                        return (new List<NovelEntity>(), 0);
                     }
                 }
 
@@ -108,7 +110,7 @@ namespace Infrastructure.Repositories.Implements
 
                 var sortBuilder = Builders<NovelEntity>.Sort;
                 var sortDefinitions = new List<SortDefinition<NovelEntity>>();
-
+                var totalCount = await _collection.CountDocumentsAsync(filtered);
                 foreach (var criterion in sortCreterias)
                 {
                     SortDefinition<NovelEntity>? sortDef = criterion.Field switch
@@ -136,8 +138,8 @@ namespace Infrastructure.Repositories.Implements
                     var combinedSort = sortBuilder.Combine(sortDefinitions);
                     query = query.Sort(combinedSort);
                 }
-
-                return await query.ToListAsync();
+                var novels = await query.ToListAsync();
+                return (novels, (int)totalCount);
             }
             catch
             {
@@ -150,6 +152,19 @@ namespace Infrastructure.Repositories.Implements
             try
             {
                 var result = await _collection.Find(x => x.id == novelId).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<NovelEntity> GetBySlugAsync(string slugName)
+        {
+            try
+            {
+                var result = await _collection.Find(x => x.slug == slugName.Trim()).FirstOrDefaultAsync();
                 return result;
             }
             catch
@@ -173,7 +188,7 @@ namespace Infrastructure.Repositories.Implements
 
         public async Task<NovelEntity> UpdateNovelAsync(NovelEntity entity)
         {
-           try
+            try
             {
                 var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, entity.id);
                 var result = await _collection.ReplaceOneAsync(filter, entity);
@@ -190,7 +205,7 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                int totalChapters = await _chapterRepository.GetTotalPublicChaptersAsync(novelId);
+                int totalChapters = await _chapterRepository.CountPublishedAsync(novelId);
 
                 var update = Builders<NovelEntity>.Update.Set(n => n.total_chapters, totalChapters);
                 await _collection.UpdateOneAsync(
@@ -223,13 +238,142 @@ namespace Infrastructure.Repositories.Implements
                 var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
                 var updateLock = Builders<NovelEntity>.Update.Combine(
                                  Builders<NovelEntity>.Update.Set(x => x.is_lock, isLocked),
-                                 Builders<NovelEntity>.Update.Set(x => x.is_public, false));
+                                 Builders<NovelEntity>.Update.Set(x => x.is_public, !isLocked));
                 await _collection.UpdateOneAsync(filter, updateLock);
             }
             catch
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task<bool> IncrementCommentsAsync(string novelId)
+        {
+            try
+            {
+                var update = Builders<NovelEntity>.Update.Inc(x => x.comment_count, 1);
+                var result = await _collection.UpdateOneAsync(x => x.id == novelId, update);
+
+                return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> DecrementCommentsAsync(string novelId, int count = 1)
+        {
+            try
+            {
+                var update = Builders<NovelEntity>.Update.Inc(x => x.comment_count, -count);
+                var result = await _collection.UpdateOneAsync(x => x.id == novelId, update);
+
+                return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task UpdateRatingStatsAsync(string novelId, double avg, int count)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(n => n.id, novelId);
+                var update = Builders<NovelEntity>.Update
+                    .Set(n => n.rating_avg, avg)
+                    .Set(n => n.rating_count, count);
+
+                var result = await _collection.UpdateOneAsync(filter, update);
+
+                return;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task UpdateHideNovelAsync(string novelId, bool isPublic)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
+                var updatehide = Builders<NovelEntity>.Update.Set(x => x.is_public, isPublic);
+                await _collection.UpdateOneAsync(filter, updatehide);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> IsSlugExistsAsync(string slug, string? excludeId = null)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(n => n.slug, slug);
+                if (!string.IsNullOrEmpty(excludeId))
+                {
+                    filter &= Builders<NovelEntity>.Filter.Ne(n => n.id, excludeId);
+                }
+
+                var result = await _collection.Find(filter).AnyAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<NovelEntity>> GetManyByIdsAsync(List<string> ids)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.In(x => x.id, ids);
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<int> CountAsync(Expression<Func<NovelEntity, bool>> filter = null)
+        {
+            return (int)(filter == null
+            ? await _collection.CountDocumentsAsync(_ => true)
+            : await _collection.CountDocumentsAsync(filter));
+        }
+
+        public async Task<List<WeeklyStatItem>> CountNovelsPerDayCurrentWeekAsync()
+        {
+            var fromTicks = TimeHelper.StartOfCurrentWeekTicksVN;
+            var toTicks = TimeHelper.NowTicks;
+
+            var novels = await _collection
+                .Find(n => n.created_at >= fromTicks && n.created_at <= toTicks)
+                .ToListAsync();
+
+            // Nhóm theo ngày (VN timezone)
+            var grouped = novels
+                .GroupBy(n => TimeHelper.ToVN(new DateTime(n.created_at)).Date)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // Danh sách các ngày từ thứ 2 đến hôm nay
+            var days = TimeHelper.GetDaysFromStartOfWeekToTodayVN();
+
+            var result = days.Select(d => new WeeklyStatItem
+            {
+                Day = d.ToString("yyyy-MM-dd"),
+                Count = grouped.ContainsKey(d) ? grouped[d] : 0,
+                Weekday = TimeHelper.DayOfWeekVN(d.DayOfWeek)
+            }).ToList();
+
+            return result;
         }
     }
 }

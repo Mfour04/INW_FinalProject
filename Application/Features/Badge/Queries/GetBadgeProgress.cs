@@ -6,7 +6,7 @@ namespace Application.Features.Badge.Queries
 {
     public class GetBadgeProgress : IRequest<ApiResponse>
     {
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
     }
 
     public class GetBadgeProgressHandler : IRequestHandler<GetBadgeProgress, ApiResponse>
@@ -30,7 +30,7 @@ namespace Application.Features.Badge.Queries
                     Message = "No badge progress found for the user."
                 };
             }
-            
+
             return new ApiResponse
             {
                 Success = true,
