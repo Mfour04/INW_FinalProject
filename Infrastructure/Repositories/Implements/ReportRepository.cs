@@ -4,7 +4,9 @@ using Domain.Enums;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
+using Org.BouncyCastle.Crypto;
 using Shared.Exceptions;
+using Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -291,14 +293,45 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<List<ReportEntity>> GetManyByIdsAsync(List<string> ids)
+        {
+            try
+            {
+                var filter = Builders<ReportEntity>.Filter.In(r => r.id, ids);
+                var result = await _collection.Find(filter).ToListAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task<ReportEntity> UpdateAsync(ReportEntity report)
         {
             try
             {
-                report.updated_at = DateTime.UtcNow.Ticks;
+                report.updated_at = TimeHelper.NowTicks;
                 var filter = Builders<ReportEntity>.Filter.Eq(r => r.id, report.id);
                 var result = await _collection.ReplaceOneAsync(filter, report);
                 return report;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<List<ReportEntity>> UpdateManyAsync(List<string> ids, ReportStatus newStatus)
+        {
+            try
+            {
+                var filter = Builders<ReportEntity>.Filter.In(r => r.id, ids); 
+                var update = Builders<ReportEntity>.Update
+                    .Set(r => r.status, newStatus) 
+                    .Set(r => r.updated_at, TimeHelper.NowTicks);
+                await _collection.UpdateManyAsync(filter, update);
+                return await _collection.Find(filter).ToListAsync();
             }
             catch
             {
