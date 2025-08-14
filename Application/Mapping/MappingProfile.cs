@@ -65,6 +65,8 @@ namespace Application.Mapping
                 .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.comment_count))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
                 .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
+                .ForMember(dest => dest.RatingCount, opt => opt.MapFrom(src => src.rating_count))
+                .ForMember(dest => dest.RatingAvg, opt => opt.MapFrom(src => src.rating_avg))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price))
                 .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => src.created_at))

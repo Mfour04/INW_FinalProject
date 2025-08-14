@@ -60,6 +60,7 @@ namespace Application.Features.Chapter.Queries
             //        {
             //            chapter_id = chapter.id,
             //            vector_chapter_content = embedding[0],
+            //            chapter_content = chapter.content,
             //            updated_at = TimeHelper.NowTicks
             //        };
             //        await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);

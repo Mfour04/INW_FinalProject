@@ -7,5 +7,6 @@ namespace Application.Services.Interfaces
         //Task<List<float>> GetEmbeddingAsync(List<string> tags);
         Task<List<List<float>>> GetEmbeddingAsync(List<string> inputs);
         Task<ModerationResult> CheckModerationAsync(string input);
+        Task<string> SummarizeContentAsync(string content);
     }
 }

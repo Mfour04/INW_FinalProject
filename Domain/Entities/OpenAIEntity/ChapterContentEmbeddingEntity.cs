@@ -13,6 +13,7 @@ namespace Domain.Entities.OpenAIEntity
         [BsonElement("_id")]
         public string chapter_id { get; set; }
         public List<float> vector_chapter_content { get; set; }
+        public string chapter_content { get; set; }
         public long updated_at { get; set; }
     }
 }

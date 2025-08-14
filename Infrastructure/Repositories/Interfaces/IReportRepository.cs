@@ -1,6 +1,7 @@
 ﻿using Domain.Entities;
 using Domain.Entities.System;
 using Domain.Enums;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace Infrastructure.Repositories.Interfaces
     {
         Task<ReportEntity> CreateAsync(ReportEntity report);
         Task<ReportEntity> GetByIdAsync(string id);
+        Task<List<ReportEntity>> GetManyByIdsAsync(List<string> ids);
         Task<List<ReportEntity>> GetAllAsync(FindCreterias findCreterias);
         Task<List<ReportEntity>> GetByUserIdAsync(FindCreterias findCreterias, string userId);
         Task<List<ReportEntity>> GetByMemberIdAsync(FindCreterias findCreterias, string memberId);
@@ -24,6 +26,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<List<ReportEntity>> GetByForumPostIdAsync(FindCreterias findCreterias, string forumPostId);
         Task<List<ReportEntity>> GetByForumCommentIdAsync(FindCreterias findCreterias, string forumCommentId);
         Task<ReportEntity> UpdateAsync(ReportEntity report);
+        Task<List<ReportEntity>> UpdateManyAsync(List<string> ids, ReportStatus newStatus);
         Task<bool> DeleteAsync(string id);
         Task<bool> ExistsAsync(string userId, ReportTypeStatus type, string targetId);
     }
