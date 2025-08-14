@@ -3,6 +3,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +65,7 @@ namespace Infrastructure.Repositories.Implements
 
         public async Task DeleteOldReadNotificationsAsync()
         {
-            var cutoff = DateTime.UtcNow.AddDays(-30).Ticks;
+            var cutoff = TimeHelper.NowVN.AddDays(-30).Ticks; ;
             var filter = Builders<NotificationEntity>.Filter.And(
                 Builders<NotificationEntity>.Filter.Eq(x => x.is_read, true),
                 Builders<NotificationEntity>.Filter.Lt(x => x.created_at, cutoff)

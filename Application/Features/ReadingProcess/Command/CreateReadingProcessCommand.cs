@@ -76,7 +76,7 @@ namespace Application.Features.ReadingProcess.Command
             if (existingReadingProcess != null)
             {
                 existingReadingProcess.chapter_id = request.ChapterId;
-                existingReadingProcess.updated_at = DateTime.UtcNow.Ticks;
+                existingReadingProcess.updated_at = TimeHelper.NowTicks;
 
                 var updatedReadingProcess = await _readingProcessRepository.UpdateAsync(existingReadingProcess);
                 var updatedResponse = _mapper.Map<ReadingProcessResponse>(updatedReadingProcess);
@@ -95,8 +95,8 @@ namespace Application.Features.ReadingProcess.Command
                     user_id = request.UserId,
                     novel_id = request.NovelId,
                     chapter_id = request.ChapterId,
-                    created_at = DateTime.UtcNow.Ticks,
-                    updated_at = DateTime.UtcNow.Ticks
+                    created_at = TimeHelper.NowTicks,
+                    updated_at = TimeHelper.NowTicks
                 };
                 await _readingProcessRepository.CreateAsync(newReadingProcess);
                 var createResponse = _mapper.Map<ReadingProcessResponse>(newReadingProcess);
