@@ -36,7 +36,7 @@ namespace Application.Features.OpenAI.Commands
                 };
             }
 
-            float SimilarityThreshold = 0.6f;
+            float SimilarityThreshold = 0.8f;
             int WordsPerChunk = 50;
 
             var embeddings = await _openAIRepository.GetAllChapterContentEmbedding();
