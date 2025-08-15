@@ -5,6 +5,7 @@ using Application.Features.User.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
 using Shared.Contracts.Response.User;
 using Shared.Helpers;
 using Shared.SystemHelpers.TokenGenerate;
@@ -19,6 +20,7 @@ namespace WebApi.Controllers
     {
         private readonly IMediator _mediator;
         private readonly JwtHelpers _jwtHelpers;
+        
         public UsersController(IMediator mediator, JwtHelpers jwtHelpers)
         {
             _mediator = mediator;
@@ -61,7 +63,6 @@ namespace WebApi.Controllers
                     Expires = DateTime.UtcNow.AddHours(1)
                 });
             }
-
 
             return Ok(new
             {
@@ -133,7 +134,6 @@ namespace WebApi.Controllers
             return Ok(result.Data);
         }
 
-
         // Đăng xuất người dùng
         [HttpPost("logout")]
         public IActionResult Logout()
@@ -170,6 +170,21 @@ namespace WebApi.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateUserProfileCommand command)
         {
+            
+            foreach (var header in Request.Headers)
+            {
+                Console.WriteLine($"  {header.Key}: {header.Value}");
+            }
+            
+            Console.WriteLine($"📋 Form data received:");
+            if (Request.Form != null)
+            {
+                foreach (var formField in Request.Form)
+                {
+                    Console.WriteLine($"  {formField.Key}: {formField.Value}");
+                }
+            }
+            
             // Add this validation
             if (!ModelState.IsValid)
             {
@@ -180,6 +195,10 @@ namespace WebApi.Controllers
                         kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
                     );
 
+                foreach (var error in errors)
+                {
+                    Console.WriteLine($"  {error.Key}: {string.Join(", ", error.Value)}");
+                }
                 return BadRequest(new
                 {
                     message = "Validation failed",
@@ -188,14 +207,95 @@ namespace WebApi.Controllers
             }
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            Console.WriteLine($"🔑 UserId from token: {userId}");
 
             if (string.IsNullOrEmpty(userId))
             {
+                Console.WriteLine($"❌ Invalid token - no userId found");
                 return Unauthorized(new { message = "Invalid token" });
             }
+            
             command.UserId = userId;
-            var result = await _mediator.Send(command);
-            return Ok(result);
+            
+            try
+            {
+                var result = await _mediator.Send(command);
+                
+                if (result.Success)
+                {
+                    try
+                    {
+                        // Lấy dữ liệu user đã cập nhật từ database
+                        var updatedUser = await _mediator.Send(new GetUserById 
+                        { 
+                            UserId = userId,
+                            CurrentUserId = userId 
+                        });
+                        
+                        if (updatedUser.Success && updatedUser.Data != null)
+                        {
+                            // ✅ CAST VỀ ĐÚNG TYPE UserResponse
+                            var userData = updatedUser.Data as UserResponse;
+                            if (userData != null)
+                            {
+
+                                var finalResponse = new ApiResponse
+                                {
+                                    Success = true,
+                                    Message = "Profile updated successfully.",
+                                    Data = userData
+                                };
+                                
+                                return Ok(finalResponse);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"❌ Failed to cast updatedUser.Data to UserResponse. Data type: {updatedUser.Data?.GetType()?.Name}");
+                                // ❌ KHÔNG FALLBACK - TRẢ VỀ LỖI
+                                return StatusCode(500, new ApiResponse
+                                {
+                                    Success = false,
+                                    Message = "Failed to cast user data to UserResponse"
+                                });
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"❌ Failed to retrieve updated user data. Success: {updatedUser.Success}, Data: {updatedUser.Data != null}");
+                            // ❌ KHÔNG FALLBACK - TRẢ VỀ LỖI
+                            return StatusCode(500, new ApiResponse
+                            {
+                                Success = false,
+                                Message = "Failed to retrieve updated user data from database"
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Exception occurred while retrieving updated user data: {ex.Message}");
+                        // ❌ KHÔNG FALLBACK - TRẢ VỀ LỖI
+                        return StatusCode(500, new ApiResponse
+                        {
+                            Success = false,
+                            Message = $"Exception occurred: {ex.Message}"
+                        });
+                    }
+                }
+                
+                // ❌ Nếu UpdateUserProfileCommand thất bại, trả về lỗi
+                Console.WriteLine($"❌ UpdateUserProfileCommand failed - returning BadRequest");
+                return BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 Exception occurred in UpdateUserProfile endpoint: {ex.Message}");
+                Console.WriteLine($"💥 Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Internal server error: {ex.Message}"
+                });
+            }
         }
 
         [HttpPost("forgot-password")]

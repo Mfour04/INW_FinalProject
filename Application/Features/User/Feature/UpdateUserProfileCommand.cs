@@ -25,7 +25,7 @@ namespace Application.Features.User.Feature
         [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
         public string Bio { get; set; }
 
-        public IFormFile? AvataUrl { get; set; }
+        public IFormFile? AvatarUrl { get; set; }
         public IFormFile? CoverUrl { get; set; }
         public List<string> BadgeId { get; set; } = new();
         public List<string>? FavouriteType { get; set; } = new();
@@ -53,7 +53,9 @@ namespace Application.Features.User.Feature
         {
             var user = await _userRepository.GetById(request.UserId);
             if(user == null)
+            {
                 return new ApiResponse { Success = false, Message = "User not found." };
+            }
             var oldFavouriteTypes = user.favourite_type ?? new List<string>();
             user.displayname = request.DisplayName;
             user.displayname_unsigned = SystemHelper.RemoveDiacritics(request.DisplayName);
@@ -63,16 +65,21 @@ namespace Application.Features.User.Feature
             user.badge_id = request.BadgeId;
             user.favourite_type = request.FavouriteType;
 
-            if (request.AvataUrl != null)
+            if (request.AvatarUrl != null)
             {
-                var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvataUrl, CloudFolders.Users);
-                user.avata_url = imageAUrl;
+                var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvatarUrl, CloudFolders.Users);
+                user.avata_url = imageAUrl; // ✅ Sử dụng đúng field name từ database: avata_url
             }
 
             if (request.CoverUrl != null)
             {
                 var coverUrl = await _cloudDinaryService.UploadImagesAsync(request.CoverUrl, CloudFolders.Users);
                 user.cover_url = coverUrl;
+                Console.WriteLine($"✅ Cover image uploaded successfully: {coverUrl}");
+            }
+            else
+            {
+                Console.WriteLine($"ℹ️ No cover image provided for user {request.UserId}");
             }
 
             if (user.favourite_type != null && user.favourite_type.Any())
@@ -98,7 +105,16 @@ namespace Application.Features.User.Feature
                 }
             }
 
-            await _userRepository.UpdateUser(user);
+            var updateResult = await _userRepository.UpdateUser(user);
+            if (updateResult == null)
+            {
+                Console.WriteLine($"❌ Failed to update user profile in database for UserId: {request.UserId}");
+                return new ApiResponse 
+                { 
+                    Success = false, 
+                    Message = "Failed to update user profile in database." 
+                };
+            }
 
             List<TagEntity> tagEntities = new();
             if (user.favourite_type != null && user.favourite_type.Any())
@@ -106,20 +122,24 @@ namespace Application.Features.User.Feature
                 tagEntities = await _tagRepository.GetTagsByIdsAsync(user.favourite_type);
             }
           
-            var response = _mapper.Map<UpdateUserProfileReponse>(user);
-
-            response.FavouriteType = tagEntities.Select(tag => new TagListResponse
+            var response = new UpdateUserProfileReponse
             {
-                TagId = tag.id,
-                Name = tag.name
-            }).ToList();
+                UserId = user.id,
+                DisplayName = user.displayname,
+                Bio = user.bio,
+                AvatarUrl = user.avata_url, // ✅ Sử dụng đúng field name từ database: avata_url
+                CoverUrl = user.cover_url
+            };
 
-            return new ApiResponse 
+
+            var apiResponse = new ApiResponse 
             { 
                 Success = true, 
-                Message = "Profile updated successfully.",
-                Data = response
+                Message = "User profile updated successfully.", 
+                Data = response 
             };
+            
+            return apiResponse;
         }
     }
 }

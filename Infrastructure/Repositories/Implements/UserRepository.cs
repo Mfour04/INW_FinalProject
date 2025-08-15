@@ -50,8 +50,18 @@ namespace Infrastructure.Repositories.Implements
             try
             {
                 var filter = Builders<UserEntity>.Filter.Eq(x => x.id, entity.id);
-                await _collection.ReplaceOneAsync(filter, entity);
-                return entity;
+                var result = await _collection.ReplaceOneAsync(filter, entity);
+                
+                // ✅ KIỂM TRA UPDATE CÓ THÀNH CÔNG KHÔNG
+                if (result.IsAcknowledged && result.ModifiedCount > 0)
+                {
+                    return entity;
+                }
+                else
+                {
+                    // Update không thành công
+                    return null;
+                }
             }
             catch
             {

@@ -2,6 +2,8 @@ using Application.Services.Implements;
 using Application.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using MediatR;
+using System.Reflection;
 
 namespace Application
 {

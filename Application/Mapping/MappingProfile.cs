@@ -40,16 +40,15 @@ namespace Application.Mapping
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
                 .ForMember(dest => dest.LastLogin, opt => opt.MapFrom(src => src.last_login))
                 .ForMember(dest => dest.FavouriteType, opt => opt.Ignore())
-                .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => src.created_at))
-                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => src.updated_at));
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
 
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.AvataUrl, opt => opt.MapFrom(src => src.avata_url))
-                .ForMember(dest => dest.CoverUrl, opt => opt.MapFrom(src => src.cover_url))
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.displayname))
-                .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
-                .ForMember(dest => dest.FavouriteType, opt => opt.Ignore());
+                .ForMember(dest => dest.Bio, opt => opt.MapFrom(src => src.bio))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.avata_url)) // ✅ Sử dụng đúng field name từ database: avata_url
+                .ForMember(dest => dest.CoverUrl, opt => opt.MapFrom(src => src.cover_url));
             //Novel
             CreateMap<NovelEntity, NovelResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.id))
@@ -228,7 +227,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.follow.novel_id))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.follow.username))
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.user.displayname))
-                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.user.avata_url))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.user.avata_url)) // ✅ Sử dụng đúng field name từ database: avata_url
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
 
             CreateMap<(NovelFollowerEntity follow, UserEntity user), NovelFollowerUserInfoResponse>()
@@ -236,7 +235,7 @@ namespace Application.Mapping
                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user.id))
                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.user.username))
                .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.user.displayname))
-               .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.user.avata_url))
+               .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.user.avata_url)) // ✅ Sử dụng đúng field name từ database: avata_url
                .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
 
             // 2. Map từ NovelFollowerEntity + NovelEntity + UserEntity → UserFollowingNovelInfoResponse
