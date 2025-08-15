@@ -37,6 +37,14 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpPut("updated")]
+        [Authorize]
+        public async Task<IActionResult> UpdateNovelFollow([FromBody] UpdateNovelFollowCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
         [HttpGet("novel/{novelId}")]
         public async Task<IActionResult> GetByNovelId(string novelId)
         {
