@@ -115,7 +115,7 @@ namespace Application.Features.Chapter.Queries
         private async Task HandleNovelViewAsync(string userId, string novelId)
         {
             var tracking = await _viewTrackingRepository.FindByUserAndNovelAsync(userId, novelId);
-            var today = TimeHelper.NowTicks;
+            var today = TimeHelper.StartOfTodayTicksVN;
             if (tracking == null)
             {
                 var newTracking = new NovelViewTrackingEntity
@@ -131,7 +131,7 @@ namespace Application.Features.Chapter.Queries
             }
             else
             {
-                var lastViewDate = new DateTime(tracking.updated_at).Date;
+                var lastViewDate = tracking.updated_at;
                 if (lastViewDate < today)
                 {
                     tracking.updated_at = TimeHelper.NowTicks;

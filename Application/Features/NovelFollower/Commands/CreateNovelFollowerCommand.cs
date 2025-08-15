@@ -1,6 +1,7 @@
 ﻿using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -67,6 +68,8 @@ namespace Application.Features.NovelFollower.Commands
                 novel_id = novel.id,
                 user_id = user.id,
                 username = user.displayname,
+                is_notification = true, //Default
+                reading_status = NovelFollowReadingStatus.Reading, // Default status
                 followed_at = TimeHelper.NowTicks
             };
 

@@ -123,9 +123,8 @@ namespace Infrastructure.Repositories.Implements
             try
             {
                 var filter = Builders<NovelFollowerEntity>.Filter.Eq(x => x.id, entity.id);
-                var result = await _collection.ReplaceOneAsync(filter, entity);
-
-                return entity;
+                await _collection.ReplaceOneAsync(filter, entity);
+                return entity;  
             }
             catch
             {

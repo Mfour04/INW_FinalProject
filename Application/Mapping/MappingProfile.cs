@@ -45,8 +45,9 @@ namespace Application.Mapping
 
             CreateMap<UserEntity, UpdateUserProfileReponse>()
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.AvataUrl, opt => opt.MapFrom(src => src.avata_url))
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.avata_url))
                 .ForMember(dest => dest.CoverUrl, opt => opt.MapFrom(src => src.cover_url))
+                 .ForMember(dest => dest.Bio, opt => opt.MapFrom(src => src.bio))
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.displayname))
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
                 .ForMember(dest => dest.FavouriteType, opt => opt.Ignore());
@@ -192,13 +193,29 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status));
 
             //Reading Process
-            CreateMap<ReadingProcessEntity, ReadingProcessResponse>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
-                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
-                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
+            // Map từ ReadingProcessEntity + NovelEntity + Author(UserEntity) → ReadingProcessResponse
+            CreateMap<(ReadingProcessEntity process, NovelEntity novel, UserEntity author), ReadingProcessResponse>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.process.id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.process.user_id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel.id))
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.novel.title))
+                .ForMember(dest => dest.Slug, opt => opt.MapFrom(src => src.novel.slug))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.novel.description))
+                .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.author.id))
+                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.author.displayname))
+                .ForMember(dest => dest.NovelImage, opt => opt.MapFrom(src => src.novel.novel_image))
+                .ForMember(dest => dest.NovelBanner, opt => opt.MapFrom(src => src.novel.novel_banner))
+                .ForMember(dest => dest.Tags, opt => opt.Ignore()) // sẽ fill riêng nếu lấy từ service Tag
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.novel.status))
+                .ForMember(dest => dest.TotalChapters, opt => opt.MapFrom(src => src.novel.total_chapters))
+                .ForMember(dest => dest.TotalViews, opt => opt.MapFrom(src => src.novel.total_views))
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.novel.comment_count))
+                .ForMember(dest => dest.RatingAvg, opt => opt.MapFrom(src => src.novel.rating_avg))
+                .ForMember(dest => dest.RatingCount, opt => opt.MapFrom(src => src.novel.rating_count))
+                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.process.chapter_id))
+                .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => src.process.created_at))
+                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => src.process.updated_at));
+
 
             CreateMap<ReadingProcessEntity, UpdateReadingProcessResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
@@ -216,14 +233,17 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at))
                 .ForMember(dest => dest.Author, opt => opt.Ignore());
 
-            //Novel Follower
+            // Novel Follower → NovelFollowResponse
             CreateMap<NovelFollowerEntity, NovelFollowResponse>()
                 .ForMember(dest => dest.NovelFollowId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.username))
+                .ForMember(dest => dest.IsNotification, opt => opt.MapFrom(src => src.is_notification))
+                .ForMember(dest => dest.ReadingStatus, opt => opt.MapFrom(src => src.reading_status))
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.followed_at));
 
+            // NovelFollowerEntity + UserEntity → CreateNovelFollowResponse
             CreateMap<(NovelFollowerEntity follow, UserEntity user), CreateNovelFollowReponse>()
                 .ForMember(dest => dest.NovelFollowId, opt => opt.MapFrom(src => src.follow.id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.follow.user_id))
@@ -231,17 +251,24 @@ namespace Application.Mapping
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.follow.username))
                 .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.user.displayname))
                 .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.user.avata_url))
+                .ForMember(dest => dest.IsNotification, opt => opt.MapFrom(src => src.follow.is_notification))
+                .ForMember(dest => dest.ReadingStatus, opt => opt.MapFrom(src => src.follow.reading_status))
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
 
+            // NovelFollowerEntity + UserEntity → NovelFollowerUserInfoResponse
+            // Mapping lấy thông tin người theo dõi 1 tiểu thuyết
             CreateMap<(NovelFollowerEntity follow, UserEntity user), NovelFollowerUserInfoResponse>()
                .ForMember(dest => dest.FollowerId, opt => opt.MapFrom(src => src.follow.id))
                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user.id))
                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.user.username))
                .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.user.displayname))
                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.user.avata_url))
+               .ForMember(dest => dest.IsNotification, opt => opt.MapFrom(src => src.follow.is_notification))
+               .ForMember(dest => dest.ReadingStatus, opt => opt.MapFrom(src => src.follow.reading_status))
                .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
 
-            // 2. Map từ NovelFollowerEntity + NovelEntity + UserEntity → UserFollowingNovelInfoResponse
+            // NovelFollowerEntity + NovelEntity + UserEntity → UserFollowingNovelInfoResponse
+            // Mapping cho lấy số tiểu thuyết mà 1 user theo dõi
             CreateMap<(NovelFollowerEntity follow, NovelEntity novel, UserEntity author), UserFollowingNovelInfoResponse>()
                 .ForMember(dest => dest.FollowId, opt => opt.MapFrom(src => src.follow.id))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel.id))
@@ -258,7 +285,20 @@ namespace Application.Mapping
                 .ForMember(dest => dest.RatingAvg, opt => opt.MapFrom(src => src.novel.rating_avg))
                 .ForMember(dest => dest.Followers, opt => opt.MapFrom(src => src.novel.followers))
                 .ForMember(dest => dest.TotalChapters, opt => opt.MapFrom(src => src.novel.total_chapters))
+                .ForMember(dest => dest.IsNotification, opt => opt.MapFrom(src => src.follow.is_notification))
+                .ForMember(dest => dest.ReadingStatus, opt => opt.MapFrom(src => src.follow.reading_status))
                 .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.follow.followed_at));
+
+            // NovelFollowerEntity → UpdateNovelFollowResponse
+            // Mapping cho phản hồi cập nhật theo dõi tiểu thuyết
+            CreateMap<NovelFollowerEntity, UpdateNovelFollowResponse>()
+                .ForMember(dest => dest.NovelFollowId, opt => opt.MapFrom(src => src.id))
+                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
+                .ForMember(dest => dest.IsNotification, opt => opt.MapFrom(src => src.is_notification))
+                .ForMember(dest => dest.ReadingStatus, opt => opt.MapFrom(src => src.reading_status))
+                .ForMember(dest => dest.FollowedAt, opt => opt.MapFrom(src => src.followed_at));
+
 
             //Notification
             CreateMap<NotificationEntity, NotificationReponse>()

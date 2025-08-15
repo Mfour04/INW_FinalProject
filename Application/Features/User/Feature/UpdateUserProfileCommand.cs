@@ -25,7 +25,7 @@ namespace Application.Features.User.Feature
         [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
         public string Bio { get; set; }
 
-        public IFormFile? AvataUrl { get; set; }
+        public IFormFile? AvatarUrl { get; set; }
         public IFormFile? CoverUrl { get; set; }
         public List<string> BadgeId { get; set; } = new();
         public List<string>? FavouriteType { get; set; } = new();
@@ -63,9 +63,9 @@ namespace Application.Features.User.Feature
             user.badge_id = request.BadgeId;
             user.favourite_type = request.FavouriteType;
 
-            if (request.AvataUrl != null)
+            if (request.AvatarUrl != null)
             {
-                var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvataUrl, CloudFolders.Users);
+                var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvatarUrl, CloudFolders.Users);
                 user.avata_url = imageAUrl;
             }
 
