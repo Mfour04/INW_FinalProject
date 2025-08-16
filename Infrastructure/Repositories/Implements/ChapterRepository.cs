@@ -480,21 +480,23 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task UpdateLockChapterStatus(string chapterId, bool isLocked)
+        public async Task UpdateLockChaptersStatus(List<string> chapterIds, bool isLocked)
         {
             try
             {
-                var filter = Builders<ChapterEntity>.Filter.Eq(x => x.id, chapterId);
+                var filter = Builders<ChapterEntity>.Filter.In(x => x.id, chapterIds);
                 var updateLock = Builders<ChapterEntity>.Update.Combine(
-                                 Builders<ChapterEntity>.Update.Set(x => x.is_lock, isLocked),
-                                 Builders<ChapterEntity>.Update.Set(x => x.is_public, !isLocked));
-                await _collection.UpdateOneAsync(filter, updateLock);
+                                    Builders<ChapterEntity>.Update.Set(x => x.is_lock, isLocked),
+                                    Builders<ChapterEntity>.Update.Set(x => x.is_public, !isLocked));
+
+                await _collection.UpdateManyAsync(filter, updateLock);
             }
             catch
             {
                 throw new InternalServerException();
             }
         }
+
         public async Task UpdateHideAllChaptersByNovelIdAsync(string novelId, bool isPublic)
         {
             try
