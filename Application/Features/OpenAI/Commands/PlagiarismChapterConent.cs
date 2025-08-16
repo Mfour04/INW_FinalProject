@@ -4,6 +4,7 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Helpers;
+using System.Text.RegularExpressions;
 
 namespace Application.Features.OpenAI.Commands
 {
@@ -16,7 +17,18 @@ namespace Application.Features.OpenAI.Commands
         private readonly IOpenAIRepository _openAIRepository;
         private readonly IOpenAIService _openAIService;
         private readonly IChapterRepository _chapterRepository;
+        private string StripHtmlTags(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
 
+            // Loại bỏ toàn bộ tag <...>
+            return Regex.Replace(input, @"<\/?[^>]+>", string.Empty)
+             .Replace("&nbsp;", " ")
+             .Replace("&amp;", "&")
+             .Replace("&quot;", "\"")
+             .Trim();
+        }
         public PlagiarismChapterConentHandler(IOpenAIRepository openAIRepository, IOpenAIService openAIService
             , IChapterRepository chapterRepository)
         {
@@ -35,6 +47,7 @@ namespace Application.Features.OpenAI.Commands
                     Message = "Content is empty"
                 };
             }
+            var cleanContent = StripHtmlTags(request.Content);
 
             float SimilarityThreshold = 0.8f;
             int WordsPerChunk = 50;
@@ -58,10 +71,10 @@ namespace Application.Features.OpenAI.Commands
             var allTexts = new List<string>();
 
             // - Input full
-            allTexts.Add(request.Content);
+            allTexts.Add(cleanContent);
 
             // - Input chunks
-            var inputChunks = ChunkText(request.Content, WordsPerChunk);
+            var inputChunks = ChunkText(cleanContent, WordsPerChunk);
             int inputChunksStartIndex = allTexts.Count;
             allTexts.AddRange(inputChunks);
 
@@ -77,7 +90,7 @@ namespace Application.Features.OpenAI.Commands
                     string.IsNullOrWhiteSpace(chapter.content))
                     continue;
 
-                var chapterChunks = ChunkText(chapter.content, WordsPerChunk);
+                var chapterChunks = ChunkText(StripHtmlTags(chapter.content), WordsPerChunk);
                 int startIndex = allTexts.Count;
                 allTexts.AddRange(chapterChunks);
 
@@ -131,7 +144,7 @@ namespace Application.Features.OpenAI.Commands
                 Message = "Plagiarism check completed successfully.",
                 Data = new
                 {
-                    InputContentLength = request.Content.Length,
+                    InputContentLength = cleanContent.Length,
                     MatchCount = suspectedChapters.Count,
                     Matches = suspectedChapters
                 }
