@@ -13,5 +13,12 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> HasUserRatedNovelAsync(string userId, string novelId);
         Task<double> GetAverageRatingByNovelIdAsync(string novelId);
         Task<int> GetRatingCountByNovelIdAsync(string novelId);
+
+        Task<(IReadOnlyList<RatingEntity> items, bool hasMore)> GetByNovelIdKeysetAsync(
+          string novelId,
+          int limit,
+          long? afterCreatedAtTicks,
+          string? afterId,
+          CancellationToken ct = default);
     }
 }

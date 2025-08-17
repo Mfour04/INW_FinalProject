@@ -16,6 +16,21 @@ namespace Infrastructure.Repositories.Implements
         {
             mongoDBHelper.CreateCollectionIfNotExistsAsync("rating").Wait();
             _collection = mongoDBHelper.GetCollection<RatingEntity>("rating");
+
+            try
+            {
+                var keys = Builders<RatingEntity>.IndexKeys
+                    .Ascending(x => x.novel_id)
+                    .Descending(x => x.created_at)
+                    .Descending(x => x.id);
+
+                var options = new CreateIndexOptions { Background = true, Name = "idx_novel_created_id_desc" };
+                _collection.Indexes.CreateOne(new CreateIndexModel<RatingEntity>(keys, options));
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
 
         /// <summary>
@@ -200,6 +215,49 @@ namespace Infrastructure.Repositories.Implements
 
                 var result = (int)count;
                 return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+         public async Task<(IReadOnlyList<RatingEntity> items, bool hasMore)> GetByNovelIdKeysetAsync(
+            string novelId,
+            int limit,
+            long? afterCreatedAtTicks,
+            string? afterId,
+            CancellationToken ct = default)
+        {
+            try
+            {
+                var b = Builders<RatingEntity>.Filter;
+
+                var filter = b.Eq(x => x.novel_id, novelId);
+
+                if (afterCreatedAtTicks.HasValue && !string.IsNullOrWhiteSpace(afterId))
+                {
+                    var ltCreated = b.Lt(x => x.created_at, afterCreatedAtTicks.Value);
+                    var eqCreated = b.Eq(x => x.created_at, afterCreatedAtTicks.Value);
+                    var ltId = b.Lt(x => x.id, afterId);
+
+                    filter = b.And(filter, b.Or(ltCreated, b.And(eqCreated, ltId)));
+                }
+
+                var sort = Builders<RatingEntity>.Sort
+                    .Descending(x => x.created_at)
+                    .Descending(x => x.id);
+
+                var list = await _collection
+                    .Find(filter)
+                    .Sort(sort)
+                    .Limit(Math.Clamp(limit, 1, 50) + 1)
+                    .ToListAsync(ct);
+
+                var hasMore = list.Count > Math.Clamp(limit, 1, 50);
+                if (hasMore) list.RemoveAt(list.Count - 1);
+
+                return (list, hasMore);
             }
             catch
             {
