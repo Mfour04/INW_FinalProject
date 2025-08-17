@@ -34,35 +34,26 @@ namespace Application.Features.Rating.Queries
         {
             var limit = Math.Clamp(req.Limit, 1, 50);
 
-            long? afterTicks = null;
-            if (!string.IsNullOrWhiteSpace(req.AfterId))
-            {
-                if (CursorHelper.TryParseShortCursor20(req.AfterId, req.NovelId, out var ticks, out var expired)
-                    && !expired)
-                {
-                    afterTicks = ticks;
-                }
-            }
-
             var (items, hasMore) = await _ratingRepository.GetByNovelIdKeysetAsync(
                 req.NovelId,
                 limit,
-                afterTicks,
+                req.AfterId, 
                 ct);
 
             var responses = _mapper.Map<List<RatingResponse>>(items);
 
-            var userIds = items.Select(x => x.user_id)
-                               .Where(id => !string.IsNullOrWhiteSpace(id))
-                               .Distinct()
-                               .ToList();
+            var userIds = items
+                .Select(x => x.user_id)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
 
             if (userIds.Count > 0)
             {
-                var fetchTasks = userIds.Select(id => _userRepository.GetById(id)).ToList();
-                var users = await Task.WhenAll(fetchTasks);
-                var userMap = users.Where(u => u != null && !string.IsNullOrWhiteSpace(u!.id))
-                                   .ToDictionary(u => u!.id, u => u!);
+                var users = await Task.WhenAll(userIds.Select(id => _userRepository.GetById(id)));
+                var userMap = users
+                    .Where(u => u != null && !string.IsNullOrWhiteSpace(u!.id))
+                    .ToDictionary(u => u!.id, u => u!);
 
                 for (int i = 0; i < items.Count; i++)
                 {
@@ -83,14 +74,23 @@ namespace Application.Features.Rating.Queries
                 }
             }
 
+            string? nextCursor = null;
             var last = items.LastOrDefault();
-            var nextAfterId = last is null ? null : CursorHelper.MakeShortCursor20(req.NovelId, last.created_at);
+            if (last != null)
+            {
+                nextCursor = CursorHmacHelper.Make(
+                    req.NovelId,
+                    last.created_at,
+                    last.id,
+                    ttlMinutes: 30
+                );
+            }
 
             var result = new RatingListKeysetResponse
             {
                 Items = responses,
                 HasMore = hasMore,
-                NextAfterId = nextAfterId
+                NextAfterId = nextCursor 
             };
 
             return new ApiResponse
