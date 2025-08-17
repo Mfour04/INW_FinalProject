@@ -41,7 +41,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<int> ReleaseScheduledAsync();
         Task IncreaseViewCountAsync(string chapterId);
         Task UpdateHideChapterStatus(string chapterId, bool isPublic);
-        Task UpdateLockChapterStatus(string chapterId, bool isLocked);
+        Task UpdateLockChaptersStatus(List<string> chapterIds, bool isLocked);
         Task UpdateHideAllChaptersByNovelIdAsync(string novelId, bool isPublic);
     }
 }

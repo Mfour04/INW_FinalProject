@@ -14,6 +14,7 @@ namespace Application.Features.NovelFollower.Queries
     {
         public string UserId { get; set; }
         public int Page { get; set; } = 0;
+        public string? SearchTerm { get; set; } = "";
         public int Limit { get; set; } = int.MaxValue;
     }
     public class GetFollowerByUserIdHandler : IRequestHandler<GetFollowerByUserId, ApiResponse>
@@ -37,7 +38,10 @@ namespace Application.Features.NovelFollower.Queries
             var findCriteria = new FindCreterias
             {
                 Page = request.Page,
-                Limit = request.Limit
+                Limit = request.Limit,
+                SearchTerm = !string.IsNullOrWhiteSpace(request.SearchTerm)
+                         ? new List<string> { request.SearchTerm }
+                         : new List<string>()
             };
 
             var (follows, totalCount) = await _followerRepository.GetFollowedNovelsByUserIdAsync(request.UserId, findCriteria);

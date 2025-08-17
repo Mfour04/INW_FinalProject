@@ -54,7 +54,7 @@ namespace WebApi.Controllers
 
         [HttpGet("user")]
         [Authorize]
-        public async Task<IActionResult> GetFollowedNovelsByUserId([FromQuery] int page = 0, [FromQuery] int limit = 20)
+        public async Task<IActionResult> GetFollowedNovelsByUserId([FromQuery] int page = 0, [FromQuery] int limit = 20, [FromQuery] string searchTerm = "")
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -70,7 +70,8 @@ namespace WebApi.Controllers
             {
                 UserId = userId,
                 Page = page,
-                Limit = limit
+                Limit = limit,
+                SearchTerm = searchTerm
             };
 
             var result = await _mediator.Send(query);
