@@ -1,9 +1,12 @@
 ﻿using AutoMapper;
 using Domain.Entities;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
+using MongoDB.Driver;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.ReadingProcess;
+using Shared.Contracts.Response.Tag;
 using Shared.Helpers;
 using System.Text.Json.Serialization;
 
@@ -23,53 +26,62 @@ namespace Application.Features.ReadingProcess.Command
         private readonly INovelRepository _novelRepository;
         private readonly IChapterRepository _chapterRepository;
         private readonly IMapper _mapper;
+        private readonly ITagRepository _tagRepository;
 
-        public CreateReadingProcessCommandHandler(IReadingProcessRepository readingProcessRepository, IUserRepository userRepository, INovelRepository novelRepository, IChapterRepository chapterRepository, IMapper mapper)
+        public CreateReadingProcessCommandHandler(IReadingProcessRepository readingProcessRepository, IUserRepository userRepository
+            , INovelRepository novelRepository, IChapterRepository chapterRepository, IMapper mapper
+            , ITagRepository tagRepository)
         {
             _readingProcessRepository = readingProcessRepository;
             _userRepository = userRepository;
             _novelRepository = novelRepository;
             _chapterRepository = chapterRepository;
             _mapper = mapper;
+            _tagRepository = tagRepository;
         }
 
         public async Task<ApiResponse> Handle(CreateReadingProcessCommand request, CancellationToken cancellationToken)
         {
-            if (request.UserId != null)
+            var user = await _userRepository.GetById(request.UserId);
+            if (user == null)
             {
-                var user = await _userRepository.GetById(request.UserId);
-                if (user == null)
+                return new ApiResponse
                 {
-                    return new ApiResponse
-                    {
-                        Success = false,
-                        Message = "User not found."
-                    };
-                }
+                    Success = false,
+                    Message = "User not found."
+                };
             }
-            if (request.NovelId != null)
+
+            var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
+            if (novel == null)
             {
-                var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
-                if (novel == null)
+                return new ApiResponse
                 {
-                    return new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Novel not found."
-                    };
-                }
+                    Success = false,
+                    Message = "Novel not found."
+                };
             }
-            if (request.ChapterId != null)
+
+            var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
+            if (chapter == null)
             {
-                var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
-                if (chapter == null)
+                return new ApiResponse
                 {
-                    return new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Chapter not found."
-                    };
-                }
+                    Success = false,
+                    Message = "Chapter not found."
+                };
+            }
+
+            var allTagIds = novel.tags.Distinct().ToList();
+            var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
+            var tagDict = allTags.ToDictionary(t => t.id, t => t.name);
+            if (allTagIds.Count == 0)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Novel has no valid tags."
+                };
             }
 
             var existingReadingProcess = await _readingProcessRepository.GetByUserAndNovelAsync(request.UserId, request.NovelId);
@@ -79,7 +91,17 @@ namespace Application.Features.ReadingProcess.Command
                 existingReadingProcess.updated_at = TimeHelper.NowTicks;
 
                 var updatedReadingProcess = await _readingProcessRepository.UpdateAsync(existingReadingProcess);
-                var updatedResponse = _mapper.Map<ReadingProcessResponse>(updatedReadingProcess);
+
+                // Fix: Use the correct overload of the Map method
+                var updatedResponse = _mapper.Map<ReadingProcessResponse>((updatedReadingProcess, novel, user));
+                updatedResponse.Tags = allTags
+                    .Where(t => tagDict.ContainsKey(t.id))
+                    .Select(t => new TagListResponse
+                    {
+                        TagId = t.id,
+                        Name = t.name
+                    }).ToList();
+
                 return new ApiResponse
                 {
                     Success = true,
@@ -99,7 +121,16 @@ namespace Application.Features.ReadingProcess.Command
                     updated_at = TimeHelper.NowTicks
                 };
                 await _readingProcessRepository.CreateAsync(newReadingProcess);
-                var createResponse = _mapper.Map<ReadingProcessResponse>(newReadingProcess);
+
+                var createResponse = _mapper.Map<ReadingProcessResponse>((newReadingProcess, novel, user));
+                createResponse.Tags = allTags
+                    .Where(t => tagDict.ContainsKey(t.id))
+                    .Select(t => new TagListResponse
+                    {
+                        TagId = t.id,
+                        Name = t.name
+                    }).ToList();
+
                 return new ApiResponse
                 {
                     Success = true,
