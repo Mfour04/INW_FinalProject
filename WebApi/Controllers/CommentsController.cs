@@ -56,7 +56,6 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> DeleteComment(string id)

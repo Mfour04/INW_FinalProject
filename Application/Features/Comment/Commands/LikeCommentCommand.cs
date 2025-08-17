@@ -56,6 +56,7 @@ namespace Application.Features.Comment.Commands
             };
 
             await _commentLikeRepo.LikeCommentAsync(like);
+            await _commentRepo.IncreaseLikeCountAsync(request.CommentId, 1);
 
             return new ApiResponse
             {
