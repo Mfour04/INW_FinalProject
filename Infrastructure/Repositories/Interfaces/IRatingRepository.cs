@@ -15,10 +15,9 @@ namespace Infrastructure.Repositories.Interfaces
         Task<int> GetRatingCountByNovelIdAsync(string novelId);
 
         Task<(IReadOnlyList<RatingEntity> items, bool hasMore)> GetByNovelIdKeysetAsync(
-          string novelId,
-          int limit,
-          long? afterCreatedAtTicks,
-          string? afterId,
-          CancellationToken ct = default);
+            string novelId,
+            int limit,
+            long? afterCreatedAtTicks,
+            CancellationToken ct);
     }
 }
