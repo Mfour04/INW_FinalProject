@@ -28,16 +28,19 @@ namespace Application.Features.ReadingProcess.Queries
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly INovelRepository _novelRepository;
+        private readonly ITagRepository _tagRepository;
         public GetReadingHistoryHandler(
             IReadingProcessRepository readingProcessRepository,
             IUserRepository userRepository,
             IMapper mapper,
-            INovelRepository novelRepository)
+            INovelRepository novelRepository,
+            ITagRepository tagRepository)
         {
             _readingProcessRepository = readingProcessRepository;
             _userRepository = userRepository;
             _mapper = mapper;
             _novelRepository = novelRepository;
+            _tagRepository = tagRepository;
         }
 
         public async Task<ApiResponse> Handle(GetReadingHistory request, CancellationToken cancellationToken)
@@ -86,11 +89,15 @@ namespace Application.Features.ReadingProcess.Queries
                 var mapped = _mapper.Map<ReadingProcessResponse>((process, novel, author));
 
                 // Nếu cần map tags
-                mapped.Tags = novel.tags?.Select(tagId => new TagListResponse
+                if (novel.tags != null && novel.tags.Any())
                 {
-                    TagId = tagId,
-                    Name = "" // TODO: Lấy tên tag nếu có service Tag
-                }).ToList() ?? new List<TagListResponse>();
+                    var tags = await _tagRepository.GetTagsByIdsAsync(novel.tags);
+                    mapped.Tags = tags.Select(tag => new TagListResponse
+                    {
+                        TagId = tag.id,
+                        Name = tag.name
+                    }).ToList();
+                }
 
                 response.Add(mapped);
             }
