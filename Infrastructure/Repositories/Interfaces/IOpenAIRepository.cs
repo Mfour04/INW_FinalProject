@@ -20,8 +20,11 @@ namespace Infrastructure.Repositories.Interfaces
         Task SaveChapterContentEmbeddingAsync(ChapterContentEmbeddingEntity embedding);
         Task DeleteUserEmbeddingAsync(string userId);
         Task DeleteNovelEmbeddingAsync(string novelId);
+        //chapter content embedding methods
         Task<bool> ChapterContentEmbeddingExistsAsync(string chapterId);
         Task<List<ChapterContentEmbeddingEntity>> GetAllChapterContentEmbedding();
+        Task<ChapterContentEmbeddingEntity> GetChapterContentEmbeddingByIdAsync(string chapterId);
+        Task UpdateChapterContentEmbeddingAsync(ChapterContentEmbeddingEntity entity);
         /// <summary>
         /// End Embedding methods
         /// </summary>

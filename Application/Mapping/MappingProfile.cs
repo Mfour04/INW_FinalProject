@@ -63,13 +63,17 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NovelBanner, opt => opt.MapFrom(src => src.novel_banner))
                 .ForMember(dest => dest.Tags, opt => opt.Ignore())              // là List<string>
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
-                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.comment_count))
                 .ForMember(dest => dest.IsPublic, opt => opt.MapFrom(src => src.is_public))
-                .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
-                .ForMember(dest => dest.RatingCount, opt => opt.MapFrom(src => src.rating_count))
-                .ForMember(dest => dest.RatingAvg, opt => opt.MapFrom(src => src.rating_avg))
+                .ForMember(dest => dest.AllowComment, opt => opt.MapFrom(src => src.allow_comment))
                 .ForMember(dest => dest.IsPaid, opt => opt.MapFrom(src => src.is_paid))
+                .ForMember(dest => dest.IsLock, opt => opt.MapFrom(src => src.is_lock))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.price))
+                .ForMember(dest => dest.TotalChapters, opt => opt.MapFrom(src => src.total_chapters))
+                .ForMember(dest => dest.TotalViews, opt => opt.MapFrom(src => src.total_views))
+                .ForMember(dest => dest.Followers, opt => opt.MapFrom(src => src.followers))
+                .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.comment_count))
+                .ForMember(dest => dest.RatingAvg, opt => opt.MapFrom(src => src.rating_avg))
+                .ForMember(dest => dest.RatingCount, opt => opt.MapFrom(src => src.rating_count))
                 .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => src.updated_at));
 
