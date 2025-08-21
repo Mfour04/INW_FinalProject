@@ -2,6 +2,7 @@ using Domain.Entities;
 using Domain.Entities.System;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Exceptions;
 using Shared.Helpers;
@@ -200,6 +201,69 @@ namespace Infrastructure.Repositories.Implements
 
                 var result = (int)count;
                 return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<(IReadOnlyList<RatingEntity> items, bool hasMore)> GetByNovelIdKeysetAsync(
+            string novelId,
+            int limit,
+            string? afterCursor,
+            CancellationToken ct)
+        {
+            try
+            {
+                var builder = Builders<RatingEntity>.Filter;
+                var filter = builder.Eq(x => x.novel_id, novelId);
+
+                long? afterTicks = null;
+                string? afterId = null;
+
+                if (!string.IsNullOrWhiteSpace(afterCursor))
+                {
+                    if (CursorHmacHelper.TryParse(afterCursor, novelId, out var ticks, out var id))
+                    {
+                        afterTicks = ticks;
+                        afterId = id;
+                    }
+                    else
+                    {
+                        afterId = afterCursor;
+                    }
+                }
+
+                if (afterTicks.HasValue && !string.IsNullOrWhiteSpace(afterId))
+                {
+                    var ltTicks = builder.Lt(x => x.created_at, afterTicks.Value);
+                    var eqTicksLtId = builder.And(
+                        builder.Eq(x => x.created_at, afterTicks.Value),
+                        builder.Lt(x => x.id, afterId)
+                    );
+                    filter = builder.And(filter, builder.Or(ltTicks, eqTicksLtId));
+                }
+                else if (!string.IsNullOrWhiteSpace(afterId))
+                {
+                    filter = builder.And(filter, builder.Lt(x => x.id, afterId));
+                }
+
+                var sort = Builders<RatingEntity>.Sort
+                    .Descending(x => x.created_at);
+
+                var take = Math.Clamp(limit, 1, 50) + 1;
+
+                var list = await _collection
+                    .Find(filter)
+                    .Sort(sort)
+                    .Limit(take)
+                    .ToListAsync(ct);
+
+                var hasMore = list.Count > limit;
+                if (hasMore) list.RemoveAt(list.Count - 1);
+
+                return (list, hasMore);
             }
             catch
             {

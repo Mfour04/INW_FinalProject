@@ -83,7 +83,7 @@ namespace WebApi.Controllers
         [HttpPut("update")]
         public async Task<IActionResult> UpdateReport([FromBody] UpdateReportCommand report)
         {
-            if (report == null || string.IsNullOrEmpty(report.ReportId))
+            if (report == null || report.ReportIds == null || !report.ReportIds.Any())
             {
                 return BadRequest("Invalid report data.");
             }
@@ -94,7 +94,7 @@ namespace WebApi.Controllers
                 return Ok(result);
             }
             return BadRequest(result.Message);
-        }
+        }   
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteReport(string id)
         {

@@ -38,6 +38,24 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("keyset")]
+        public async Task<IActionResult> GetByNovelIdKeyset(
+        [FromRoute] string novelId,
+        [FromQuery] int limit = 5,
+        [FromQuery] string? afterId = null,
+        CancellationToken ct = default)
+        {
+            var query = new GetNovelRatingsKeyset
+            {
+                NovelId = novelId,
+                Limit = limit,
+                AfterId = afterId
+            };
+
+            var result = await _mediator.Send(query, ct);
+            return Ok(result);
+        }
+
         [HttpGet("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> GetRatingDetail(string id)

@@ -110,5 +110,38 @@ namespace Application.Services.Implements
             return embeddings;
         }
 
+        public async Task<string> SummarizeContentAsync(string content)
+        {
+            var requestBody = new
+            {
+                model = _config.SummaryModel, // "gpt-4o-mini"
+                messages = new object[]
+            {
+                new { role = "system", content = "Bạn là trợ lý AI chuyên tóm tắt văn bản ngắn gọn và đầy đủ ý chính." },
+                new { role = "user", content = $"Hãy tóm tắt nội dung sau giúp tôi từ:\n\n{content}" }
+            },
+                temperature = 0.7
+            };
+
+            var requestJson = JsonSerializer.Serialize(requestBody);
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, _config.SummaryUrl);
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _config.ApiKey);
+            httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(httpRequest);
+            response.EnsureSuccessStatusCode();
+
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            using var document = await JsonDocument.ParseAsync(responseStream);
+
+            var summary = document
+                .RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+
+            return summary ?? string.Empty;
+        }
     }
 }

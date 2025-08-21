@@ -58,7 +58,7 @@ namespace WebApi.Controllers
                     HttpOnly = true,
                     Secure = true, // để bảo mật hơn khi chạy https
                     SameSite = SameSiteMode.None, // nếu dùng frontend khác domain
-                    Expires = DateTime.UtcNow.AddHours(1)
+                    Expires = TimeHelper.NowVN.AddHours(1)
                 });
             }
 

@@ -18,5 +18,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> IsDuplicateCommentAsync(string userId, string novelId, string? chapterId, string content, int withinMinutes);
         Task<bool> IsSpammingTooFrequentlyAsync(string userId, int limit, int withinMinutes);
         Task<Dictionary<string, int>> CountRepliesPerCommentAsync(List<string> parentCommentIds);
+        Task<bool> IncreaseLikeCountAsync(string commentId, int inc = 1);
+        Task<bool> DecreaseLikeCountAsync(string commentId, int dec = 1);
     }
 }

@@ -40,6 +40,8 @@ namespace Application.Features.Comment.Commands
             if (!isSuccess)
                 return Fail("Failed to unlike the comment.");
 
+            await _commentRepo.DecreaseLikeCountAsync(request.CommentId, 1);
+
             return new ApiResponse
             {
                 Success = true,

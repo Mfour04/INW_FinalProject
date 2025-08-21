@@ -2,6 +2,7 @@
 using AutoMapper;
 using Domain.Entities.OpenAIEntity;
 using Domain.Entities.System;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -22,14 +23,16 @@ namespace Application.Features.Chapter.Queries
         private readonly IMapper _mapper;
         private readonly IOpenAIService _openAIService;
         private readonly IOpenAIRepository _openAIRepository;
+        private readonly INovelRepository _novelRepository;
 
         public GetChapterHanlder(IChapterRepository chapterRepository, IMapper mapper
-            , IOpenAIService openAIService, IOpenAIRepository openAIRepository)
+            , IOpenAIService openAIService, IOpenAIRepository openAIRepository, INovelRepository novelRepository)
         {
             _chapterRepository = chapterRepository;
             _mapper = mapper;
             _openAIService = openAIService;
             _openAIRepository = openAIRepository;
+            _novelRepository = novelRepository;
         }
         public async Task<ApiResponse> Handle(GetChapter request, CancellationToken cancellationToken)
         {
@@ -41,34 +44,82 @@ namespace Application.Features.Chapter.Queries
             if (chapters == null || chapters.Count == 0)
                 return new ApiResponse { Success = false, Message = "Chapter not found" };
 
-            //int embeddedCount = 0;
+            //var novelIds = chapters.Select(c => c.novel_id).Distinct().ToList();
+            //var novels = await _novelRepository.GetManyByIdsAsync(novelIds);
+            //var novelDictionary = novels.ToDictionary(
+            //    n => n.id,
+            //    n => new { n.title, n.slug }
+            //);
+
             //var existingEmbeddings = new List<string>();
             //var newEmbeddings = new List<string>();
+
             //foreach (var chapter in chapters)
             //{
             //    if (chapter == null || string.IsNullOrWhiteSpace(chapter.content)) continue;
-            //    var exists = await _openAIRepository.ChapterContentEmbeddingExistsAsync(chapter.id);
-            //    if (exists)
-            //    {
-            //        existingEmbeddings.Add(chapter.id);
-            //        continue;
-            //    }
+
             //    try
             //    {
-            //        var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
-            //        var embeddingEntity = new ChapterContentEmbeddingEntity
+            //        var existingEntity = await _openAIRepository.GetChapterContentEmbeddingByIdAsync(chapter.id);
+
+            //        if (existingEntity != null)
             //        {
-            //            chapter_id = chapter.id,
-            //            vector_chapter_content = embedding[0],
-            //            updated_at = TimeHelper.NowTicks
-            //        };
-            //        await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);
-            //        newEmbeddings.Add(chapter.id);
+            //            bool contentChanged = existingEntity.chapter_content != chapter.content;
+
+            //            // update metadata
+            //            if (novelDictionary.TryGetValue(chapter.novel_id, out var novelInfo))
+            //            {
+            //                existingEntity.novel_title = novelInfo.title;
+            //                existingEntity.slug = novelInfo.slug;
+            //            }
+            //            else
+            //            {
+            //                existingEntity.novel_title = "Unknown";
+            //                existingEntity.slug = "unknown-slug";
+            //            }
+
+            //            existingEntity.novel_id = chapter.novel_id;
+            //            existingEntity.chapter_title = chapter.title;
+            //            existingEntity.updated_at = TimeHelper.NowTicks;
+
+            //            // nếu content thay đổi thì gọi lại AI
+            //            if (contentChanged)
+            //            {
+            //                var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
+            //                existingEntity.vector_chapter_content = embedding[0];
+            //                existingEntity.chapter_content = chapter.content;
+            //            }
+
+            //            await _openAIRepository.UpdateChapterContentEmbeddingAsync(existingEntity);
+            //            existingEmbeddings.Add(chapter.id);
+            //        }
+            //        else
+            //        {
+            //            // Chưa có entity -> tạo mới
+            //            var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
+            //            var newEntity = new ChapterContentEmbeddingEntity
+            //            {
+            //                chapter_id = chapter.id,
+            //                novel_id = chapter.novel_id,
+            //                novel_title = novelDictionary.ContainsKey(chapter.novel_id)
+            //                    ? novelDictionary[chapter.novel_id].title
+            //                    : "Unknown",
+            //                slug = novelDictionary.ContainsKey(chapter.novel_id)
+            //                    ? novelDictionary[chapter.novel_id].slug
+            //                    : "unknown-slug",
+            //                chapter_title = chapter.title,
+            //                vector_chapter_content = embedding[0],
+            //                chapter_content = chapter.content,
+            //                updated_at = TimeHelper.NowTicks
+            //            };
+
+            //            await _openAIRepository.SaveChapterContentEmbeddingAsync(newEntity);
+            //            newEmbeddings.Add(chapter.id);
+            //        }
             //    }
             //    catch (Exception ex)
             //    {
             //        Console.WriteLine($"[Embedding Error] Chapter {chapter.id}: {ex.Message}");
-            //        // Ghi log, không throw để tránh gián đoạn
             //    }
             //}
             var chapterResponse = _mapper.Map<List<ChapterResponse>>(chapters);

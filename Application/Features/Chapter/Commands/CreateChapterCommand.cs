@@ -147,7 +147,12 @@ namespace Application.Features.Chapter.Commands
                         var embeddingEntity = new ChapterContentEmbeddingEntity
                         {
                             chapter_id = chapter.id,
+                            novel_id = novel.id,
+                            novel_title = novel.title,
+                            slug = novel.slug,
+                            chapter_title = chapter.title,
                             vector_chapter_content = embedding[0],
+                            chapter_content = chapter.content,
                             updated_at = TimeHelper.NowTicks
                         };
                         await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);

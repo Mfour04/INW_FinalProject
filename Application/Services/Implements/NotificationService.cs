@@ -26,7 +26,7 @@ namespace Application.Services.Implements
         {
             if (userIds == null || !userIds.Any())
                 return Enumerable.Empty<NotificationEntity>();
-
+            Console.WriteLine($"[NotificationService] Sending notification to users: {string.Join(", ", userIds)}");
             var nowTicks = TimeHelper.NowTicks;
             var notifications = userIds.Select(uid => new NotificationEntity
             {
@@ -44,14 +44,16 @@ namespace Application.Services.Implements
 
             // 2. Send real-time notifications via SignalR
             var sendTasks = notifications.Select(n =>
-                _hubContext.Clients.User(n.user_id).SendAsync("ReceiveNotification", new
+            {
+                Console.WriteLine($"[SignalR] Sending to userId = {n.user_id}, notificationId = {n.id}");
+                return _hubContext.Clients.User(n.user_id).SendAsync("ReceiveNotification", new
                 {
                     n.id,
                     n.type,
                     n.message,
                     n.created_at
-                })
-            );
+                });
+            });
 
             await Task.WhenAll(sendTasks);
 

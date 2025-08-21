@@ -11,6 +11,8 @@ namespace Shared.Contracts.Response.Follow
         public string UserName { get; set; }
         public string DisplayName { get; set; }
         public string AvatarUrl { get; set; }
+        public bool IsNotification { get; set; }       
+        public NovelFollowReadingStatus ReadingStatus { get; set; } 
         public long FollowedAt { get; set; }
     }
     // <summary>
@@ -23,6 +25,8 @@ namespace Shared.Contracts.Response.Follow
         public string UserName { get; set; }
         public string DisplayName { get; set; }
         public string AvatarUrl { get; set; }
+        public bool IsNotification { get; set; }
+        public NovelFollowReadingStatus ReadingStatus { get; set; }
         public long FollowedAt { get; set; }
     }
 
@@ -59,6 +63,8 @@ namespace Shared.Contracts.Response.Follow
         public double RatingAvg { get; set; }
         public int Followers { get; set; }
         public int TotalChapters { get; set; }
+        public bool IsNotification { get; set; }
+        public NovelFollowReadingStatus ReadingStatus { get; set; }
         public long FollowedAt { get; set; }
     }
 

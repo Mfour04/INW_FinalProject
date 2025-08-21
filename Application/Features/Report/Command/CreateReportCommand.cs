@@ -124,8 +124,8 @@ namespace Application.Features.Report.Command
                 forum_comment_id = request.ForumCommentId,
                 reason = request.Reason,
                 status = ReportStatus.InProgress,
-                created_at = DateTime.UtcNow.Ticks,
-                updated_at = DateTime.UtcNow.Ticks
+                created_at = TimeHelper.NowTicks,
+                updated_at = TimeHelper.NowTicks
             };
 
             await _reportRepository.CreateAsync(createRequest);

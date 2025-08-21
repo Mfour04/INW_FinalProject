@@ -181,6 +181,18 @@ namespace Infrastructure.Repositories.Implements
             return await _chapterContentCollection.Find(_ => true).ToListAsync();
         }
 
+        public async Task<ChapterContentEmbeddingEntity> GetChapterContentEmbeddingByIdAsync(string chapterId)
+        {
+            var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(x => x.chapter_id, chapterId);
+            return await _chapterContentCollection.Find(filter).FirstOrDefaultAsync();
+        }
+
+        public async Task UpdateChapterContentEmbeddingAsync(ChapterContentEmbeddingEntity entity)
+        {
+            var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(x => x.chapter_id, entity.chapter_id);
+            await _chapterContentCollection.ReplaceOneAsync(filter, entity, new ReplaceOptions { IsUpsert = false });
+        }
+
         /// <summary>
         /// End Embedding methods
         /// </summary>

@@ -2,6 +2,7 @@
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
+using MongoDB.Driver;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Report;
 using System;
@@ -14,7 +15,7 @@ namespace Application.Features.Report.Command
 {
     public class UpdateReportCommand : IRequest<ApiResponse>
     {
-        public string ReportId { get; set; }
+        public List<string> ReportIds { get; set; }
         public ReportStatus Status { get; set; }
     }
 
@@ -30,12 +31,21 @@ namespace Application.Features.Report.Command
         public async Task<ApiResponse> Handle(UpdateReportCommand request, CancellationToken cancellationToken)
         {
             var input = request;
-            var report = await _reportRepository.GetByIdAsync(input.ReportId);
+            var report = await _reportRepository.GetManyByIdsAsync(input.ReportIds);
             if (report == null)
                 return new ApiResponse { Success = false, Message = "Report not found" };
-            report.status = input.Status;
-            var updatedReport = await _reportRepository.UpdateAsync(report);
-            var response = _mapper.Map<UpdateReportResponse>(updatedReport);
+
+            var updatedReport = await _reportRepository.UpdateManyAsync(request.ReportIds, request.Status);
+            if (updatedReport.Count == 0)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Không có report nào được cập nhật"
+                };
+            }
+
+            var response = _mapper.Map<List<UpdateReportResponse>>(updatedReport);
             return new ApiResponse
             {
                 Success = true,

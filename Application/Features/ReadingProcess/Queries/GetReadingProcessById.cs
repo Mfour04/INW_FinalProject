@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.ReadingProcess;
+using Shared.Contracts.Response.Tag;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,11 +22,15 @@ namespace Application.Features.ReadingProcess.Queries
     {
         private readonly IReadingProcessRepository _readingProcessRepository;
         private readonly IMapper _mapper;
-
-        public GetReadingProcessByIdHandler(IReadingProcessRepository readingProcessRepository, IMapper mapper)
+        private readonly INovelRepository _novelRepository;
+        private readonly IUserRepository _userRepository;
+        public GetReadingProcessByIdHandler(IReadingProcessRepository readingProcessRepository, IMapper mapper
+            , INovelRepository novelRepository, IUserRepository userRepository)
         {
             _readingProcessRepository = readingProcessRepository;
             _mapper = mapper;
+            _novelRepository = novelRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<ApiResponse> Handle(GetReadingProcessById request, CancellationToken cancellationToken)
@@ -38,7 +44,28 @@ namespace Application.Features.ReadingProcess.Queries
                     Message = "Reading process not found."
                 };
             }
-            var readingProcessResponse = _mapper.Map<ReadingProcessResponse>(readingProcess);
+            var novel = await _novelRepository.GetByNovelIdAsync(readingProcess.novel_id);
+            if (novel == null)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Novel not found for this reading process."
+                };
+            }
+
+            // Lấy thông tin author
+            var author = await _userRepository.GetById(novel.author_id);
+
+            // Map vào response
+            var readingProcessResponse = _mapper.Map<ReadingProcessResponse>((readingProcess, novel, author));
+
+            // Map tags nếu cần
+            readingProcessResponse.Tags = novel.tags?.Select(tagId => new TagListResponse
+            {
+                TagId = tagId,
+                Name = "" // TODO: Lấy tên tag nếu có service Tag
+            }).ToList() ?? new List<TagListResponse>();
 
             return new ApiResponse
             {
