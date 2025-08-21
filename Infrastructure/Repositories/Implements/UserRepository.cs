@@ -273,14 +273,14 @@ namespace Infrastructure.Repositories.Implements
                         // ✅ THAY builder.Eq thành Regex để chứa từ đó (fuzzy nhẹ)
                         filtered &= builder.Regex(
                             x => x.displayname_unsigned,
-                            new BsonRegularExpression(keyword, "i")
+                            new BsonRegularExpression($".*{keyword}.*", "i")
                         );
                     }
                     else
                     {
                         // Fuzzy match: tất cả từ phải khớp
                         var regexFilters = creterias.SearchTerm.Select(term =>
-                            builder.Regex(x => x.displayname_unsigned, new BsonRegularExpression(term, "i"))
+                            builder.Regex(x => x.displayname_unsigned, new BsonRegularExpression($".*{SystemHelper.RemoveDiacritics(term).ToLower()}.*", "i"))
                         );
                         filtered &= builder.And(regexFilters);
                     }
