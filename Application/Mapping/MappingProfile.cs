@@ -37,6 +37,8 @@ namespace Application.Mapping
                 .ForMember(dest => dest.Coin, opt => opt.MapFrom(src => src.coin))
                 .ForMember(dest => dest.BlockCoin, opt => opt.MapFrom(src => src.block_coin))
                 .ForMember(dest => dest.NovelFollowCount, opt => opt.MapFrom(src => src.novel_follow_count))
+                .ForMember(dest => dest.FollowerCount, opt => opt.MapFrom(src => src.follower_count))
+                .ForMember(dest => dest.FollowingCount, opt => opt.MapFrom(src => src.following_count))
                 .ForMember(dest => dest.BadgeId, opt => opt.MapFrom(src => src.badge_id))
                 .ForMember(dest => dest.LastLogin, opt => opt.MapFrom(src => src.last_login))
                 .ForMember(dest => dest.FavouriteType, opt => opt.Ignore())

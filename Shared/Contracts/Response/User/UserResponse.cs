@@ -19,6 +19,8 @@ namespace Shared.Contracts.Response.User
         public int Coin { get; set; }
         public int BlockCoin { get; set; }
         public int NovelFollowCount { get; set; }
+        public int FollowerCount { get; set; }
+        public int FollowingCount { get; set; }
         public List<string> BadgeId { get; set; } = new();
         public long LastLogin { get; set; }
         public List<TagListResponse> FavouriteType { get; set; } = new();

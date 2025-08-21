@@ -34,28 +34,48 @@ namespace Application.Features.User.Queries
 
         public async Task<ApiResponse> Handle(GetAllUser request, CancellationToken cancellationToken)
         {
-            var result = SystemHelper.ParseSearchQuerySmart(request.SearchTerm);
-            var exact = result.Exact;
-            var fuzzyTerms = result.FuzzyTerms;
+            // Đơn giản hóa search logic - tìm kiếm dễ dàng hơn
+            var searchTerm = request.SearchTerm?.Trim().ToLower() ?? "";
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            var findCriteria = new FindCreterias
-            {
-                Page = request.Page,
-                Limit = request.Limit,
-                SearchTerm = string.IsNullOrWhiteSpace(exact) ? new() : new List<string> { exact },
-            };
+            List<UserEntity> users;
+            int totalCount;
 
-            var (users, totalCount) = await _userRepository.GetAllUserAsync(findCriteria, sortBy);
-
-            // Fallback: nếu không có, thử fuzzy
-            if ((users == null || users.Count == 0) && fuzzyTerms.Any())
+            // Nếu có searchTerm, tìm kiếm đơn giản
+            if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                findCriteria.SearchTerm = fuzzyTerms;
-                (users, totalCount) = await _userRepository.GetAllUserAsync(findCriteria, sortBy);
+                // Tìm kiếm theo username hoặc displayname chứa searchTerm
+                var allUsers = await _userRepository.GetAllUserAsync(new FindCreterias
+                {
+                    Page = 0,
+                    Limit = int.MaxValue,
+                    SearchTerm = new()
+                }, sortBy);
+
+                users = allUsers.Users?.Where(u => 
+                    u.username.ToLower().Contains(searchTerm) || 
+                    u.displayname.ToLower().Contains(searchTerm)
+                ).ToList() ?? new List<UserEntity>();
             }
+            else
+            {
+                // Nếu không có searchTerm, lấy tất cả users
+                var findCriteria = new FindCreterias
+                {
+                    Page = request.Page,
+                    Limit = request.Limit,
+                    SearchTerm = new(),
+                };
+
+                var result = await _userRepository.GetAllUserAsync(findCriteria, sortBy);
+                users = result.Users ?? new List<UserEntity>();
+                totalCount = result.TotalCount;
+            }
+
+            // Lọc admin users
             users = users?.Where(u => u.role != Role.Admin).ToList() ?? new List<UserEntity>();
             totalCount = users.Count;
+
             if (users == null || users.Count == 0)
             {
                 return new ApiResponse
@@ -64,13 +84,14 @@ namespace Application.Features.User.Queries
                     Message = "No users found."
                 };
             }
-            var allTagIds = users
-            .Where(u => u.favourite_type != null)
-            .SelectMany(u => u.favourite_type)
-            .Distinct()
-            .ToList();
 
-            // Bước 2: Lấy thông tin tag từ repo
+            // Lấy tags cho users
+            var allTagIds = users
+                .Where(u => u.favourite_type != null)
+                .SelectMany(u => u.favourite_type)
+                .Distinct()
+                .ToList();
+
             var tagEntities = await _tagRepository.GetTagsByIdsAsync(allTagIds);
             var tagDict = tagEntities.ToDictionary(t => t.id, t => t.name);
 
@@ -90,13 +111,12 @@ namespace Application.Features.User.Queries
                     }).ToList();
             }
 
-
             int totalPages = (int)Math.Ceiling((double)totalCount / request.Limit);
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Retrieved novels successfully.",
+                Message = "Retrieved users successfully.",
                 Data = new
                 {
                     Users = userResponseList,
