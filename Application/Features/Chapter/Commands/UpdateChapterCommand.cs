@@ -60,7 +60,10 @@ namespace Application.Features.Chapter.Commands
             chapter.price = request.Price ?? chapter.price;
             if (request.ScheduledAt.HasValue)
             {
-                chapter.scheduled_at = request.ScheduledAt.Value.ToUniversalTime().Ticks;
+                chapter.scheduled_at = chapter.scheduled_at = DateTimeOffset
+                    .FromUnixTimeMilliseconds(request.ScheduledAt.Value)
+                    .ToOffset(TimeSpan.FromHours(7)) // đổi về GMT+7
+                    .DateTime.Ticks;
             }
             chapter.updated_at = TimeHelper.NowTicks;
 
