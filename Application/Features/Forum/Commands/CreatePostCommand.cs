@@ -63,7 +63,8 @@ namespace Application.Features.Forum.Commands
             {
                 Id = author.id,
                 Username = author.username,
-                Avatar = author.avata_url
+                Avatar = author.avata_url,
+                DisplayName = author.displayname
             };
 
             return new ApiResponse
