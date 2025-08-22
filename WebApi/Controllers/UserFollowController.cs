@@ -35,6 +35,20 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("status/{targetUserId}")]
+        [Authorize]
+        public async Task<IActionResult> CheckFollowStatus(string targetUserId)
+        {
+            var query = new Application.Features.UserFollow.Queries.CheckFollowStatus
+            {
+                FollowerId = currentUserId,
+                TargetUserId = targetUserId
+            };
+            
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
         [HttpPost("{targetUserId}")]
         [Authorize]
         public async Task<IActionResult> Follow(string targetUserId)
