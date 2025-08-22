@@ -60,10 +60,23 @@ namespace Application.Features.Chapter.Commands
             chapter.price = request.Price ?? chapter.price;
             if (request.ScheduledAt.HasValue)
             {
-                chapter.scheduled_at = chapter.scheduled_at = DateTimeOffset
-                    .FromUnixTimeMilliseconds(request.ScheduledAt.Value)
-                    .ToOffset(TimeSpan.FromHours(7)) // đổi về GMT+7
-                    .DateTime.Ticks;
+                var scheduleAt = TimeHelper.FromUnixMillisecondsToVNTicks(request.ScheduledAt.Value);
+
+                var today = TimeHelper.NowVN.Date;
+                var scheduledDate = new DateTime(scheduleAt).Date;
+
+                if (scheduledDate <= today)
+                {
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Ngày lên lịch xuất bản chỉ được cho phép từ ngày tiếp theo trở đi."
+                    };
+                }
+
+                chapter.scheduled_at = scheduleAt;
+                chapter.is_draft = false;
+                chapter.is_public = false;
             }
             chapter.updated_at = TimeHelper.NowTicks;
 

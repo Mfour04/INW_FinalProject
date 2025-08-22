@@ -93,5 +93,17 @@ namespace Shared.Helpers
 
         public static bool IsBanExpired(long? bannedUntilTicks) =>
             bannedUntilTicks.HasValue && NowTicks > bannedUntilTicks.Value;
+
+        public static long FromUnixMillisecondsToVNTicks(long unixMs)
+        {
+            // unixMs là UTC (FE gửi lên chuẩn UTC)
+            var utcDateTime = DateTimeOffset.FromUnixTimeMilliseconds(unixMs).UtcDateTime;
+
+            // Convert về giờ VN
+            var vnDateTime = ToVN(utcDateTime);
+
+            // Trả về ticks (theo giờ VN)
+            return vnDateTime.Ticks;
+        }
     }
 }
