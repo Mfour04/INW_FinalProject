@@ -2,12 +2,14 @@
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Shared.Contracts.Response;
 using Shared.SystemHelpers.TokenGenerate;
+using System.Security.Claims;
 using System.Text;
 
 namespace Infrastructure
@@ -70,53 +72,9 @@ namespace Infrastructure
     IConfiguration configuration
 )
         {
-            var jwtSettings = configuration.GetSection(JwtSettings.Section).Get<JwtSettings>();
-
-            var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
-
-            services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.Section));
-
-            services
-                .AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwtSettings.Issuer,
-                        ValidAudience = jwtSettings.Audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(key)
-                    };
-
-                    options.Events = new JwtBearerEvents
-                    {
-                        OnMessageReceived = context =>
-                        {
-                            // Lấy token từ query string cho SignalR
-                            var accessToken = context.Request.Query["access_token"];
-                            var path = context.HttpContext.Request.Path;
-
-                            if (!string.IsNullOrEmpty(accessToken) &&
-                                path.StartsWithSegments("/hubs/notification"))
-                            {
-                                context.Token = accessToken;
-                            }
-
-                            // Nếu token trong cookie "jwt"
-                            if (string.IsNullOrEmpty(context.Token) &&
-                                context.Request.Cookies.ContainsKey("jwt"))
-                            {
-                                context.Token = context.Request.Cookies["jwt"];
-                            }
-
-                            return Task.CompletedTask;
-                        }
-                    };
-                });
-
+            
             return services;
         }
+
     }
 }

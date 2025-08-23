@@ -26,5 +26,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> IncrementFollowingCountAsync(string userId, int value);
         Task<int> CountAsync(Expression<Func<UserEntity, bool>> filter = null);
         Task<List<WeeklyStatItem>> CountUsersPerDayCurrentWeekAsync();
+        Task<UserEntity> FindOrCreateUserFromGoogleAsync(string email, string name, string avatarUrl);
     }
 }

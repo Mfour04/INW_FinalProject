@@ -2,6 +2,8 @@
 using Application.Features.Novel.Queries;
 using Application.Features.User.Feature;
 using Application.Features.User.Queries;
+using Application.Services.Interfaces;
+using Google.Apis.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +12,7 @@ using Shared.Helpers;
 using Shared.SystemHelpers.TokenGenerate;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 
 namespace WebApi.Controllers
 {
@@ -19,11 +22,92 @@ namespace WebApi.Controllers
     {
         private readonly IMediator _mediator;
         private readonly JwtHelpers _jwtHelpers;
-        public UsersController(IMediator mediator, JwtHelpers jwtHelpers)
+        private readonly IConfiguration _config;
+
+        public UsersController(IMediator mediator, JwtHelpers jwtHelpers
+            , IConfiguration config)
         {
             _mediator = mediator;
             _jwtHelpers = jwtHelpers;
+            _config = config;
         }
+
+        public class GoogleLoginRequest
+        {
+            public string AccessToken { get; set; }
+        }
+        public class GoogleUserInfo
+        {
+            public string Sub { get; set; }
+            public string Name { get; set; }
+
+            [JsonPropertyName("given_name")]
+            public string GivenName { get; set; }
+
+            [JsonPropertyName("family_name")]
+            public string FamilyName { get; set; }
+
+            [JsonPropertyName("picture")]
+            public string Picture { get; set; }
+
+            [JsonPropertyName("email")]
+            public string Email { get; set; }
+
+            [JsonPropertyName("email_verified")]
+            public bool EmailVerified { get; set; }
+        }
+
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", request.AccessToken);
+
+                var response = await httpClient.GetStringAsync("https://www.googleapis.com/oauth2/v3/userinfo");
+
+                // 🔍 Log thử response từ Google
+                Console.WriteLine("Google userinfo response: " + response);
+
+                var userInfo = System.Text.Json.JsonSerializer.Deserialize<GoogleUserInfo>(
+                    response,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (userInfo == null || string.IsNullOrEmpty(userInfo.Email))
+                {
+                    return Unauthorized(new
+                    {
+                        Message = "Invalid Google access token",
+                        Error = "User info not found",
+                        RawResponse = response   // 👈 thêm raw response để debug
+                    });
+                }
+
+                var command = new LoginGoogleCommand
+                {
+                    Email = userInfo.Email,
+                    Name = userInfo.Name ?? userInfo.GivenName ?? userInfo.Email,
+                    AvatarUrl = userInfo.Picture
+                };
+
+                var result = await _mediator.Send(command);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GoogleLogin Error] {ex}");
+                return Unauthorized(new
+                {
+                    Message = "Invalid Google access token",
+                    Error = ex.Message,
+                    Stack = ex.StackTrace
+                });
+            }
+        }
+
 
         // Đăng ký người dùng mới
         [HttpPost("register")]

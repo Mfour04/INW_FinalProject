@@ -374,5 +374,36 @@ namespace Infrastructure.Repositories.Implements
 
             return result;
         }
+        public async Task<UserEntity> FindOrCreateUserFromGoogleAsync(string email, string name, string avatarUrl)
+        {
+            var user = await _collection.Find(u => u.email == email).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                user = new UserEntity
+                {
+                    id = SystemHelper.RandomId(),
+                    email = email,
+                    displayname = name,
+                    displayname_unsigned = SystemHelper.RemoveDiacritics(name),
+                    avata_url = avatarUrl,
+                    role = Role.User,
+                    is_verified = true,
+                    created_at = TimeHelper.NowTicks,
+                    last_login = TimeHelper.NowTicks
+                };
+
+                Console.WriteLine("Creating new user: " + email);
+                await _collection.InsertOneAsync(user);
+                Console.WriteLine("User created: " + user.id);
+            }
+            else
+            {
+                user.last_login = TimeHelper.NowTicks;
+                var update = Builders<UserEntity>.Update.Set(u => u.last_login, user.last_login);
+                await _collection.UpdateOneAsync(u => u.email == email, update);
+            }
+
+            return user; // Fix: Return the user's ID as a string instead of the UserEntity object.
+        }
     }
 }
