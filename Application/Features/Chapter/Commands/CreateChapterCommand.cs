@@ -73,7 +73,7 @@ namespace Application.Features.Chapter.Commands
                     return new ApiResponse
                     {
                         Success = false,
-                        Message = "Ngày lên lịch xuất bản chỉ được cho phép từ ngày tiếp theo trở đi. Vui lòng chọn ngày từ ngày mai trở đi. Nếu bạn vẫn chọn ngày xuất bản giống với ngày hiện tại thì nên chọn xuất bản ngay!"
+                        Message = "Ngày lên lịch xuất bản chỉ được từ ngày tiếp theo trở đi. Vui lòng chọn ngày từ ngày mai trở đi. Nếu bạn vẫn chọn ngày xuất bản giống với ngày hiện tại thì nên chọn xuất bản ngay!"
                     };
                 }
             }
