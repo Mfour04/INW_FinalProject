@@ -22,12 +22,12 @@ namespace Application.Features.Report.Command
     public class UpdateReportCommandHandler : IRequestHandler<UpdateReportCommand, ApiResponse>
     {
         private readonly IReportRepository _reportRepository;
-        private readonly IMapper _mapper;
-        public UpdateReportCommandHandler(IReportRepository reportRepository, IMapper mapper)
+
+        public UpdateReportCommandHandler(IReportRepository reportRepository)
         {
             _reportRepository = reportRepository;
-            _mapper = mapper;
         }
+
         public async Task<ApiResponse> Handle(UpdateReportCommand request, CancellationToken cancellationToken)
         {
             var input = request;
@@ -45,12 +45,10 @@ namespace Application.Features.Report.Command
                 };
             }
 
-            var response = _mapper.Map<List<UpdateReportResponse>>(updatedReport);
             return new ApiResponse
             {
                 Success = true,
                 Message = "Report updated successfully",
-                Data = response
             };
         }
     }

@@ -1,13 +1,9 @@
 ﻿using AutoMapper;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Report;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Report.Queries
 {
@@ -20,32 +16,76 @@ namespace Application.Features.Report.Queries
     {
         private readonly IReportRepository _reportRepository;
         private readonly IMapper _mapper;
+        private readonly IUserRepository _userRepository;
 
-        public GetReportByIdHandler(IReportRepository reportRepository, IMapper mapper)
+        public GetReportByIdHandler(
+            IReportRepository reportRepository,
+            IMapper mapper,
+            IUserRepository userRepository)
         {
             _reportRepository = reportRepository;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
 
-        public async Task<ApiResponse> Handle(GetReportById request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(GetReportById req, CancellationToken ct)
         {
-            var report = await _reportRepository.GetByIdAsync(request.ReportId);
-            if (report == null)
+            var entity = await _reportRepository.GetByIdAsync(req.ReportId);
+            if (entity == null)
+                return new ApiResponse { Success = false, Message = "Report not found." };
+
+            var userIds = new List<string>();
+            if (!string.IsNullOrWhiteSpace(entity.reporter_id)) userIds.Add(entity.reporter_id);
+            if (!string.IsNullOrWhiteSpace(entity.moderator_id)) userIds.Add(entity.moderator_id!);
+
+            var userLookup = new Dictionary<string, BaseReportResponse.UserResponse>();
+            if (userIds.Count > 0)
             {
-                return new ApiResponse
+                var users = await _userRepository.GetUsersByIdsAsync(userIds.Distinct().ToList());
+                foreach (var u in users)
                 {
-                    Success = false,
-                    Message = "Report not found."
-                };
+                    userLookup[u.id] = new BaseReportResponse.UserResponse
+                    {
+                        Id = u.id,
+                        Username = u.username,
+                        DisplayName = u.displayname,
+                        AvatarUrl = u.avata_url
+                    };
+                }
             }
 
-            var reportResponse = _mapper.Map<ReportResponse>(report);
+            BaseReportResponse response;
+            switch (entity.scope)
+            {
+                case ReportScope.Novel:
+                    response = _mapper.Map<NovelReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                    break;
+
+                case ReportScope.Chapter:
+                    response = _mapper.Map<ChapterReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                    break;
+
+                case ReportScope.Comment:
+                    response = _mapper.Map<CommentReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                    break;
+
+                case ReportScope.ForumPost:
+                    response = _mapper.Map<ForumPostReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                    break;
+
+                case ReportScope.ForumComment:
+                    response = _mapper.Map<ForumCommentReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                    break;
+
+                default:
+                    return new ApiResponse { Success = false, Message = "Unknown report scope." };
+            }
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Report retrieved successfully.",
-                Data = reportResponse
+                Data = response
             };
         }
     }

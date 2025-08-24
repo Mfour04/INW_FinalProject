@@ -1,187 +1,224 @@
-﻿using Application.Features.Notification.Commands;
-using AutoMapper;
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
-using Shared.Contracts.Response.Report;
 using Shared.Helpers;
-using System.Text.Json.Serialization;
 
 namespace Application.Features.Report.Command
 {
     public class CreateReportCommand : IRequest<ApiResponse>
     {
-        public string UserId { get; set; }
-        public string MemberId { get; set; }
-        public string NovelId { get; set; }
-        public string ChapterId { get; set; }
-        public string CommentId { get; set; }
-        public string ForumPostId { get; set; }
-        public string ForumCommentId { get; set; }
-        public ReportTypeStatus Type { get; set; }
-        public string Reason { get; set; }
+        public ReportScope Scope { get; set; }
+        public ReportReason Reason { get; set; }
+
+        public string? NovelId { get; set; }
+        public string? ChapterId { get; set; }
+        public string? CommentId { get; set; }
+        public string? ForumPostId { get; set; }
+        public string? ForumCommentId { get; set; }
+
+        public string? Message { get; set; }
     }
 
-    public class CreateReponseCommandHandler : IRequestHandler<CreateReportCommand, ApiResponse>
+    public class CreateReportCommandHandler : IRequestHandler<CreateReportCommand, ApiResponse>
     {
-        private readonly INovelRepository _novelRepository;
-        private readonly IChapterRepository _chapterRepository;
-        private readonly ICommentRepository _commentRepository;
-        private readonly IUserRepository _userRepository;
-        private readonly IReportRepository _reportRepository;
-        private readonly IForumPostRepository _forumPostRepository;
-        private readonly IForumCommentRepository _forumCommentRepository;
-        private readonly IMapper _mapper;
-        private readonly IMediator _mediator;
+        private readonly IReportRepository _reportRepo;
+        private readonly INovelRepository _novelRepo;
+        private readonly IChapterRepository _chapterRepo;
+        private readonly ICommentRepository _commentRepo;
+        private readonly IForumPostRepository _forumPostRepo;
+        private readonly IForumCommentRepository _forumCommentRepo;
+        private readonly ICurrentUserService _currentUser;
 
-        public CreateReponseCommandHandler(INovelRepository novelRepository, IChapterRepository chapterRepository, ICommentRepository commentRepository
-            , IUserRepository userRepository, IReportRepository reportRepository, IForumPostRepository forumPostRepository
-            , IForumCommentRepository forumCommentRepository, IMapper mapper, IMediator mediator)
+        // === Anti-spam ===
+        private const int COOLDOWN_SECONDS = 120; // 2 phút giữa 2 report
+        private const int DUP_WINDOW_SECONDS = 600; // 10 phút không trùng target + reason (Pending)
+        private const int DAILY_LIMIT = 10;  // tối đa 10 report / 24h / user
+
+        private static long SecToTicks(int s) => (long)s * TimeSpan.TicksPerSecond;
+
+        public CreateReportCommandHandler(
+           IReportRepository reportRepo,
+           INovelRepository novelRepo,
+           IChapterRepository chapterRepo,
+           ICommentRepository commentRepo,
+           IForumPostRepository forumPostRepo,
+           IForumCommentRepository forumCommentRepo,
+           ICurrentUserService currentUser)
         {
-            _novelRepository = novelRepository;
-            _chapterRepository = chapterRepository;
-            _commentRepository = commentRepository;
-            _userRepository = userRepository;
-            _reportRepository = reportRepository;
-            _forumPostRepository = forumPostRepository;
-            _forumCommentRepository = forumCommentRepository;
-            _mapper = mapper;
-            _mediator = mediator;
+            _reportRepo = reportRepo;
+            _novelRepo = novelRepo;
+            _chapterRepo = chapterRepo;
+            _commentRepo = commentRepo;
+            _forumPostRepo = forumPostRepo;
+            _forumCommentRepo = forumCommentRepo;
+            _currentUser = currentUser;
         }
 
-        public async Task<ApiResponse> Handle(CreateReportCommand request, CancellationToken cancellationToken)
+        public async Task<ApiResponse> Handle(CreateReportCommand req, CancellationToken ct)
         {
-            var targetId = GetTargetId(request);
-            var exists = await _reportRepository.ExistsAsync(request.UserId, request.Type, targetId);
-            if (exists)
-            {
-                return new ApiResponse
-                {
-                    Success = false,
-                    Message = "You have already reported this item"
-                };
-            }
-            if (request.Type == ReportTypeStatus.NovelReport)
-            {
-                var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
-                if (novel == null)
-                {
-                    return new ApiResponse { Success = false, Message = "Novel not found" };
-                }
-            }
-            else if (request.Type == ReportTypeStatus.ChapterReport)
-            {
-                var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
-                if (chapter == null)
-                {
-                    return new ApiResponse { Success = false, Message = "Chapter not found" };
-                }
-            }
-            else if (request.Type == ReportTypeStatus.CommentReport)
-            {
-                var comment = await _commentRepository.GetByIdAsync(request.CommentId);
-                if (comment == null)
-                {
-                    return new ApiResponse { Success = false, Message = "Comment not found" };
-                }
-            }
-            else if (request.Type == ReportTypeStatus.UserReport)
-            {
-                var user = await _userRepository.GetById(request.MemberId);
-                if (user == null)
-                {
-                    return new ApiResponse { Success = false, Message = "User not found" };
-                }
-            }
-            else if (request.Type == ReportTypeStatus.ForumPostReport)
-            {
-                var forumPost = await _forumPostRepository.GetByIdAsync(request.ForumPostId);
-                if (forumPost == null)
-                {
-                    return new ApiResponse { Success = false, Message = "Forum post not found" };
-                }
-            }   
-            else if (request.Type == ReportTypeStatus.ForumCommentReport)
-            {
-                var forumComment = await _forumCommentRepository.GetByIdAsync(request.ForumCommentId);
-                if (forumComment == null)
-                {
-                    return new ApiResponse { Success = false, Message = "Forum comment not found" };
-                }
-            }
-            var createRequest = new ReportEntity
+            var reporterId = _currentUser.UserId;
+            if (string.IsNullOrWhiteSpace(reporterId))
+                return Fail("You must be signed in to submit a report.");
+
+            var targetId = GetTargetIdByScope(req.Scope, req);
+            if (string.IsNullOrWhiteSpace(targetId))
+                return Fail($"Missing target id for scope '{req.Scope}'.");
+
+            var now = TimeHelper.NowTicks;
+
+            // 1) Cooldown per user
+            var cooldownFrom = now - SecToTicks(COOLDOWN_SECONDS);
+            var cooldownCount = await _reportRepo.CountByReporterAsync(reporterId!, cooldownFrom);
+            if (cooldownCount > 0)
+                return Fail($"Please wait {COOLDOWN_SECONDS} seconds before sending another report.");
+
+            // 2) Daily cap
+            var dayFrom = now - TimeSpan.TicksPerDay;
+            var dailyCount = await _reportRepo.CountByReporterAsync(reporterId!, dayFrom);
+            if (dailyCount >= DAILY_LIMIT)
+                return Fail("You've reached today's report limit.");
+
+            // 3) Duplicate window: cùng target + reason trong 10 phút và còn Pending
+            var dupFrom = now - SecToTicks(DUP_WINDOW_SECONDS);
+            var duplicate = await _reportRepo.ExistsAsync(
+                reporterId: reporterId!,
+                scope: req.Scope,
+                novelId: req.NovelId,
+                chapterId: req.ChapterId,
+                commentId: req.CommentId,
+                forumPostId: req.ForumPostId,
+                forumCommentId: req.ForumCommentId,
+                reason: req.Reason,
+                status: ReportStatus.Pending,
+                fromTicks: dupFrom
+            );
+            if (duplicate)
+                return Fail("You already reported this item recently. We're reviewing it.");
+
+            var (resId, parentNovelId) = await ValidateAndExtractResourceAsync(req.Scope, req);
+            if (string.IsNullOrEmpty(resId))
+                return Fail("Resource not found or information does not match.");
+
+            var report = new ReportEntity
             {
                 id = SystemHelper.RandomId(),
-                user_id = request.UserId,
-                type = request.Type,
-                chapter_id = request.ChapterId,
-                novel_id = request.NovelId,
-                member_id = request.MemberId,
-                comment_id = request.CommentId,
-                forum_post_id = request.ForumPostId,
-                forum_comment_id = request.ForumCommentId,
-                reason = request.Reason,
-                status = ReportStatus.InProgress,
-                created_at = TimeHelper.NowTicks,
-                updated_at = TimeHelper.NowTicks
+                scope = req.Scope,
+
+                novel_id = parentNovelId,
+                chapter_id = req.ChapterId ?? "",
+                comment_id = req.CommentId ?? "",
+                forum_post_id = req.ForumPostId ?? "",
+                forum_comment_id = req.ForumCommentId ?? "",
+
+                reporter_id = reporterId!,
+                reason = req.Reason,
+                message = (req.Message ?? string.Empty).Trim(),
+                status = ReportStatus.Pending,
+
+                action = ModerationAction.None,
+                moderator_id = "",
+                moderator_note = "",
+                moderated_at = 0,
+
+                created_at = now,
             };
 
-            await _reportRepository.CreateAsync(createRequest);
-            var response = _mapper.Map<ReportResponse>(createRequest);
-
-            var admin = await _userRepository.GetFirstUserByRoleAsync(Role.Admin);
-            NotificationType notiType = request.Type switch
-            {
-                ReportTypeStatus.ChapterReport => NotificationType.ChapterReportNotification,
-                ReportTypeStatus.NovelReport => NotificationType.NovelReportNofitication,
-                ReportTypeStatus.CommentReport => NotificationType.ReportComment,
-                ReportTypeStatus.UserReport => NotificationType.UserReport,
-                _ => NotificationType.UserReport
-            };
-
-
-            await _mediator.Send(new SendNotificationToUserCommand
-            {
-                UserId = admin.id,
-                SenderId = request.UserId,
-                NovelId = request.NovelId,
-                ChapterId = request.ChapterId,
-                CommentId = request.CommentId,
-                UserReportedId = request.MemberId,
-                Type = notiType
-            });
+            await _reportRepo.CreateAsync(report);
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Report created successfully",
-                Data = new
-                {
-                    Comment = response,
-                    SignalR = new
-                    {
-                        Sent = true,
-                        NotificationType = notiType.ToString(),
-                    }
-                }
+                Message = "Report submitted. Thank you!"
             };
         }
 
-        private string GetTargetId(CreateReportCommand request)
-        {
-            var result = request;
-            return result.Type switch
+        private static ApiResponse Fail(string message) => new() { Success = false, Message = message };
+
+        private static string? GetTargetIdByScope(ReportScope scope, CreateReportCommand r) =>
+            scope switch
             {
-                ReportTypeStatus.UserReport => result.MemberId,
-                ReportTypeStatus.NovelReport => result.NovelId,
-                ReportTypeStatus.ChapterReport => result.ChapterId,
-                ReportTypeStatus.CommentReport => result.CommentId,
-                ReportTypeStatus.ForumPostReport => result.ForumPostId,
-                ReportTypeStatus.ForumCommentReport => result.ForumCommentId,
-                _ => string.Empty
+                ReportScope.Novel => r.NovelId,
+                ReportScope.Chapter => r.ChapterId,
+                ReportScope.Comment => r.CommentId,
+                ReportScope.ForumPost => r.ForumPostId,
+                ReportScope.ForumComment => r.ForumCommentId,
+                _ => null
             };
+
+        private async Task<(string resId, string parentNovelId)> ValidateAndExtractResourceAsync(ReportScope scope, CreateReportCommand req)
+        {
+            switch (scope)
+            {
+                case ReportScope.Novel:
+                    {
+                        var novel = await _novelRepo.GetByNovelIdAsync(req.NovelId!);
+                        return novel == null ? ("", "") : (req.NovelId!, req.NovelId!);
+                    }
+
+                case ReportScope.Chapter:
+                    {
+                        var chap = await _chapterRepo.GetByIdAsync(req.ChapterId!);
+                        if (chap == null) return ("", "");
+
+                        var chapterNovelId = chap.novel_id;
+                        if (!string.IsNullOrWhiteSpace(req.NovelId) &&
+                            !string.Equals(chapterNovelId, req.NovelId, StringComparison.Ordinal))
+                            return ("", "");
+
+                        return (req.ChapterId!, chapterNovelId ?? req.NovelId ?? "");
+                    }
+
+                case ReportScope.Comment:
+                    {
+                        var cmt = await _commentRepo.GetByIdAsync(req.CommentId!);
+                        if (cmt == null) return ("", "");
+
+                        string parentNovelId = "";
+                        if (!string.IsNullOrWhiteSpace(cmt.chapter_id))
+                        {
+                            var chap = await _chapterRepo.GetByIdAsync(cmt.chapter_id);
+                            parentNovelId = chap?.novel_id ?? "";
+                        }
+                        else if (!string.IsNullOrWhiteSpace(cmt.novel_id))
+                        {
+                            parentNovelId = cmt.novel_id;
+                        }
+                        else
+                        {
+                            parentNovelId = req.NovelId ?? "";
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(req.NovelId) &&
+                            !string.IsNullOrWhiteSpace(parentNovelId) &&
+                            !string.Equals(parentNovelId, req.NovelId, StringComparison.Ordinal))
+                            return ("", "");
+
+                        if (!string.IsNullOrWhiteSpace(req.ChapterId) &&
+                            !string.IsNullOrWhiteSpace(cmt.chapter_id) &&
+                            !string.Equals(cmt.chapter_id, req.ChapterId, StringComparison.Ordinal))
+                            return ("", "");
+
+                        return (req.CommentId!, parentNovelId);
+                    }
+
+                case ReportScope.ForumPost:
+                    {
+                        var post = await _forumPostRepo.GetByIdAsync(req.ForumPostId!);
+                        return post == null ? ("", "") : (req.ForumPostId!, "");
+                    }
+
+                case ReportScope.ForumComment:
+                    {
+                        var fc = await _forumCommentRepo.GetByIdAsync(req.ForumCommentId!);
+                        return fc == null ? ("", "") : (req.ForumCommentId!, "");
+                    }
+
+                default:
+                    return ("", "");
+            }
         }
     }
 }

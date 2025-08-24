@@ -12,9 +12,6 @@ namespace WebApi.Controllers
     public class AuthorAnalysisController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private string currentUserId =>
-            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? throw new UnauthorizedAccessException("User ID not found in token");
 
         public AuthorAnalysisController(IMediator mediator)
         {
