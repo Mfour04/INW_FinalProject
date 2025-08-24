@@ -320,7 +320,7 @@ namespace Infrastructure.Repositories.Implements
             var filterBuilder = Builders<TransactionEntity>.Filter;
 
             var filter = filterBuilder.In(x => x.novel_id, novelIds) &
-						 filterBuilder.In(x => (int)x.type, types) &
+                         filterBuilder.In(x => (int)x.type, types) &
                          filterBuilder.Eq(x => x.status, PaymentStatus.Completed) &
                          filterBuilder.Gte(x => x.completed_at, startTicks) &
                          filterBuilder.Lte(x => x.completed_at, endTicks);
@@ -336,6 +336,20 @@ namespace Infrastructure.Repositories.Implements
                 .Find(filter)
                 .Project<TransactionEntity>(projection)
                 .ToListAsync();
+        }
+
+        public async Task<List<TransactionEntity>> GetTransactionsByIdsAsync(List<string> transactionIds)
+        {
+            try
+            {
+                var filter = Builders<TransactionEntity>.Filter.In(u => u.id, transactionIds);
+                var result = await _collection.Find(filter).ToListAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
     }
 }

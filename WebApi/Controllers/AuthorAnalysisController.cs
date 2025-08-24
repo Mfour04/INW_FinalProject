@@ -1,5 +1,6 @@
 using System.Security.Claims;
-using Application.Features.AuthorEarning.Queries;
+using Application.Features.AuthorAnalysis.Earning.Queries;
+using Application.Features.AuthorAnalysis.View.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,45 +8,47 @@ using Microsoft.AspNetCore.Mvc;
 namespace WebApi.Controllers
 {
     [ApiController]
-    [Route("api/earnings")]
-    public class AuthorEarningController : ControllerBase
+    [Route("api/authors/me")]
+    public class AuthorAnalysisController : ControllerBase
     {
         private readonly IMediator _mediator;
         private string currentUserId =>
             User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new UnauthorizedAccessException("User ID not found in token");
 
-        public AuthorEarningController(IMediator mediator)
+        public AuthorAnalysisController(IMediator mediator)
         {
             _mediator = mediator;
         }
 
-        [HttpGet("summary")]
+        [HttpGet("earnings/summary")]
         [Authorize]
         public async Task<IActionResult> GetAuthorEarningSummary([FromQuery] GetAuthorEarningsSummary query)
         {
-            query.UserId = currentUserId;
-
             var result = await _mediator.Send(query);
             return Ok(result);
         }
 
-        [HttpGet("chart")]
+        [HttpGet("earnings/chart")]
         [Authorize]
         public async Task<IActionResult> GetAuthorEarningChart([FromQuery] GetAuthorEarningsChart query)
         {
-            query.UserId = currentUserId;
-
             var result = await _mediator.Send(query);
             return Ok(result);
         }
 
-        [HttpGet("top-novels")]
+        [HttpGet("earnings/top-novels")]
         [Authorize]
-        public async Task<IActionResult> GetAuthorTopEarningNovel([FromQuery] GetAuthorTopEarningNovels query)
+        public async Task<IActionResult> GetAuthorTopEarningNovel([FromQuery] GetAuthorTopNovels query)
         {
-            query.UserId = currentUserId;
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
 
+        [HttpGet("views/top-novels")]
+        [Authorize]
+        public async Task<IActionResult> GetAuthorTopViewedNovel([FromQuery] GetAuthorTopViewedNovels query)
+        {
             var result = await _mediator.Send(query);
             return Ok(result);
         }
