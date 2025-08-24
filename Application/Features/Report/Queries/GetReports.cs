@@ -1,114 +1,150 @@
 ﻿using AutoMapper;
-using Domain.Entities;
 using Domain.Entities.System;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Report;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Shared.Helpers;
 
 namespace Application.Features.Report.Queries
 {
     public class GetReports : IRequest<ApiResponse>
     {
-        public int Page = 0;
-        public int Limit = int.MaxValue;
-        public string UserId { get; set; }
-        public ReportTypeStatus? Type { get; set; }
+        public string SortBy { get; set; } = "created_at:desc";
+        public int Page { get; set; } = 0;
+        public int Limit { get; set; } = int.MaxValue;
+
+        public ReportScope? Scope { get; set; }
         public ReportStatus? Status { get; set; }
-        public string MemberId { get; set; }
-        public string NovelId { get; set; }
-        public string ChapterId { get; set; }
-        public string CommentId { get; set; }
-        public string ForumPostId { get; set; }
-        public string ForumCommentId { get; set; }
     }
 
     public class GetReportsHandler : IRequestHandler<GetReports, ApiResponse>
     {
         private readonly IReportRepository _reportRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
 
-        public GetReportsHandler(IReportRepository reportRepository, IMapper mapper)
+        public GetReportsHandler(
+            IReportRepository reportRepository,
+            IMapper mapper,
+            IUserRepository userRepository)
         {
             _reportRepository = reportRepository;
             _mapper = mapper;
+            _userRepository = userRepository;
         }
 
         public async Task<ApiResponse> Handle(GetReports request, CancellationToken cancellationToken)
         {
-            FindCreterias findCreterias = new FindCreterias
+            var find = new FindCreterias
             {
                 Limit = request.Limit,
                 Page = request.Page
             };
+            var sort = SystemHelper.ParseSortCriteria(request.SortBy);
 
-            List<ReportEntity> reports;
-            // Filter theo các điều kiện
-            if (!string.IsNullOrEmpty(request.UserId))
-            {
-                reports = await _reportRepository.GetByUserIdAsync(findCreterias, request.UserId);
-            }
-            else if (request.Status.HasValue)
-            {
-                reports = await _reportRepository.GetByStatusAsync(findCreterias, request.Status.Value);
-            }
-            else if (request.Type.HasValue)
-            {
-                reports = await _reportRepository.GetByTypeAsync(findCreterias, request.Type.Value);
-            }
-            else if (!string.IsNullOrEmpty(request.MemberId))
-            {
-                reports = await _reportRepository.GetByMemberIdAsync(findCreterias, request.MemberId);
-            }
-            else if (!string.IsNullOrEmpty(request.NovelId))
-            {
-                reports = await _reportRepository.GetByNovelIdAsync(findCreterias, request.NovelId);
-            }
-            else if (!string.IsNullOrEmpty(request.ChapterId))
-            {
-                reports = await _reportRepository.GetByChapterIdAsync(findCreterias, request.ChapterId);
-            }
-            else if (!string.IsNullOrEmpty(request.CommentId))
-            {
-                reports = await _reportRepository.GetByCommentIdAsync(findCreterias, request.CommentId);
-            }
-            else if (!string.IsNullOrEmpty(request.ForumPostId))
-            {
-                reports = await _reportRepository.GetByForumPostIdAsync(findCreterias, request.ForumPostId);
-            }
-            else if (!string.IsNullOrEmpty(request.ForumCommentId))
-            {
-                reports = await _reportRepository.GetByForumCommentIdAsync(findCreterias, request.ForumCommentId);
-            }
-            else
-            {
-                reports = await _reportRepository.GetAllAsync(findCreterias);
-            }
-
-            if (reports == null)
+            var reports = await _reportRepository.GetAllAsync(request.Scope, request.Status, find, sort);
+            if (reports == null || reports.Count == 0)
             {
                 return new ApiResponse
                 {
-                    Success = false,
-                    Message = "No reports found."
+                    Success = true,
+                    Message = "No report found.",
+                    Data = Array.Empty<object>()
                 };
             }
 
-            var requestResponse = _mapper.Map<List<ReportResponse>>(reports);
+            var userIds = reports
+                .Select(r => r.reporter_id)
+                .Concat(reports.Where(r => !string.IsNullOrWhiteSpace(r.moderator_id))
+                .Select(r => r.moderator_id!))
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
+
+            var userMap = new Dictionary<string, BaseReportResponse.UserResponse>(StringComparer.Ordinal);
+            if (userIds.Count > 0)
+            {
+                var users = await _userRepository.GetUsersByIdsAsync(userIds);
+                foreach (var u in users)
+                {
+                    userMap[u.id] = new BaseReportResponse.UserResponse
+                    {
+                        Id = u.id,
+                        Username = u.username,
+                        DisplayName = u.displayname,
+                        AvatarUrl = u.avata_url
+                    };
+                }
+            }
+
+            BaseReportResponse.UserResponse? GetUser(string? id)
+                => !string.IsNullOrWhiteSpace(id) && userMap.TryGetValue(id, out var v) ? v : null;
+
+            var response = reports.Select(r =>
+            {
+                BaseReportResponse dto;
+                switch (r.scope)
+                {
+                    case ReportScope.Novel:
+                        {
+                            var mapped = _mapper.Map<NovelReportResponse>(r);
+                            mapped.Reporter = GetUser(r.reporter_id);
+                            mapped.Moderator = GetUser(r.moderator_id);
+                            dto = mapped;
+                            break;
+                        }
+                    case ReportScope.Chapter:
+                        {
+                            var mapped = _mapper.Map<ChapterReportResponse>(r);
+                            mapped.Reporter = GetUser(r.reporter_id);
+                            mapped.Moderator = GetUser(r.moderator_id);
+                            dto = mapped;
+                            break;
+                        }
+                    case ReportScope.Comment:
+                        {
+                            var mapped = _mapper.Map<CommentReportResponse>(r);
+                            mapped.Reporter = GetUser(r.reporter_id);
+                            mapped.Moderator = GetUser(r.moderator_id);
+                            dto = mapped;
+                            break;
+                        }
+                    case ReportScope.ForumPost:
+                        {
+                            var mapped = _mapper.Map<ForumPostReportResponse>(r);
+                            mapped.Reporter = GetUser(r.reporter_id);
+                            mapped.Moderator = GetUser(r.moderator_id);
+                            dto = mapped;
+                            break;
+                        }
+                    case ReportScope.ForumComment:
+                        {
+                            var mapped = _mapper.Map<ForumCommentReportResponse>(r);
+                            mapped.Reporter = GetUser(r.reporter_id);
+                            mapped.Moderator = GetUser(r.moderator_id);
+                            dto = mapped;
+                            break;
+                        }
+                    default:
+                        {
+                            var mapped = _mapper.Map<BaseReportResponse>(r);
+                            mapped.Reporter = GetUser(r.reporter_id);
+                            mapped.Moderator = GetUser(r.moderator_id);
+                            dto = mapped;
+                            break;
+                        }
+                }
+                return dto;
+            }).ToList();
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Retrieved reports successfully.",
-                Data = requestResponse
+                Data = response
             };
-
         }
     }
 }

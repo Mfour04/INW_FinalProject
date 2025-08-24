@@ -178,26 +178,6 @@ namespace Application.Mapping
                 .ForMember(dest => dest.TargetAction, opt => opt.MapFrom(src => src.target_action))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at));
 
-            //Report
-            CreateMap<ReportEntity, ReportResponse>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
-                .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.member_id))
-                .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
-                .ForMember(dest => dest.ChapterId, opt => opt.MapFrom(src => src.chapter_id))
-                .ForMember(dest => dest.CommentId, opt => opt.MapFrom(src => src.comment_id))
-                .ForMember(dest => dest.ForumPostId, opt => opt.MapFrom(src => src.forum_post_id))
-                .ForMember(dest => dest.ForumCommentId, opt => opt.MapFrom(src => src.forum_comment_id))
-                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.type))
-                .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.reason))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
-
-            CreateMap<ReportEntity, UpdateReportResponse>()
-                .ForMember(dest => dest.ReportId, opt => opt.MapFrom(src => src.id))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.status));
-
             //Reading Process
             // Map từ ReadingProcessEntity + NovelEntity + Author(UserEntity) → ReadingProcessResponse
             CreateMap<(ReadingProcessEntity process, NovelEntity novel, UserEntity author), ReadingProcessResponse>()
