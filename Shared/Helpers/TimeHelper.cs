@@ -64,6 +64,7 @@ namespace Shared.Helpers
         /// Ticks tại 23:59:59.9999999 Chủ nhật tuần này (giờ VN)
         public static long EndOfCurrentWeekTicksVN =>
             new DateTime(StartOfCurrentWeekTicksVN).AddDays(7).AddTicks(-1).Ticks;
+            
         public static List<DateTime> GetDaysFromStartOfWeekToTodayVN()
         {
             var today = NowVN.Date;
