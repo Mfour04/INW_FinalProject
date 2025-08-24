@@ -64,5 +64,26 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<List<AuthorEarningEntity>> GetByNovelAsync(string authorId, string novelId, long startTicks, long endTicks)
+        {
+            try
+            {
+                var fb = Builders<AuthorEarningEntity>.Filter;
+                var filter = fb.Eq(x => x.author_id, authorId) & fb.Eq(x => x.novel_id, novelId);
+
+                if (startTicks > 0)
+                    filter &= fb.Gte(x => x.created_at, startTicks);
+
+                if (endTicks > 0)
+                    filter &= fb.Lte(x => x.created_at, endTicks);
+
+                return await _collection.Find(filter).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }
