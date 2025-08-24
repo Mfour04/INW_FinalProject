@@ -57,18 +57,23 @@ namespace Application.Features.Chapter.Commands
             var isDraft = request.IsDraft ?? true;
             var isPublic = request.IsPublic ?? false;
             var today = TimeHelper.NowVN;
-            var scheduleAt = request.ScheduleAt.GetValueOrDefault(TimeHelper.NowTicks);
+            long? scheduleAt = null;
+            if (!isDraft && request.ScheduleAt.HasValue)
+            {
+                scheduleAt = request.ScheduleAt.Value;
+            }
+
             var isScheduled = !isDraft && !isPublic && scheduleAt > nowTicks;
             var hasSchedule = !isDraft && !isPublic && scheduleAt > 0;
             if (hasSchedule)
             {
-                var scheduledDate = new DateTime(scheduleAt).Date;
+                var scheduledDate = TimeHelper.FromTicks(scheduleAt.Value);
                 if (scheduledDate <= today)
                 {
                     return new ApiResponse
                     {
                         Success = false,
-                        Message = "Ngày lên lịch xuất bản chỉ được cho phép từ ngày tiếp theo trở đi. Vui lòng chọn ngày từ ngày mai trở đi. Nếu bạn vẫn chọn ngày xuất bản giống với ngày hiện tại thì nên chọn xuất bản ngay!"
+                        Message = "Ngày lên lịch xuất bản chỉ được từ ngày tiếp theo trở đi. Vui lòng chọn ngày từ ngày mai trở đi. Nếu bạn vẫn chọn ngày xuất bản giống với ngày hiện tại thì nên chọn xuất bản ngay!"
                     };
                 }
             }
@@ -81,7 +86,7 @@ namespace Application.Features.Chapter.Commands
                 chapter_number = null,
                 is_paid = request.IsPaid ?? false,
                 price = request.Price ?? 0,
-                scheduled_at = scheduleAt,
+                scheduled_at = scheduleAt ?? null,
                 is_lock = false,
                 is_draft = isDraft,
                 is_public = isPublic,
@@ -93,7 +98,6 @@ namespace Application.Features.Chapter.Commands
             {
                 chapter.is_draft = false;
                 chapter.is_public = false;
-                chapter.is_lock = true;
             }
             else if (!isDraft && isPublic)
             {

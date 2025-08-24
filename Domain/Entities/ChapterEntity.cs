@@ -8,7 +8,7 @@ namespace Domain.Entities
         public int? chapter_number { get; set; }
         public bool is_paid { get; set; }
         public int price { get; set; }
-        public long scheduled_at { get; set; }
+        public long? scheduled_at { get; set; }
         public bool allow_comment { get; set; }
         public bool is_lock { get; set; }
         public bool is_draft { get; set; }
