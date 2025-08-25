@@ -45,15 +45,8 @@ namespace Application.Features.Report.Queries
             var sort = SystemHelper.ParseSortCriteria(request.SortBy);
 
             var reports = await _reportRepository.GetAllAsync(request.Scope, request.Status, find, sort);
-            if (reports == null || reports.Count == 0)
-            {
-                return new ApiResponse
-                {
-                    Success = true,
-                    Message = "No report found.",
-                    Data = Array.Empty<object>()
-                };
-            }
+
+            var totalCount = await _reportRepository.CountAsync(request.Scope, request.Status);
 
             var userIds = reports
                 .Select(r => r.reporter_id)
@@ -139,11 +132,23 @@ namespace Application.Features.Report.Queries
                 return dto;
             }).ToList();
 
+            var limit = request.Limit <= 0 ? int.MaxValue : request.Limit;
+            var totalPages = totalCount == 0
+                ? 0
+                : (limit == int.MaxValue
+                    ? 1
+                    : (int)Math.Ceiling(totalCount / (double)limit));
+
             return new ApiResponse
             {
                 Success = true,
-                Message = "Retrieved reports successfully.",
-                Data = response
+                Message = response.Count == 0 ? "No report found." : "Retrieved reports successfully.",
+                Data = new
+                {
+                    Reports = response,
+                    TotalReports = totalCount,
+                    TotalPages = totalPages
+                }
             };
         }
     }

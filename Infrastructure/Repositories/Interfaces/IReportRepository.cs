@@ -12,6 +12,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> UpdateAsync(string id, ReportEntity entity);
         Task<List<ReportEntity>> UpdateManyAsync(List<string> ids, ReportStatus newStatus);
         Task<bool> DeleteAsync(string id);
+        Task<long> CountAsync(ReportScope? scope, ReportStatus? status);
         Task<long> CountByReporterAsync(string reporterId, long fromTicks);
         Task<bool> ExistsAsync(
             string reporterId,

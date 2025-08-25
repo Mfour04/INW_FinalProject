@@ -167,6 +167,30 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<long> CountAsync(ReportScope? scope, ReportStatus? status)
+        {
+            try
+            {
+                var filter = Builders<ReportEntity>.Filter.Empty;
+
+                if (scope.HasValue)
+                {
+                    filter &= Builders<ReportEntity>.Filter.Eq(x => x.scope, scope.Value);
+                }
+
+                if (status.HasValue)
+                {
+                    filter &= Builders<ReportEntity>.Filter.Eq(x => x.status, status.Value);
+                }
+
+                return await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task<long> CountByReporterAsync(string reporterId, long fromTicks)
         {
             try
