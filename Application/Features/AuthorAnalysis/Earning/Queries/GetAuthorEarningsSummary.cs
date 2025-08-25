@@ -25,17 +25,22 @@ namespace Application.Features.AuthorAnalysis.Earning.Queries
         private readonly ITransactionRepository _transactionRepo;
         private readonly IUserRepository _userRepo;
         private readonly ICurrentUserService _currentUser;
-
+        private readonly INovelRepository _novelRepo;
+        private readonly IChapterRepository _chapterRepo;
         public GetAuthorEarningsSummaryHandler(
             IAuthorEarningRepository authorEarningRepo,
             ITransactionRepository transactionRepo,
             IUserRepository userRepo,
-            ICurrentUserService currentUser)
+            ICurrentUserService currentUser,
+            INovelRepository novelRepo,
+            IChapterRepository chapterRepo)
         {
             _authorEarningRepo = authorEarningRepo;
             _transactionRepo = transactionRepo;
             _userRepo = userRepo;
             _currentUser = currentUser;
+            _novelRepo = novelRepo;
+            _chapterRepo = chapterRepo;
         }
 
         public async Task<ApiResponse> Handle(GetAuthorEarningsSummary request, CancellationToken cancellationToken)
@@ -94,7 +99,29 @@ namespace Application.Features.AuthorAnalysis.Earning.Queries
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
+            var novelIds = pageRows
+                .Select(x => x.novel_id)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
 
+            var novels = novelIds.Count == 0
+                ? new List<Domain.Entities.NovelEntity>()
+                : await _novelRepo.GetManyByIdsAsync(novelIds);
+
+            var novelMap = novels.ToDictionary(n => n.id, n => n.title ?? "");
+
+            var chapterIds = pageRows
+                .Select(x => x.chapter_id)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
+
+            var chapters = chapterIds.Count == 0
+                ? new List<Domain.Entities.ChapterEntity>()
+                : await _chapterRepo.GetChaptersByIdsAsync(chapterIds);
+
+            var chapterMap = chapters.ToDictionary(c => c.id, c => c.title ?? "");
             var logs = pageRows.Select(x =>
             {
                 string? buyerUsername = null;
@@ -108,11 +135,18 @@ namespace Application.Features.AuthorAnalysis.Earning.Queries
                     displayNameMap.TryGetValue(tx.requester_id, out buyerDisplayName);
                 }
 
+                novelMap.TryGetValue(x.novel_id, out var novelTitle);
+                string? chapterTitle = null;
+                if (!string.IsNullOrWhiteSpace(x.chapter_id))
+                    chapterMap.TryGetValue(x.chapter_id, out chapterTitle);
+
                 return new AuthorEarningPurchaseLogItem
                 {
                     EarningId = x.id,
                     NovelId = x.novel_id,
+                    NovelTitle = novelTitle,
                     ChapterId = x.chapter_id,
+                    ChapterTitle = chapterTitle,
                     Type = x.type.ToString(),
                     Amount = x.amount,
                     CreatedAt = x.created_at,

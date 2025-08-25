@@ -49,5 +49,13 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+
+        [HttpGet("views/top-ratings")]
+        [Authorize]
+        public async Task<IActionResult> GetAuthorTopRatedNovel([FromQuery] GetAuthorTopRatedNovels query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
     }
 }

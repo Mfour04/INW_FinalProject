@@ -1,52 +1,54 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.AuthorAnalysis;
 
+
 namespace Application.Features.AuthorAnalysis.View.Queries
 {
-    public class GetAuthorTopViewedNovels : IRequest<ApiResponse>
+    public class GetAuthorTopRatedNovels : IRequest<ApiResponse>
     {
         public int Limit { get; set; } = 10;
     }
-
-    public class GetAuthorTopViewedNovelsHandler : IRequestHandler<GetAuthorTopViewedNovels, ApiResponse>
+    public class GetAuthorTopRatedNovelsHandler : IRequestHandler<GetAuthorTopRatedNovels, ApiResponse>
     {
         private readonly INovelRepository _novelRepo;
         private readonly ICurrentUserService _current;
-
-        public GetAuthorTopViewedNovelsHandler(INovelRepository novelRepo, ICurrentUserService current)
+        public GetAuthorTopRatedNovelsHandler(INovelRepository novelRepo, ICurrentUserService current)
         {
             _novelRepo = novelRepo;
             _current = current;
         }
-
-        public async Task<ApiResponse> Handle(GetAuthorTopViewedNovels request, CancellationToken ct)
+        public async Task<ApiResponse> Handle(GetAuthorTopRatedNovels request, CancellationToken ct)
         {
             var novels = await _novelRepo.GetNovelByAuthorId(_current.UserId!);
 
             var topNovels = novels
-                .OrderByDescending(n => n.total_views)
+                .Where(n => n.rating_avg > 0) // Ensure the novel has ratings
+                .OrderByDescending(n => n.rating_avg)
+                .ThenByDescending(n => n.rating_count)
                 .Take(request.Limit)
-                .Select(n => new AuthorTopViewedNovelResponse
+                .Select(n => new AuthorTopRatedNovelResponse
                 {
                     NovelId = n.id,
                     Title = n.title,
-                    TotalViews = n.total_views
+                    RatingAvg = n.rating_avg,
+                    RatingCount = n.rating_count
                 })
-                .ToList();
+            .ToList();
+
             var totalNovelCount = novels.Count;
             return new ApiResponse
             {
                 Success = true,
-                Message = "Retrieved top viewed novels successfully.",
+                Message = "Retrieved top rated novels successfully.",
                 Data = new
                 {
                     TotalNovels = totalNovelCount,
-                    TopViewNovels = topNovels
+                    TopRatedNovels = topNovels
                 }
             };
         }
-    }
+    }   
 }
