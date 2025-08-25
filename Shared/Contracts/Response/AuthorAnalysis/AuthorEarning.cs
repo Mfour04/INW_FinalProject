@@ -17,7 +17,9 @@ namespace Shared.Contracts.Response.AuthorAnaysis
     {
         public string EarningId { get; set; }
         public string NovelId { get; set; }
+        public string NovelTitle { get; set; } 
         public string? ChapterId { get; set; }
+        public string? ChapterTitle { get; set; }
         public string Type { get; set; }
         public int Amount { get; set; }
         public long CreatedAt { get; set; }
