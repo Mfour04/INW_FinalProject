@@ -9,14 +9,14 @@ namespace Application.Features.Report.Queries
 {
     public class GetReportById : IRequest<ApiResponse>
     {
-        public string ReportId { get; set; }
+        public string ReportId { get; set; } = default!;
     }
 
     public class GetReportByIdHandler : IRequestHandler<GetReportById, ApiResponse>
     {
         private readonly IReportRepository _reportRepository;
-        private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
 
         public GetReportByIdHandler(
             IReportRepository reportRepository,
@@ -30,21 +30,22 @@ namespace Application.Features.Report.Queries
 
         public async Task<ApiResponse> Handle(GetReportById req, CancellationToken ct)
         {
-            var entity = await _reportRepository.GetByIdAsync(req.ReportId);
-            if (entity == null)
+            var r = await _reportRepository.GetByIdAsync(req.ReportId);
+            if (r == null)
                 return new ApiResponse { Success = false, Message = "Report not found." };
 
-            var userIds = new List<string>();
-            if (!string.IsNullOrWhiteSpace(entity.reporter_id)) userIds.Add(entity.reporter_id);
-            if (!string.IsNullOrWhiteSpace(entity.moderator_id)) userIds.Add(entity.moderator_id!);
+            // === load user map (reporter + moderator) ===
+            var userIds = new List<string>(2);
+            if (!string.IsNullOrWhiteSpace(r.reporter_id))  userIds.Add(r.reporter_id);
+            if (!string.IsNullOrWhiteSpace(r.moderator_id)) userIds.Add(r.moderator_id!);
 
-            var userLookup = new Dictionary<string, BaseReportResponse.UserResponse>();
+            var userMap = new Dictionary<string, BaseReportResponse.UserResponse>(StringComparer.Ordinal);
             if (userIds.Count > 0)
             {
                 var users = await _userRepository.GetUsersByIdsAsync(userIds.Distinct().ToList());
                 foreach (var u in users)
                 {
-                    userLookup[u.id] = new BaseReportResponse.UserResponse
+                    userMap[u.id] = new BaseReportResponse.UserResponse
                     {
                         Id = u.id,
                         Username = u.username,
@@ -54,38 +55,68 @@ namespace Application.Features.Report.Queries
                 }
             }
 
-            BaseReportResponse response;
-            switch (entity.scope)
+            BaseReportResponse.UserResponse? GetUser(string? id)
+                => !string.IsNullOrWhiteSpace(id) && userMap.TryGetValue(id, out var v) ? v : null;
+
+            // === map đúng DTO theo scope + gán Reporter/Moderator ===
+            BaseReportResponse dto;
+            switch (r.scope)
             {
                 case ReportScope.Novel:
-                    response = _mapper.Map<NovelReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                {
+                    var mapped = _mapper.Map<NovelReportResponse>(r);
+                    mapped.Reporter  = GetUser(r.reporter_id);
+                    mapped.Moderator = GetUser(r.moderator_id);
+                    dto = mapped;
                     break;
-
+                }
                 case ReportScope.Chapter:
-                    response = _mapper.Map<ChapterReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                {
+                    var mapped = _mapper.Map<ChapterReportResponse>(r);
+                    mapped.Reporter  = GetUser(r.reporter_id);
+                    mapped.Moderator = GetUser(r.moderator_id);
+                    dto = mapped;
                     break;
-
+                }
                 case ReportScope.Comment:
-                    response = _mapper.Map<CommentReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                {
+                    var mapped = _mapper.Map<CommentReportResponse>(r);
+                    mapped.Reporter  = GetUser(r.reporter_id);
+                    mapped.Moderator = GetUser(r.moderator_id);
+                    dto = mapped;
                     break;
-
-                case ReportScope.ForumPost:
-                    response = _mapper.Map<ForumPostReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                }
+                case ReportScope.ForumPost: 
+                {
+                    var mapped = _mapper.Map<ForumPostReportResponse>(r);
+                    mapped.Reporter  = GetUser(r.reporter_id);
+                    mapped.Moderator = GetUser(r.moderator_id);
+                    dto = mapped;
                     break;
-
+                }
                 case ReportScope.ForumComment:
-                    response = _mapper.Map<ForumCommentReportResponse>(entity, opt => opt.Items["users"] = userLookup);
+                {
+                    var mapped = _mapper.Map<ForumCommentReportResponse>(r);
+                    mapped.Reporter  = GetUser(r.reporter_id);
+                    mapped.Moderator = GetUser(r.moderator_id);
+                    dto = mapped;
                     break;
-
+                }
                 default:
-                    return new ApiResponse { Success = false, Message = "Unknown report scope." };
+                {
+                    var mapped = _mapper.Map<BaseReportResponse>(r);
+                    mapped.Reporter  = GetUser(r.reporter_id);
+                    mapped.Moderator = GetUser(r.moderator_id);
+                    dto = mapped;
+                    break;
+                }
             }
 
             return new ApiResponse
             {
                 Success = true,
                 Message = "Report retrieved successfully.",
-                Data = response
+                Data = dto
             };
         }
     }

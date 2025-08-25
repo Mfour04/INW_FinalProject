@@ -107,7 +107,7 @@ namespace Infrastructure.Repositories.Implements
 
                 var update = Builders<RatingEntity>
                     .Update.Set(x => x.score, entity?.score ?? rating.score)
-                    .Set(x => x.content, entity.content ?? rating.content)
+                    .Set(x => x.content, entity?.content ?? rating.content)
                     .Set(x => x.updated_at, TimeHelper.NowTicks);
 
                 var updated = await _collection.FindOneAndUpdateAsync(

@@ -12,7 +12,7 @@ namespace Application.Features.Rating.Command
         public int Score { get; set; }
         public string? Content { get; set; }
     }
-
+ 
     public class UpdateRatingCommandHandler : IRequestHandler<UpdateRatingCommand, ApiResponse>
     {
         private readonly IRatingRepository _ratingRepository;
