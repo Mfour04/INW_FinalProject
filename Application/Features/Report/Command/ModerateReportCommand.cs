@@ -10,9 +10,9 @@ namespace Application.Features.Report.Command
 {
     public class ModerateReportCommand : IRequest<ApiResponse>
     {
-        public string ReportId { get; set; } = default!;
+        public string? ReportId { get; set; }
         public ReportStatus Status { get; set; }
-        public ModerationAction Action { get; set; } = ModerationAction.None;
+        public ModerationAction Action { get; set; }
         public string? ModeratorNote { get; set; }
     }
 
@@ -49,28 +49,50 @@ namespace Application.Features.Report.Command
             if (!_currentUser.IsAdmin())
                 return Fail("You don't have permission to moderate reports.");
 
+            if (string.IsNullOrWhiteSpace(request.ReportId))
+                return Fail("Invalid report id.");
+
             var report = await _reportRepo.GetByIdAsync(request.ReportId);
             if (report == null)
                 return Fail("Report not found.");
 
             if (report.status != ReportStatus.Pending)
-                return Fail("This report has already been processed.");
+                return Fail("This report has already been processed and cannot be updated.");
+
+            if (request.Status == ReportStatus.Pending)
+                return Fail("Cannot update report status to Pending.");
+
+            if (request.Status != ReportStatus.Resolved &&
+                request.Status != ReportStatus.Rejected &&
+                request.Status != ReportStatus.Ignored)
+                return Fail("Invalid target status. Must be Resolved, Rejected, or Ignored.");
 
             if (request.Status == ReportStatus.Resolved)
             {
+                if (request.Action == ModerationAction.None)
+                    return Fail("A moderation action is required when status is Resolved.");
+
                 var ok = await ApplyModerationActionAsync(report, request.Action);
-                if (!ok)
-                    return Fail("Failed to apply moderation action on the resource.");
+                if (!ok) return Fail("Failed to apply moderation action on the resource.");
+            }
+            else
+            {
+                if (request.Action != ModerationAction.None)
+                    return Fail("Moderation action must be None when status is Rejected or Ignored.");
             }
 
-            report.status = request.Status;
-            report.action = request.Action;
-            report.moderator_id = _currentUser.UserId ?? string.Empty;
-            report.moderator_note = (request.ModeratorNote ?? string.Empty).Trim();
-            report.moderated_at = TimeHelper.NowTicks;
-            report.updated_at = TimeHelper.NowTicks;
+            ReportEntity updated = new()
+            {
+                status = request.Status,
+                action = request.Action,
+                moderator_id = _currentUser.UserId ?? string.Empty,
+                moderator_note = (request.ModeratorNote ?? string.Empty).Trim(),
+                moderated_at = TimeHelper.NowTicks
+            };
 
-            await _reportRepo.UpdateAsync(report);
+            var success = await _reportRepo.UpdateAsync(request.ReportId, updated);
+            if (!success)
+                return Fail("Failed to update the report.");
 
             return new ApiResponse
             {
@@ -79,11 +101,7 @@ namespace Application.Features.Report.Command
             };
         }
 
-        private ApiResponse Fail(string message) => new()
-        {
-            Success = false,
-            Message = message
-        };
+        private ApiResponse Fail(string message) => new() { Success = false, Message = message };
 
         private async Task<bool> ApplyModerationActionAsync(ReportEntity r, ModerationAction action)
         {
@@ -93,15 +111,23 @@ namespace Application.Features.Report.Command
             {
                 switch (r.scope)
                 {
-                    case ReportScope.Novel: return await ModerateNovelAsync(r.novel_id, action);
-                    case ReportScope.Chapter: return await ModerateChapterAsync(r.chapter_id, action);
-                    case ReportScope.Comment: return await ModerateCommentAsync(r.comment_id, action);
-                    case ReportScope.ForumPost: return await ModerateForumPostAsync(r.forum_post_id, action);
-                    case ReportScope.ForumComment: return await ModerateForumCommentAsync(r.forum_comment_id, action);
+                    case ReportScope.Novel:
+                        return await ModerateNovelAsync(r.novel_id, action);
+                    case ReportScope.Chapter:
+                        return await ModerateChapterAsync(r.chapter_id, action);
+                    case ReportScope.Comment:
+                        return await ModerateCommentAsync(r.comment_id, action);
+                    case ReportScope.ForumPost:
+                        return await ModerateForumPostAsync(r.forum_post_id, action);
+                    case ReportScope.ForumComment:
+                        return await ModerateForumCommentAsync(r.forum_comment_id, action);
                     default: return false;
                 }
             }
-            catch { return false; }
+            catch
+            {
+                return false;
+            }
         }
 
         private async Task<bool> ModerateNovelAsync(string novelId, ModerationAction action)
@@ -114,7 +140,8 @@ namespace Application.Features.Report.Command
                 // case ModerationAction.DeleteResource:
                 //     await _novelRepo.SoftDeleteAsync(novelId);
                 //     return true;
-                default: return true;
+                default:
+                    return true; // các action khác hiện chưa có side-effect
             }
         }
 
@@ -128,7 +155,8 @@ namespace Application.Features.Report.Command
                 // case ModerationAction.DeleteResource:
                 //     await _chapterRepo.SoftDeleteAsync(chapterId);
                 //     return true;
-                default: return true;
+                default:
+                    return true;
             }
         }
 
@@ -142,7 +170,8 @@ namespace Application.Features.Report.Command
                 case ModerationAction.DeleteResource:
                     await _commentRepo.DeleteAsync(commentId);
                     return true;
-                default: return true;
+                default:
+                    return true;
             }
         }
 
@@ -156,7 +185,8 @@ namespace Application.Features.Report.Command
                 case ModerationAction.DeleteResource:
                     await _forumPostRepo.DeleteAsync(postId);
                     return true;
-                default: return true;
+                default:
+                    return true;
             }
         }
 
@@ -165,12 +195,13 @@ namespace Application.Features.Report.Command
             switch (action)
             {
                 // case ModerationAction.HideResource:
-                //     await _forumCommentRepo.DeleteAsync(forumCommentId);
+                //     await _forumCommentRepo.SetHiddenAsync(forumCommentId, true);
                 //     return true;
                 case ModerationAction.DeleteResource:
                     await _forumCommentRepo.DeleteAsync(forumCommentId);
                     return true;
-                default: return true;
+                default:
+                    return true;
             }
         }
     }

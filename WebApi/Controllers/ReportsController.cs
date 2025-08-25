@@ -55,38 +55,5 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(command);
             return Ok(result);
         }
-
-
-        // [HttpPut("update")]
-        // public async Task<IActionResult> UpdateReport([FromBody] UpdateReportCommand report)
-        // {
-        //     if (report == null || report.ReportIds == null || !report.ReportIds.Any())
-        //     {
-        //         return BadRequest("Invalid report data.");
-        //     }
-
-        //     var result = await _mediator.Send(report);
-        //     if (result.Success)
-        //     {
-        //         return Ok(result);
-        //     }
-        //     return BadRequest(result.Message);
-        // }
-
-        // [HttpDelete("{id}")]
-        // public async Task<IActionResult> DeleteReport(string id)
-        // {
-        //     if (string.IsNullOrEmpty(id))
-        //     {
-        //         return BadRequest("Report ID cannot be null or empty.");
-        //     }
-
-        //     var result = await _mediator.Send(new DeleteReportCommand { ReportId = id });
-        //     if (result.Success)
-        //     {
-        //         return Ok(result);
-        //     }
-        //     return BadRequest(result.Message);
-        // }
     }
 }

@@ -9,11 +9,9 @@ namespace Infrastructure.Repositories.Interfaces
         Task<List<ReportEntity>> GetAllAsync(ReportScope? scope, ReportStatus? status, FindCreterias creterias, List<SortCreterias> sortCreterias);
         Task<ReportEntity> GetByIdAsync(string id);
         Task<ReportEntity> CreateAsync(ReportEntity report);
-        Task<List<ReportEntity>> GetManyByIdsAsync(List<string> ids);
-        Task<ReportEntity> UpdateAsync(ReportEntity report);
+        Task<bool> UpdateAsync(string id, ReportEntity entity);
         Task<List<ReportEntity>> UpdateManyAsync(List<string> ids, ReportStatus newStatus);
         Task<bool> DeleteAsync(string id);
-
         Task<long> CountByReporterAsync(string reporterId, long fromTicks);
         Task<bool> ExistsAsync(
             string reporterId,

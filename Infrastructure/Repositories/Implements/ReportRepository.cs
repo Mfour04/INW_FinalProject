@@ -117,30 +117,32 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-
-
-        public async Task<List<ReportEntity>> GetManyByIdsAsync(List<string> ids)
+        public async Task<bool> UpdateAsync(string id, ReportEntity entity)
         {
             try
             {
-                var filter = Builders<ReportEntity>.Filter.In(r => r.id, ids);
-                var result = await _collection.Find(filter).ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
+                var filter = Builders<ReportEntity>.Filter.Eq(x => x.id, id);
 
-        public async Task<ReportEntity> UpdateAsync(ReportEntity report)
-        {
-            try
-            {
-                report.updated_at = TimeHelper.NowTicks;
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.id, report.id);
-                var result = await _collection.ReplaceOneAsync(filter, report);
-                return report;
+                var report = await _collection.Find(filter).FirstOrDefaultAsync();
+
+                var update = Builders<ReportEntity>
+                    .Update.Set(x => x.moderator_id, entity.moderator_id ?? report.moderator_id)
+                    .Set(x => x.moderator_note, entity.moderator_note ?? report.moderator_note)
+                    .Set(x => x.status, entity?.status ?? report.status)
+                    .Set(x => x.action, entity?.action ?? report.action)
+                    .Set(x => x.moderated_at, entity?.moderated_at ?? 0)
+                    .Set(x => x.updated_at, TimeHelper.NowTicks);
+
+                var updated = await _collection.FindOneAndUpdateAsync(
+                  filter,
+                  update,
+                  new FindOneAndUpdateOptions<ReportEntity>
+                  {
+                      ReturnDocument = ReturnDocument.After,
+                  }
+              );
+
+                return updated != null;
             }
             catch
             {
@@ -251,6 +253,6 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
-        
+
     }
 }
