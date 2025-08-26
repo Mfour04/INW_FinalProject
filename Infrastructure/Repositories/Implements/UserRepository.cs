@@ -405,5 +405,17 @@ namespace Infrastructure.Repositories.Implements
 
             return user; // Fix: Return the user's ID as a string instead of the UserEntity object.
         }
+
+        public async Task<List<UserEntity>> GetManyAdmin()
+        {
+            try
+            {
+                return await _collection.Find(u => u.role == Role.Admin).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }

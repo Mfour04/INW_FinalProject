@@ -1,3 +1,4 @@
+using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -17,13 +18,16 @@ namespace Application.Features.Transaction.Commands
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly IUserRepository _userRepository;
+        private readonly INotificationService _notificationService;
 
         public CancelWithdrawRequestCommandHandler(
             ITransactionRepository transactionRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            INotificationService notificationService)
         {
             _transactionRepository = transactionRepository;
             _userRepository = userRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(CancelWithdrawRequestCommand request, CancellationToken cancellationToken)
@@ -57,6 +61,12 @@ namespace Application.Features.Transaction.Commands
 
             await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
             await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
+
+            await _notificationService.SendNotificationToUsersAsync(
+            new[] { user.id },
+            $"Bạn đã hủy yêu cầu rút {transaction.amount} coin.",
+            NotificationType.WithdrawCancelled
+            );
 
             return new ApiResponse
             {

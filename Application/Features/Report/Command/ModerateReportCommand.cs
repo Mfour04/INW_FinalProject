@@ -27,6 +27,7 @@ namespace Application.Features.Report.Command
         private readonly IForumCommentRepository _forumCommentRepo;
         private readonly IUserRepository _userRepo;
         private readonly ICurrentUserService _currentUser;
+        private readonly INotificationService _notificationService;
 
         public ModerateReportCommandHandler(
             IReportRepository reportRepo,
@@ -35,8 +36,9 @@ namespace Application.Features.Report.Command
             ICommentRepository commentRepo,
             IForumPostRepository forumPostRepo,
             IForumCommentRepository forumCommentRepo,
-            IUserRepository userRepo,
-            ICurrentUserService currentUser)
+            ICurrentUserService currentUser, 
+            INotificationService notificationService,
+            IUserRepository userRepo)
         {
             _reportRepo = reportRepo;
             _novelRepo = novelRepo;
@@ -46,6 +48,7 @@ namespace Application.Features.Report.Command
             _forumCommentRepo = forumCommentRepo;
             _userRepo = userRepo;
             _currentUser = currentUser;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(ModerateReportCommand request, CancellationToken cancellationToken)
@@ -97,6 +100,25 @@ namespace Application.Features.Report.Command
             var success = await _reportRepo.UpdateAsync(request.ReportId, updated);
             if (!success)
                 return Fail("Failed to update the report.");
+
+            var reporter = await _userRepo.GetById(report.reporter_id);
+            if (reporter != null)
+            {
+                string statusText = request.Status.ToString();
+                string actionText = request.Action.ToString();
+                string note = string.IsNullOrEmpty(request.ModeratorNote) ? "" : $"\nGhi chú: {request.ModeratorNote}";
+
+                string message =
+                    $"Báo cáo của bạn đã được xử lý.\n" +
+                    $"- Trạng thái: {statusText}\n" +
+                    $"- Hành động: {actionText}{note}";
+
+                await _notificationService.SendNotificationToUsersAsync(
+                    new[] { reporter.id },
+                    message,
+                    NotificationType.ReportModerated
+                );
+            }
 
             return new ApiResponse
             {
