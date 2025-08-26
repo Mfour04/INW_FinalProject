@@ -43,8 +43,7 @@ namespace Application.Features.OpenAI.Commands
 
             try
             {
-                // Prefer repository method that accepts cancellationToken; if not available, you can add it.
-                var chapters = await _chapterRepository.GetChaptersByNovelIdAsync(request.NovelId /*, cancellationToken */);
+                var chapters = await _chapterRepository.GetAllByNovelIdAsync(request.NovelId );
                 if (chapters == null || !chapters.Any())
                 {
                     return new ApiResponse { Success = false, Message = "Không tìm thấy chapter nào của tiểu thuyết." };
@@ -68,8 +67,6 @@ namespace Application.Features.OpenAI.Commands
                     {
                         try
                         {
-                            // OPTIONAL: If your _openAIService supports cancellationToken, pass it
-                            // var s = await _openAIService.SummarizeContentAsync(ch.content, cancellationToken);
 
                             var s = await _openAIService.SummarizeContentAsync(ch.content);
                             if (!string.IsNullOrWhiteSpace(s))
@@ -84,12 +81,10 @@ namespace Application.Features.OpenAI.Commands
                         catch (OperationCanceledException)
                         {
                             _logger.LogInformation("Summarization cancelled for chapter {Chapter}", ch.chapter_number);
-                            // honour cancellation
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Error summarizing chapter {Chapter} of novel {NovelId}", ch.chapter_number, request.NovelId);
-                            // decide: skip this chapter summary, continue with others
                         }
                         finally
                         {
