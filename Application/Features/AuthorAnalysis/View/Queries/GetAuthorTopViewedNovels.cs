@@ -36,14 +36,14 @@ namespace Application.Features.AuthorAnalysis.View.Queries
                     TotalViews = n.total_views
                 })
                 .ToList();
-            var totalNovelCount = novels.Count;
+            var totalViewsCount = novels.Sum(n => n.total_views);
             return new ApiResponse
             {
                 Success = true,
                 Message = "Retrieved top viewed novels successfully.",
                 Data = new
                 {
-                    TotalNovels = totalNovelCount,
+                    TotalViews = totalViewsCount,
                     TopViewNovels = topNovels
                 }
             };

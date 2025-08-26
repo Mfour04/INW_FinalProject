@@ -1,3 +1,4 @@
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -18,13 +19,18 @@ namespace Application.Features.Comment.Commands
     {
         private readonly ICommentLikeRepository _commentLikeRepo;
         private readonly ICommentRepository _commentRepo;
-
+        private readonly INotificationService _notificationService;
+        private readonly IUserRepository _userRepo;
         public LikeCommentCommandHandler(
             ICommentLikeRepository commentLikeRepo,
-            ICommentRepository commentRepo)
+            ICommentRepository commentRepo,
+            INotificationService notificationService,
+            IUserRepository userRepository)
         {
             _commentLikeRepo = commentLikeRepo;
             _commentRepo = commentRepo;
+            _notificationService = notificationService;
+            _userRepo = userRepository;
         }
 
         public async Task<ApiResponse> Handle(LikeCommentCommand request, CancellationToken cancellationToken)
@@ -57,6 +63,17 @@ namespace Application.Features.Comment.Commands
 
             await _commentLikeRepo.LikeCommentAsync(like);
             await _commentRepo.IncreaseLikeCountAsync(request.CommentId, 1);
+
+            var user = await _userRepo.GetById(request.UserId);
+            if (!string.IsNullOrWhiteSpace(targetComment.user_id) && targetComment.user_id != request.UserId)
+            {
+                string message = $"{user.displayname} đã thích bình luận của bạn.";
+                await _notificationService.SendNotificationToUsersAsync(
+                    new[] { targetComment.user_id },
+                    message,
+                    NotificationType.CommentLike
+                );
+            }
 
             return new ApiResponse
             {

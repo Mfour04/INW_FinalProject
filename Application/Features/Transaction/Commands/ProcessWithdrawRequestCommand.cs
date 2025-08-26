@@ -1,3 +1,4 @@
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -20,15 +21,18 @@ namespace Application.Features.Transaction.Commands
         private readonly ITransactionRepository _transactionRepository;
         private readonly ITransactionLogRepository _logRepository;
         private readonly IUserRepository _userRepository;
+        private readonly INotificationService _notificationService;
 
         public ProcessWithdrawRequestCommandCommandHandler(
             ITransactionRepository transactionRepository,
             IUserRepository userRepository,
-            ITransactionLogRepository logRepository)
+            ITransactionLogRepository logRepository,
+            INotificationService notificationService)
         {
             _transactionRepository = transactionRepository;
             _userRepository = userRepository;
             _logRepository = logRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(ProcessWithdrawRequestCommand request, CancellationToken cancellationToken)
@@ -48,7 +52,7 @@ namespace Application.Features.Transaction.Commands
 
             if (!request.IsApproved && string.IsNullOrWhiteSpace(request.Message))
                 return Fail("Rejection reason is required.");
-
+            string notifyMessage;
             if (request.IsApproved)
             {
                 // admin approve
@@ -63,6 +67,7 @@ namespace Application.Features.Transaction.Commands
 
                 await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
                 await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
+                notifyMessage = $"Yêu cầu rút {transaction.amount} coin của bạn đã được duyệt thành công.";
             }
             else
             {
@@ -77,6 +82,7 @@ namespace Application.Features.Transaction.Commands
 
                 await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
                 await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
+                notifyMessage = $"Yêu cầu rút {transaction.amount} coin của bạn đã bị từ chối. Lý do: {request.Message}";
             }
 
             TransactionLogEntity log = new()
@@ -90,7 +96,11 @@ namespace Application.Features.Transaction.Commands
             };
 
             await _logRepository.AddAsync(log);
-
+            await _notificationService.SendNotificationToUsersAsync(
+                new[] { user.id },
+                notifyMessage,
+                request.IsApproved ? NotificationType.WithdrawApproved : NotificationType.WithdrawRejected
+            );
             return new ApiResponse
             {
                 Success = true,

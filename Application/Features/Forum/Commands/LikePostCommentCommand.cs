@@ -1,3 +1,4 @@
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -17,13 +18,18 @@ namespace Application.Features.Forum.Commands
     {
         private readonly ICommentLikeRepository _commentLikeRepo;
         private readonly IForumCommentRepository _postCommentRepo;
-
+        private readonly INotificationService _notificationService;
+        private readonly IUserRepository _userRepo;
         public LikePostCommentCommandHandler(
             ICommentLikeRepository commentLikeRepo,
-            IForumCommentRepository postCommentRepo)
+            IForumCommentRepository postCommentRepo,
+            INotificationService notificationService,
+            IUserRepository userRepository)
         {
             _commentLikeRepo = commentLikeRepo;
             _postCommentRepo = postCommentRepo;
+            _notificationService = notificationService;
+            _userRepo = userRepository;
         }
 
         public async Task<ApiResponse> Handle(LikePostCommentCommand request, CancellationToken cancellationToken)
@@ -49,6 +55,18 @@ namespace Application.Features.Forum.Commands
             };
 
             await _commentLikeRepo.LikeCommentAsync(like);
+
+            // 📌 Gửi thông báo cho tác giả comment
+            if (!string.IsNullOrWhiteSpace(targetComment.user_id) && targetComment.user_id != request.UserId)
+            {
+                var liker = await _userRepo.GetById(request.UserId);
+                string message = $"{liker.displayname} đã thích bình luận của bạn.";
+                await _notificationService.SendNotificationToUsersAsync(
+                    new[] { targetComment.user_id },
+                    message,
+                    NotificationType.LikePostComment
+                );
+            }
 
             return new ApiResponse
             {

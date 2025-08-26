@@ -33,6 +33,7 @@ namespace Application.Features.Report.Command
         private readonly IForumCommentRepository _forumCommentRepo;
         private readonly IUserRepository _userRepo;
         private readonly ICurrentUserService _currentUser;
+        private readonly INotificationService _notificationService;
 
         // === Anti-spam ===
         private const int COOLDOWN_SECONDS = 120; // 2 phút giữa 2 report
@@ -48,8 +49,9 @@ namespace Application.Features.Report.Command
            ICommentRepository commentRepo,
            IForumPostRepository forumPostRepo,
            IForumCommentRepository forumCommentRepo,
-           IUserRepository userRepo,
-           ICurrentUserService currentUser)
+           ICurrentUserService currentUser,
+           INotificationService notificationService,
+           IUserRepository userRepo)
         {
             _reportRepo = reportRepo;
             _novelRepo = novelRepo;
@@ -59,6 +61,7 @@ namespace Application.Features.Report.Command
             _forumCommentRepo = forumCommentRepo;
             _userRepo = userRepo;
             _currentUser = currentUser;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(CreateReportCommand req, CancellationToken ct)
@@ -137,6 +140,19 @@ namespace Application.Features.Report.Command
             };
 
             await _reportRepo.CreateAsync(report);
+
+            var admins = await _userRepo.GetManyAdmin();
+            var adminIds = admins.Select(a => a.id).ToArray();
+            var reporter = await _userRepo.GetById(reporterId!);
+            var reportMessage = string.IsNullOrWhiteSpace(req.Message)
+                ? "(Không có nội dung kèm theo)"
+                : req.Message.Trim();
+            var reasonText = req.Reason.ToString();
+            await _notificationService.SendNotificationToUsersAsync(
+                adminIds,
+                $"{reporter.displayname} đã tạo 1 báo cáo: {reasonText}. Nội dung: {reportMessage}.",
+                NotificationType.CreateReport
+            );
 
             return new ApiResponse
             {

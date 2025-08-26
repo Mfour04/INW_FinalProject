@@ -38,14 +38,14 @@ namespace Application.Features.AuthorAnalysis.View.Queries
                 })
             .ToList();
 
-            var totalNovelCount = novels.Count;
+            var totalRatingsCount = novels.Sum(n => n.rating_count);
             return new ApiResponse
             {
                 Success = true,
                 Message = "Retrieved top rated novels successfully.",
                 Data = new
                 {
-                    TotalNovels = totalNovelCount,
+                    TotalRatings = totalRatingsCount,
                     TopRatedNovels = topNovels
                 }
             };

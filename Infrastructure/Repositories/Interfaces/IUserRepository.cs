@@ -27,5 +27,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<int> CountAsync(Expression<Func<UserEntity, bool>> filter = null);
         Task<List<WeeklyStatItem>> CountUsersPerDayCurrentWeekAsync();
         Task<UserEntity> FindOrCreateUserFromGoogleAsync(string email, string name, string avatarUrl);
+        Task<List<UserEntity>> GetManyAdmin();
     }
 }
