@@ -11,8 +11,6 @@ namespace Application.Features.OpenAI.Commands
     public class PlagiarismChapterConent : IRequest<ApiResponse>
     {
         public string Content { get; set; }
-        public int PageNumber { get; set; } = 0;
-        public int PageSize { get; set; } = 3;
     }
     public class PlagiarismChapterConentHandler : IRequestHandler<PlagiarismChapterConent, ApiResponse>
     {
@@ -177,9 +175,6 @@ namespace Application.Features.OpenAI.Commands
 
             }
 
-            int totalCount = suspectedChapters.Count;
-            int skip = (request.PageNumber - 1) * request.PageSize;
-            var pagedResult = suspectedChapters.Skip(skip).Take(request.PageSize).ToList();
 
             return new ApiResponse
             {
@@ -188,11 +183,8 @@ namespace Application.Features.OpenAI.Commands
                 Data = new
                 {
                     InputContentLength = cleanContent.Length,
-                    TotalCount = totalCount,
-                    PageNumber = request.PageNumber,
-                    PageSize = request.PageSize,
-                    MatchCount = pagedResult.Count,
-                    Matches = pagedResult
+                    TotalCount = suspectedChapters.Count,
+                    Matches = suspectedChapters
                 }
             };
         }

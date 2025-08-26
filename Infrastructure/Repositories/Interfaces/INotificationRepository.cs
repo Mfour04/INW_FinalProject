@@ -11,7 +11,7 @@ namespace Infrastructure.Repositories.Interfaces
     {
         Task CreateAsync(List<NotificationEntity> notification);
         Task<List<NotificationEntity>> GetUserNotificationsAsync(string userId);
-        Task MarkAsReadAsync(string notificationId);
+        Task MarkAsReadAsync(IEnumerable<string> notificationIds);
         Task DeleteAsync(string notificationId);
         Task DeleteAllAsync(string userId);
         Task DeleteOldReadNotificationsAsync();

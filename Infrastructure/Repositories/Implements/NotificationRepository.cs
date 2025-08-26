@@ -92,13 +92,14 @@ namespace Infrastructure.Repositories.Implements
         }
 
 
-
-        public async Task MarkAsReadAsync(string notificationId)
+        public async Task MarkAsReadAsync(IEnumerable<string> notificationIds)
         {
             try
             {
+                var filter = Builders<NotificationEntity>.Filter.In(x => x.id, notificationIds);
                 var update = Builders<NotificationEntity>.Update.Set(x => x.is_read, true);
-                await _collection.UpdateOneAsync(x => x.id == notificationId, update);
+
+                await _collection.UpdateManyAsync(filter, update);
             }
             catch
             {
