@@ -6,7 +6,8 @@ namespace Domain.Enums
         Chapter = 1,
         Comment = 2,
         ForumPost = 3,
-        ForumComment = 4
+        ForumComment = 4,
+        User = 5
     }
 
     public enum ReportReason
@@ -23,7 +24,10 @@ namespace Domain.Enums
         Doxxing,       // Tiết lộ thông tin cá nhân (cho comment/post)
         Offtopic,      // Lệch chủ đề (cho comment/post)
         Misinfo,       // Thông tin sai lệch (cho post)
-        Spoiler        // Tiết lộ nội dung (spoiler) (cho comment/post)
+        Spoiler,       // Tiết lộ nội dung (spoiler) (cho comment/post)
+        Impersonation, // Giả mạo danh tính (cho user)
+        InappropriateUsername, // Username không phù hợp
+        Underage,      // Người dùng dưới tuổi cho phép
     }
 
     public enum ReportStatus
@@ -39,8 +43,8 @@ namespace Domain.Enums
         None = 0,            // Không làm gì
         HideResource = 1,    // Ẩn tài nguyên 
         DeleteResource = 2,  // Xóa tài nguyên 
-        WarnAuthor = 3,      // Cảnh cáo tác giả
-        SuspendAuthor = 4,   // Tạm khóa tài khoản tác giả
-        BanAuthor = 5        // Cấm vĩnh viễn tài khoản tác giả
+        WarnUser = 3,        // Cảnh cáo user
+        SuspendUser = 4,     // Tạm khóa tài khoản user
+        BanUser = 5          // Cấm vĩnh viễn tài khoản user
     }
 }

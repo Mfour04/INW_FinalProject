@@ -11,6 +11,7 @@ namespace Domain.Entities
         public string comment_id { get; set; }
         public string forum_post_id { get; set; }
         public string forum_comment_id { get; set; }
+        public string target_user_id { get; set; }
 
         public string reporter_id { get; set; }
         public ReportReason reason { get; set; }

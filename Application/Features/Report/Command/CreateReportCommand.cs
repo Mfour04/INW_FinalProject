@@ -18,6 +18,7 @@ namespace Application.Features.Report.Command
         public string? CommentId { get; set; }
         public string? ForumPostId { get; set; }
         public string? ForumCommentId { get; set; }
+        public string? TargetUserId { get; set; }
 
         public string? Message { get; set; }
     }
@@ -30,6 +31,7 @@ namespace Application.Features.Report.Command
         private readonly ICommentRepository _commentRepo;
         private readonly IForumPostRepository _forumPostRepo;
         private readonly IForumCommentRepository _forumCommentRepo;
+        private readonly IUserRepository _userRepo;
         private readonly ICurrentUserService _currentUser;
 
         // === Anti-spam ===
@@ -46,6 +48,7 @@ namespace Application.Features.Report.Command
            ICommentRepository commentRepo,
            IForumPostRepository forumPostRepo,
            IForumCommentRepository forumCommentRepo,
+           IUserRepository userRepo,
            ICurrentUserService currentUser)
         {
             _reportRepo = reportRepo;
@@ -54,6 +57,7 @@ namespace Application.Features.Report.Command
             _commentRepo = commentRepo;
             _forumPostRepo = forumPostRepo;
             _forumCommentRepo = forumCommentRepo;
+            _userRepo = userRepo;
             _currentUser = currentUser;
         }
 
@@ -66,6 +70,10 @@ namespace Application.Features.Report.Command
             var targetId = GetTargetIdByScope(req.Scope, req);
             if (string.IsNullOrWhiteSpace(targetId))
                 return Fail($"Missing target id for scope '{req.Scope}'.");
+
+            if (req.Scope == ReportScope.User && string.Equals(targetId, reporterId, StringComparison.Ordinal))
+                return Fail("You can't report yourself.");
+
 
             var now = TimeHelper.NowTicks;
 
@@ -91,6 +99,7 @@ namespace Application.Features.Report.Command
                 commentId: req.CommentId,
                 forumPostId: req.ForumPostId,
                 forumCommentId: req.ForumCommentId,
+                targetUserId: req.TargetUserId,
                 reason: req.Reason,
                 status: ReportStatus.Pending,
                 fromTicks: dupFrom
@@ -112,6 +121,7 @@ namespace Application.Features.Report.Command
                 comment_id = req.CommentId ?? "",
                 forum_post_id = req.ForumPostId ?? "",
                 forum_comment_id = req.ForumCommentId ?? "",
+                target_user_id = (req.TargetUserId ?? "") ?? "",
 
                 reporter_id = reporterId!,
                 reason = req.Reason,
@@ -145,6 +155,7 @@ namespace Application.Features.Report.Command
                 ReportScope.Comment => r.CommentId,
                 ReportScope.ForumPost => r.ForumPostId,
                 ReportScope.ForumComment => r.ForumCommentId,
+                ReportScope.User => r.TargetUserId,
                 _ => null
             };
 
@@ -214,6 +225,11 @@ namespace Application.Features.Report.Command
                     {
                         var fc = await _forumCommentRepo.GetByIdAsync(req.ForumCommentId!);
                         return fc == null ? ("", "") : (req.ForumCommentId!, "");
+                    }
+                case ReportScope.User:
+                    {
+                        var user = await _userRepo.GetById(req.TargetUserId!);
+                        return user == null ? ("", "") : (req.TargetUserId!, "");
                     }
 
                 default:

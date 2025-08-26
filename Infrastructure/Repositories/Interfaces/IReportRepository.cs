@@ -22,6 +22,7 @@ namespace Infrastructure.Repositories.Interfaces
             string? commentId,
             string? forumPostId,
             string? forumCommentId,
+            string? targetUserId,
             ReportReason reason,
             ReportStatus? status,
             long fromTicks);

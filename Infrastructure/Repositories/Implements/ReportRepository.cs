@@ -216,6 +216,7 @@ namespace Infrastructure.Repositories.Implements
             string? commentId,
             string? forumPostId,
             string? forumCommentId,
+            string? targetUserId,
             ReportReason reason,
             ReportStatus? status,
             long fromTicks)
@@ -229,18 +230,19 @@ namespace Infrastructure.Repositories.Implements
                     ReportScope.Comment => commentId,
                     ReportScope.ForumPost => forumPostId,
                     ReportScope.ForumComment => forumCommentId,
+                    ReportScope.User => targetUserId,
                     _ => null
                 };
                 if (string.IsNullOrWhiteSpace(targetId)) return false;
 
                 var fb = Builders<ReportEntity>.Filter;
                 var filters = new List<FilterDefinition<ReportEntity>>
-            {
-                fb.Eq(x => x.reporter_id, reporterId),
-                fb.Eq(x => x.scope, scope),
-                fb.Eq(x => x.reason, reason),
-                fb.Gte(x => x.created_at, fromTicks)
-            };
+                {
+                    fb.Eq(x => x.reporter_id, reporterId),
+                    fb.Eq(x => x.scope, scope),
+                    fb.Eq(x => x.reason, reason),
+                    fb.Gte(x => x.created_at, fromTicks)
+                };
                 if (status.HasValue)
                     filters.Add(fb.Eq(x => x.status, status.Value));
 
@@ -261,14 +263,17 @@ namespace Infrastructure.Repositories.Implements
                     case ReportScope.ForumComment:
                         filters.Add(fb.Eq(x => x.forum_comment_id, targetId));
                         break;
+                    case ReportScope.User:
+                        filters.Add(fb.Eq(x => x.target_user_id, targetId));
+                        break;
                 }
 
                 var filter = fb.And(filters);
 
                 var exists = await _collection.Find(filter)
-                                       .Project(x => x.id)
-                                       .Limit(1)
-                                       .FirstOrDefaultAsync();
+                    .Project(x => x.id)
+                    .Limit(1)
+                    .FirstOrDefaultAsync();
 
                 return exists != null;
             }

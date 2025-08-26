@@ -14,6 +14,7 @@ namespace Application.Features.Report.Command
         public ReportStatus Status { get; set; }
         public ModerationAction Action { get; set; }
         public string? ModeratorNote { get; set; }
+        public long? SuspendUntilTicks { get; set; }
     }
 
     public class ModerateReportCommandHandler : IRequestHandler<ModerateReportCommand, ApiResponse>
@@ -24,6 +25,7 @@ namespace Application.Features.Report.Command
         private readonly ICommentRepository _commentRepo;
         private readonly IForumPostRepository _forumPostRepo;
         private readonly IForumCommentRepository _forumCommentRepo;
+        private readonly IUserRepository _userRepo;
         private readonly ICurrentUserService _currentUser;
 
         public ModerateReportCommandHandler(
@@ -33,6 +35,7 @@ namespace Application.Features.Report.Command
             ICommentRepository commentRepo,
             IForumPostRepository forumPostRepo,
             IForumCommentRepository forumCommentRepo,
+            IUserRepository userRepo,
             ICurrentUserService currentUser)
         {
             _reportRepo = reportRepo;
@@ -41,6 +44,7 @@ namespace Application.Features.Report.Command
             _commentRepo = commentRepo;
             _forumPostRepo = forumPostRepo;
             _forumCommentRepo = forumCommentRepo;
+            _userRepo = userRepo;
             _currentUser = currentUser;
         }
 
@@ -72,7 +76,7 @@ namespace Application.Features.Report.Command
                 if (request.Action == ModerationAction.None)
                     return Fail("A moderation action is required when status is Resolved.");
 
-                var ok = await ApplyModerationActionAsync(report, request.Action);
+                var ok = await ApplyModerationActionAsync(report, request.Action, request.SuspendUntilTicks);
                 if (!ok) return Fail("Failed to apply moderation action on the resource.");
             }
             else
@@ -103,7 +107,7 @@ namespace Application.Features.Report.Command
 
         private ApiResponse Fail(string message) => new() { Success = false, Message = message };
 
-        private async Task<bool> ApplyModerationActionAsync(ReportEntity r, ModerationAction action)
+        private async Task<bool> ApplyModerationActionAsync(ReportEntity r, ModerationAction action, long? suspendUntilTicks)
         {
             if (action == ModerationAction.None) return true;
 
@@ -121,6 +125,8 @@ namespace Application.Features.Report.Command
                         return await ModerateForumPostAsync(r.forum_post_id, action);
                     case ReportScope.ForumComment:
                         return await ModerateForumCommentAsync(r.forum_comment_id, action);
+                    case ReportScope.User: // NEW
+                        return await ModerateUserAsync(r.target_user_id, action, suspendUntilTicks);
                     default: return false;
                 }
             }
@@ -201,6 +207,45 @@ namespace Application.Features.Report.Command
                     await _forumCommentRepo.DeleteAsync(forumCommentId);
                     return true;
                 default:
+                    return true;
+            }
+        }
+
+        private async Task<bool> ModerateUserAsync(
+           string userId,
+           ModerationAction action,
+           long? suspendUntilTicks)
+        {
+            if (string.IsNullOrWhiteSpace(userId)) return false;
+
+            switch (action)
+            {
+                case ModerationAction.WarnUser:
+                    // Tuỳ hệ thống log: nếu có bảng log moderation riêng, ghi lại:
+                    // await _userRepo.AddModerationLogAsync(userId, moderatorId, "Warn", report.moderator_note, TimeHelper.NowTicks);
+                    return true;
+
+                case ModerationAction.SuspendUser:
+                    {
+                        // Default 72h
+                        var now = TimeHelper.NowTicks;
+                        var until = suspendUntilTicks.HasValue && suspendUntilTicks.Value > now
+                            ? suspendUntilTicks.Value
+                            : now + TimeSpan.TicksPerHour * 72;
+
+                        await _userRepo.UpdateLockvsUnLockUser(userId, true, until);
+
+                        return true;
+                    }
+
+                case ModerationAction.BanUser:
+                    {
+                        await _userRepo.UpdateLockvsUnLockUser(userId, true, 0);
+                        return true;
+                    }
+
+                default:
+                    // Action không áp dụng cho user (HideResource/DeleteResource...) => coi như no-op
                     return true;
             }
         }

@@ -33,14 +33,17 @@ namespace Shared.Contracts.Response.Report
     // ==== Novel ====
     public sealed class NovelReportResponse : BaseReportResponse
     {
-        public string NovelId { get; set; } = default!;
+        public string? NovelId { get; set; }
+        public string? NovelTitle { get; set; }
     }
 
     // ==== Chapter ====
     public sealed class ChapterReportResponse : BaseReportResponse
     {
-        public string NovelId { get; set; } = default!;
-        public string ChapterId { get; set; } = default!;
+        public string? NovelId { get; set; }
+        public string? ChapterId { get; set; }
+        public string? ChapterTitle { get; set; }
+        public string? NovelTitle { get; set; }
     }
 
     // ==== Comment (thuộc novel/chapter) ====
@@ -49,18 +52,28 @@ namespace Shared.Contracts.Response.Report
         public string? NovelId { get; set; }
         public string? ChapterId { get; set; }
         public string CommentId { get; set; } = default!;
+        public UserResponse? CommentAuthor { get; set; }
     }
 
     // ==== Forum Post ====
     public sealed class ForumPostReportResponse : BaseReportResponse
     {
-        public string ForumPostId { get; set; } = default!;
+        public string? ForumPostId { get; set; }
+        public UserResponse? ForumPostAuthor { get; set; }
     }
 
     // ==== Forum Comment ====
     public sealed class ForumCommentReportResponse : BaseReportResponse
     {
-        public string ForumCommentId { get; set; } = default!;
+        public string? ForumCommentId { get; set; }
+        public UserResponse? ForumCommentAuthor { get; set; }
+    }
+
+    // ==== User ====
+    public sealed class UserReportResponse : BaseReportResponse
+    {
+        public string? TargetUserId { get; set; }
+        public UserResponse? TargetUser { get; set; }
     }
 
     // ==== Brief (dùng cho list) – gọn nhẹ ====
