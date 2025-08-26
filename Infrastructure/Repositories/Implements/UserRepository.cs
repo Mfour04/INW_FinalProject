@@ -270,18 +270,27 @@ namespace Infrastructure.Repositories.Implements
                     {
                         var keyword = creterias.SearchTerm[0];
 
-                        // ✅ THAY builder.Eq thành Regex để chứa từ đó (fuzzy nhẹ)
-                        filtered &= builder.Regex(
+                        // Search theo cả username và displayname_unsigned
+                        var usernameFilter = builder.Regex(
+                            x => x.username,
+                            new BsonRegularExpression($".*{keyword}.*", "i")
+                        );
+                        var displaynameFilter = builder.Regex(
                             x => x.displayname_unsigned,
                             new BsonRegularExpression($".*{keyword}.*", "i")
                         );
+
+                        filtered &= builder.Or(usernameFilter, displaynameFilter);
                     }
                     else
                     {
-                        // Fuzzy match: tất cả từ phải khớp
+                        // Fuzzy match: tất cả từ phải khớp với username hoặc displayname_unsigned
                         var regexFilters = creterias.SearchTerm.Select(term =>
-                            builder.Regex(x => x.displayname_unsigned, new BsonRegularExpression($".*{SystemHelper.RemoveDiacritics(term).ToLower()}.*", "i"))
-                        );
+                        {
+                            var usernameFilter = builder.Regex(x => x.username, new BsonRegularExpression($".*{SystemHelper.RemoveDiacritics(term).ToLower()}.*", "i"));
+                            var displaynameFilter = builder.Regex(x => x.displayname_unsigned, new BsonRegularExpression($".*{SystemHelper.RemoveDiacritics(term).ToLower()}.*", "i"));
+                            return builder.Or(usernameFilter, displaynameFilter);
+                        });
                         filtered &= builder.And(regexFilters);
                     }
                 }
