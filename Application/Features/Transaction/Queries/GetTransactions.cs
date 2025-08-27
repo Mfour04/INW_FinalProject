@@ -118,6 +118,7 @@ namespace Application.Features.Transaction.Queries
                         withdraw.BankInfo = new AdminWithdrawTransactionResponse.UserBankInfomation
                         {
                             BankBin = bank.bank_bin,
+                            BankShortName = bank.bank_short_name,
                             BankAccountNumber = bank.bank_account_number,
                             BankAccountName = bank.bank_account_name
                         };
