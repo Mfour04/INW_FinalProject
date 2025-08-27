@@ -39,32 +39,32 @@ namespace Application.Features.Chapter.Commands
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
             {
-                return new ApiResponse { Success = false, Message = "Unauthorized" };
+                return new ApiResponse { Success = false, Message = "Chưa xác thực" };
             }
             if (!_currentUserService.IsAdmin())
             {
-                return new ApiResponse { Success = false, Message = "Forbidden: Admin role required" };
+                return new ApiResponse { Success = false, Message = "Bị cấm: Yêu cầu quyền Admin" };
             }
             var chapters = await _chapterRepository.GetChaptersByIdsAsync(request.ChapterIds);
             if (chapters == null || !chapters.Any())
             {
-                return new ApiResponse { Success = false, Message = "Chapter not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy chương" };
             }
 
-            // Fix: Iterate through the list of chapters to check if any chapter is locked
+            // Fix: Kiểm tra xem có chương nào đã bị khóa
             if (request.IsLocked && chapters.Any(chapter => chapter.is_lock))
             {
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "One or more chapters are already locked."
+                    Message = "Một hoặc nhiều chương đã bị khóa."
                 };
             }
 
             var novel = await _novelRepository.GetByNovelIdAsync(chapters.First().novel_id);
             if (novel == null)
             {
-                return new ApiResponse { Success = false, Message = "Novel not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy tiểu thuyết" };
             }
 
             // Update lock status for all chapters in the list
@@ -73,7 +73,7 @@ namespace Application.Features.Chapter.Commands
                 await _chapterRepository.UpdateLockChaptersStatus(request.ChapterIds, request.IsLocked);
             }
 
-            var action = request.IsLocked ? "locked" : "unlocked";
+            var action = request.IsLocked ? "khóa" : "mở khóa";
             var notificationCommand = new SendNotificationToUserCommand
             {
                 UserId = novel.author_id,
@@ -121,7 +121,7 @@ namespace Application.Features.Chapter.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = $"Chapters have been {action} successfully and affected users have been notified.",
+                Message = $"Các chương đã được {action} thành công và người dùng liên quan đã được thông báo.",
                 Data = new
                 {
                     NovelId = novel.id,

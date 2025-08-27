@@ -28,7 +28,7 @@ namespace Application.Features.Tag.Command
             return new ApiResponse
             {
                 Success = true,
-                Message = "Tag Deleted Successfully",
+                Message = "Xóa tag thành công",
                 Data = deleted
             };
         }

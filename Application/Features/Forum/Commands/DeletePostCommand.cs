@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -26,14 +26,14 @@ namespace Application.Features.Forum.Commands
         {
             var post = await _postRepo.GetByIdAsync(request.Id);
             if (post == null)
-                return Fail("Post not found.");
+                return Fail("Không tìm thấy bài đăng.");
 
             if (post.user_id != request.UserId)
-                return Fail("User is not allowed to delete this post.");
+                return Fail("Người dùng không có quyền xóa bài đăng này.");
 
             var deleted = await _postRepo.DeleteAsync(request.Id);
             if (!deleted)
-                return Fail("Failed to delete the post.");
+                return Fail("Xóa bài đăng thất bại.");
 
             if (post.img_urls != null && post.img_urls.Any())
             {
@@ -46,7 +46,7 @@ namespace Application.Features.Forum.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Post deleted successfully."
+                Message = "Xóa bài đăng thành công."
             };
         }
 

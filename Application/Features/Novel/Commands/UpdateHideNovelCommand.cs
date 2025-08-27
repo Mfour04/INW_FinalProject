@@ -31,24 +31,25 @@ namespace Application.Features.Novel.Commands
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
             {
-                return new ApiResponse { Success = false, Message = "Unauthorized" };
+                return new ApiResponse { Success = false, Message = "Chưa xác thực" };
             }
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
-            if(novel == null)
+            if (novel == null)
             {
-                return new ApiResponse { Success = false, Message = "Novel not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy truyện" };
             }
             if (novel.author_id != userId)
             {
-                return new ApiResponse { Success = false, Message = "Forbidden: You are not the author of this novel." };
+                return new ApiResponse { Success = false, Message = "Bị cấm: Bạn không phải là tác giả của truyện này." };
             }
             await _novelRepository.UpdateHideNovelAsync(request.NovelId, request.IsPublic);
             await _chapterRepository.UpdateHideAllChaptersByNovelIdAsync(request.NovelId, request.IsPublic);
-            var action = request.IsPublic ? "unhidden" : "hidden";
+
+            var action = request.IsPublic ? "hiển thị" : "ẩn";
             return new ApiResponse
             {
                 Success = true,
-                Message = $"Novel has been {action} successfully and affected users have been notified."
+                Message = $"Truyện đã được {action} thành công và người dùng liên quan đã được thông báo."
             };
         }
     }

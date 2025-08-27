@@ -38,7 +38,7 @@ namespace Application.Features.Transaction.Commands
             var availableCoin = user.coin - user.block_coin;
 
             if (availableCoin < request.CoinAmount)
-                return new ApiResponse { Success = false, Message = "Insufficient available coin." };
+                return new ApiResponse { Success = false, Message = "Không đủ tiền có sẵn." };
 
             // block coin
             user.block_coin += request.CoinAmount;
@@ -76,7 +76,7 @@ namespace Application.Features.Transaction.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Withdraw request submitted successfully.",
+                Message = "Yêu cầu rút tiền đã được gửi thành công.",
                 Data = transaction
             };
         }

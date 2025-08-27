@@ -34,28 +34,28 @@ namespace Application.Features.Novel.Commands
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
             {
-                return new ApiResponse { Success = false, Message = "Unauthorized" };
+                return new ApiResponse { Success = false, Message = "Chưa xác thực" };
             }
             if (!_currentUserService.IsAdmin())
             {
-                return new ApiResponse { Success = false, Message = "Forbidden: Admin role required" };
+                return new ApiResponse { Success = false, Message = "Bị cấm: Yêu cầu quyền Admin" };
             }
 
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
             {
-                return new ApiResponse { Success = false, Message = "Novel not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy truyện" };
             }
             if (request.IsLocked && novel.is_lock)
             {
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Chapter is already locked."
+                    Message = "Chương đã bị khóa."
                 };
             }
             await _novelRepository.UpdateLockStatusAsync(request.NovelId, request.IsLocked);
-            var action = request.IsLocked ? "locked" : "unlocked";
+            var action = request.IsLocked ? "khóa" : "mở khóa";
             var notificationCommand = new SendNotificationToUserCommand
             {
                 UserId = novel.author_id,
@@ -101,7 +101,7 @@ namespace Application.Features.Novel.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = $"Novel has been {action} successfully and affected users have been notified.",
+                Message = $"Tiểu thuyết đã {action} thành công và người dùng bị ảnh hưởng đã được thông báo.",
                 Data = new
                 {
                     NovelId = novel.id,

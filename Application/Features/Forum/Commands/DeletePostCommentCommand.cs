@@ -42,7 +42,7 @@ namespace Application.Features.Forum.Commands
 
             var deleted = await _commentRepo.DeleteAsync(request.Id);
             if (!deleted)
-                return Fail("Failed to delete the comment!");
+                return Fail("Không xóa được bình luận!");
 
             // Giảm comment count cho post
             string postId = comment.post_id;
@@ -66,7 +66,7 @@ namespace Application.Features.Forum.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment deleted successfully."
+                Message = "Bình luận đã được xóa thành công."
             };
         }
 
@@ -74,10 +74,10 @@ namespace Application.Features.Forum.Commands
         {
             var comment = await _commentRepo.GetByIdAsync(commentId);
             if (comment == null)
-                return (false, Fail("Comment not found."), null);
+                return (false, Fail("Không tìm thấy bình luận."), null);
 
             if (!_currentUser.IsAdmin() && comment.user_id != _currentUser.UserId)
-                return (false, Fail("User is not allowed to delete this comment."), null);
+                return (false, Fail("Người dùng không được phép xóa bình luận này."), null);
 
             return (true, null, comment);
         }

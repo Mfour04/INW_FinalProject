@@ -166,7 +166,7 @@ namespace Application.Features.Chapter.Commands
                 return new ApiResponse
                 {
                     Success = true,
-                    Message = "Chapter created successfully",
+                    Message = "Tạo chương thành công",
                     Data = new
                     {
                         Chapter = response,
@@ -184,7 +184,7 @@ namespace Application.Features.Chapter.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Chapter created successfully",
+                Message = "Tạo chương thành công",
                 Data = new
                 {
                     Chapter = response

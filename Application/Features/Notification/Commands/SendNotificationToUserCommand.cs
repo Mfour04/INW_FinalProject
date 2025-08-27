@@ -53,7 +53,7 @@ namespace Application.Features.Notification.Commands
             // 1. Validate sender
             var senderUser = await _userRepository.GetById(request.SenderId);
             if (senderUser == null)
-                return Fail("Unauthorized. You must be login.");
+                return Fail("Không được phép. Bạn phải đăng nhập.");
 
             var senderName = senderUser.displayname;
             var receiverId = request.UserId;
@@ -68,23 +68,23 @@ namespace Application.Features.Notification.Commands
             {
                 case NotificationType.CommentNovelNotification:
                     var novelComment = await RequireNovel(request.NovelId);
-                    if (novelComment == null) return Fail("Not found this novel.");
+                    if (novelComment == null) return Fail("Không tìm thấy tiểu thuyết.");
                     receiverId = novelComment.author_id;
                     novelTitle = novelComment.title;
                     break;
 
                 case NotificationType.NovelReportNofitication:
                     var novelReport = await RequireNovel(request.NovelId);
-                    if (novelReport == null) return Fail("Not found this novel.");
+                    if (novelReport == null) return Fail("Không tìm thấy tiểu thuyết.");
                     receiverId = admin.id;
                     novelTitle = novelReport.title;
                     break;
 
                 case NotificationType.CommentChapterNotification:
                     var chapterComment = await RequireChapter(request.ChapterId);
-                    if (chapterComment == null) return Fail("Not found this chapter.");
+                    if (chapterComment == null) return Fail("Không tìm thấy chương.");
                     var novelOfChapterComment = await RequireNovel(chapterComment.novel_id);
-                    if (novelOfChapterComment == null) return Fail("Novel of this chapter not found.");
+                    if (novelOfChapterComment == null) return Fail("Không tìm thấy tiểu thuyết của chương này.");
                     receiverId = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
                     chapterTitle = chapterComment.title;
                     novelTitle = novelOfChapterComment.title;
@@ -92,9 +92,9 @@ namespace Application.Features.Notification.Commands
 
                 case NotificationType.ChapterReportNotification:
                     var chapterReport = await RequireChapter(request.ChapterId);
-                    if (chapterReport == null) return Fail("Not found this chapter.");
+                    if (chapterReport == null) return Fail("Không tìm thấy chương.");
                     var novelOfChapterReport = await RequireNovel(chapterReport.novel_id);
-                    if (novelOfChapterReport == null) return Fail("Novel of this chapter not found.");
+                    if (novelOfChapterReport == null) return Fail("Không tìm thấy tiểu thuyết của chương này.");
                     receiverId = admin.id;
                     chapterTitle = chapterReport.title;
                     novelTitle = novelOfChapterReport.title;
@@ -103,9 +103,9 @@ namespace Application.Features.Notification.Commands
                 case NotificationType.RelyCommentNovel:
                 case NotificationType.RelyCommentChapter:
                     var replyComment = await RequireComment(request.ParentCommentId);
-                    if (replyComment == null) return Fail("Not found this comment.");
+                    if (replyComment == null) return Fail("Không tìm thấy bình luận.");
                     if (replyComment.user_id == request.SenderId)
-                        return Fail("Cannot send notification when reply to yourself.");
+                        return Fail("Không thể gửi thông báo khi trả lời chính mình.");
                     receiverId = replyComment.user_id;
                     if (!string.IsNullOrWhiteSpace(request.NovelId))
                     {
@@ -127,7 +127,7 @@ namespace Application.Features.Notification.Commands
 
                 case NotificationType.UserReport:
                     var reportedUser = await _userRepository.GetById(request.UserReportedId);
-                    if (reportedUser == null) return Fail("Reported user not found.");
+                    if (reportedUser == null) return Fail("Không tìm thấy người dùng được báo cáo.");
                     receiverId = admin.id;
                     userNameReported = reportedUser.username;
                     break;
@@ -145,11 +145,11 @@ namespace Application.Features.Notification.Commands
                     receiverId = await _chapterHelperService.GetChapterAuthorIdAsync(request.ChapterId);
                     break;
                 default:
-                    return Fail("This notification type is not supported.");
+                    return Fail("Loại thông báo này không được hỗ trợ.");
             }
 
             if (receiverId == null || receiverId == request.SenderId)
-                return Fail("Cannot send notification to yourself.");
+                return Fail("Không thể gửi thông báo cho chính mình.");
 
             // 3. Tạo message
             var message = string.IsNullOrWhiteSpace(request.Message)
@@ -168,7 +168,7 @@ namespace Application.Features.Notification.Commands
             return new ApiResponse
             {
                 Success = success,
-                Message = success ? "Notification sent successfully" : "Failed to send notification",
+                Message = success ? "Thông báo đã được gửi thành công": "Không gửi được thông báo",
                 Data = new
                 {
                     Receiver = receiverId,

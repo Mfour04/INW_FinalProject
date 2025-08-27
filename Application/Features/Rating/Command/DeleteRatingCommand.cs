@@ -30,14 +30,14 @@ namespace Application.Features.Rating.Command
         {
             var rating = await _ratingRepository.GetByIdAsync(request.RatingId);
             if (rating == null)
-                return Fail("Rating not found or already deleted.");
+                return Fail("Không tìm thấy đánh giá hoặc đã bị xóa.");
 
             if (rating.user_id != _currentUser.UserId)
-                return Fail("You are not authorized to delete this rating.");
+                return Fail("Bạn không có quyền xóa đánh giá này.");
 
             var deleted = await _ratingRepository.DeleteAsync(request.RatingId);
             if (!deleted)
-                return Fail("Failed to delete rating.");
+                return Fail("Xóa đánh giá thất bại.");
 
             var avg = await _ratingRepository.GetAverageRatingByNovelIdAsync(rating.novel_id);
             var count = await _ratingRepository.GetRatingCountByNovelIdAsync(rating.novel_id);
@@ -47,7 +47,7 @@ namespace Application.Features.Rating.Command
             return new ApiResponse
             {
                 Success = true,
-                Message = "Rating deleted successfully."
+                Message = "Đã xóa đánh giá thành công."
             };
         }
 

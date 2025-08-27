@@ -27,14 +27,14 @@ namespace Application.Features.Novel.Commands
         {
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
-                return new ApiResponse { Success = false, Message = "Novel not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy truyện" };
 
             if (novel.author_id != _currentUserService.UserId)
             {
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Unauthorized: You are not the author of this novel"
+                    Message = "Không có quyền: Bạn không phải là tác giả của truyện này"
                 };
             }
 
@@ -50,7 +50,7 @@ namespace Application.Features.Novel.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Novel Deleted Succuessfully",
+                Message = "Tiểu thuyết đã xóa thành công.",
                 Data = deleted
             };
         }

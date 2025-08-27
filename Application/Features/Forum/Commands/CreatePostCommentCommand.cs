@@ -61,7 +61,7 @@ namespace Application.Features.Forum.Commands
 
             var created = await _postCommentRepo.CreateAsync(comment);
             if (created == null)
-                return Fail("Failed to create comment.");
+                return Fail("Tạo bình luận thất bại");
 
             var response = _mapper.Map<PostCommentCreatedResponse>(comment);
 
@@ -115,8 +115,8 @@ namespace Application.Features.Forum.Commands
             {
                 Success = true,
                 Message = string.IsNullOrEmpty(request.ParentCommentId)
-                    ? "Comment created successfully."
-                    : "Reply created successfully.",
+                    ? "Tạo bình luận thành công."
+                    : "Trả lời bình luận thành công.",
                 Data = response
             };
         }
@@ -127,20 +127,20 @@ namespace Application.Features.Forum.Commands
             bool hasParentId = !string.IsNullOrEmpty(request.ParentCommentId);
 
             if (!(hasPostId ^ hasParentId))
-                return Fail("Either PostId or ParentCommentId must be provided, but not both.");
+                return Fail("Phải cung cấp PostId hoặc ParentCommentId, nhưng không được cung cấp cả hai.");
 
             if (hasPostId)
             {
                 var post = await _postRepo.GetByIdAsync(request.PostId);
-                if (post == null) return Fail("Post does not exist.");
+                if (post == null) return Fail("Bài viết không tồn tại");
             }
 
             if (hasParentId)
             {
                 var parentComment = await _postCommentRepo.GetByIdAsync(request.ParentCommentId);
-                if (parentComment == null) return Fail("Parent comment not found.");
+                if (parentComment == null) return Fail("Không tìm thấy parent comment");
                 if (!string.IsNullOrEmpty(parentComment.parent_comment_id))
-                    return Fail("Only 1-level replies are allowed.");
+                    return Fail("Chỉ được phép trả lời ở mức 1.");
             }
 
             return null;
@@ -149,7 +149,7 @@ namespace Application.Features.Forum.Commands
         private async Task<ApiResponse?> IncrementCommentCount(string postId)
         {
             var success = await _postRepo.IncrementCommentsAsync(postId);
-            return success ? null : Fail("Failed to update post comment count.");
+            return success ? null : Fail("Không cập nhật được số lượng bình luận bài viết.");
         }
 
         private ApiResponse Fail(string message) => new()

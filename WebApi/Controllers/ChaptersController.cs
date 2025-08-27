@@ -17,7 +17,7 @@ namespace WebApi.Controllers
         public FindCreterias FindCreterias { get; private set; }
         private string currentUserId =>
            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-           ?? throw new UnauthorizedAccessException("User ID not found in token");
+           ?? throw new UnauthorizedAccessException("User ID không tìm thấy trong token");
 
         public ChaptersController(IMediator mediator)
         {

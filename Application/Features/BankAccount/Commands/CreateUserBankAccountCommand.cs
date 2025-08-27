@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
@@ -36,10 +36,10 @@ namespace Application.Features.BankAccount.Commands
         {
             var userId = _currentUser.UserId;
             if (string.IsNullOrWhiteSpace(userId))
-                return new ApiResponse { Success = false, Message = "User not authenticated." };
+                return new ApiResponse { Success = false, Message = "Người dùng chưa được xác thực." };
 
             if (request.BankBin <= 0)
-                return new ApiResponse { Success = false, Message = "Bank bin is invalid." };
+                return new ApiResponse { Success = false, Message = "Bank bin không hợp lệ." };
 
             //if (!request.BankAccountNumber.All(char.IsDigit))
             //    return new ApiResponse { Success = false, Message = "Bank account number must be numeric." };
@@ -72,7 +72,7 @@ namespace Application.Features.BankAccount.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Bank account created successfully.",
+                Message = "Tài khoản ngân hàng đã được tạo thành công.",
                 Data = response
             };
         }

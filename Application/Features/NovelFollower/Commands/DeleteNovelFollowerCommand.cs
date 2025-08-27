@@ -35,7 +35,7 @@ namespace Application.Features.NovelFollower.Commands
             return new ApiResponse 
             { 
                 Success = true, 
-                Message = "Novel Follower deleted succesfully", 
+                Message = "Novel Follower được xóa thành công", 
                 Data = deleted
             };
         }

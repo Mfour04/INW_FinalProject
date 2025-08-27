@@ -50,7 +50,7 @@ namespace Application.Features.Chapter.Commands
         {
             var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             if (chapter == null)
-                return new ApiResponse { Success = false, Message = "Chapter not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy chương" };
 
             chapter.title = request.Title ?? chapter.title;
             chapter.content = request.Content ?? chapter.content;
@@ -155,7 +155,7 @@ namespace Application.Features.Chapter.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Chapter updated successfully",
+                Message = "Cập nhập chương thành công",
                 Data = new
                 {
                     Chapter = response,

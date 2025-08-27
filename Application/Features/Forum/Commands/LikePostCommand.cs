@@ -35,15 +35,15 @@ namespace Application.Features.Forum.Commands
         public async Task<ApiResponse> Handle(LikePostCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.PostId) || string.IsNullOrWhiteSpace(request.UserId))
-                return Fail("Missing required fields: PostId or UserId.");
+                return Fail("Thiếu trường bắt buộc: PostId hoặc UserId.");
 
             var post = await _postRepo.GetByIdAsync(request.PostId);
             if (post == null)
-                return Fail("Post does not exist.");
+                return Fail("Bài đăng không tồn tại.");
 
             var hasLiked = await _postLikeRepo.HasUserLikedPostAsync(request.PostId, request.UserId);
             if (hasLiked)
-                return Fail("User has already liked this post.");
+                return Fail("Người dùng đã thích bài đăng này.");
 
             var like = new ForumPostLikeEntity
             {
@@ -68,7 +68,7 @@ namespace Application.Features.Forum.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Like successfully.",
+                Message = "Thích bài viết thành công.",
             };
         }
 

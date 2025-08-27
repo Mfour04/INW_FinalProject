@@ -40,7 +40,7 @@ namespace WebApi.Controllers
         {
             if (command == null)
             {
-                return BadRequest("Invalid reading process data.");
+                return BadRequest("Dữ liệu quá trình đọc không hợp lệ.");
             }
 
             var result = await _mediator.Send(command);
@@ -52,7 +52,7 @@ namespace WebApi.Controllers
         {
             if (command == null)
             {
-                return BadRequest("Invalid reading process data.");
+                return BadRequest("Dữ liệu quá trình đọc không hợp lệ.");
             }
 
             var result = await _mediator.Send(command);
@@ -64,7 +64,7 @@ namespace WebApi.Controllers
         {
             if (string.IsNullOrEmpty(id))
             {
-                return BadRequest("Reading process ID is required.");
+                return BadRequest("Cần phải đọc ID tiến trình.");
             }
 
             var result = await _mediator.Send(new DeleteReadingProcessCommand { ReadingProcessId = id });

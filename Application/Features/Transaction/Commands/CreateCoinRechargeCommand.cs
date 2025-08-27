@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -25,7 +25,7 @@ namespace Application.Features.Transaction.Commands
         {
             _transactionRepo = transactionRepo;
             _payOS = payOS;
-            _baseUrl = config["BeUrl"] ?? throw new ArgumentNullException("BaseUrl is missing in config");
+            _baseUrl = config["BeUrl"] ?? throw new ArgumentNullException("BaseUrl bị thiếu trong cấu hình");
         }
 
         public async Task<string> Handle(CreateCoinRechargeCommand request, CancellationToken cancellationToken)

@@ -68,29 +68,28 @@ namespace Application.Features.Report.Command
         {
             var reporterId = _currentUser.UserId;
             if (string.IsNullOrWhiteSpace(reporterId))
-                return Fail("You must be signed in to submit a report.");
+                return Fail("Bạn phải đăng nhập để gửi báo cáo.");
 
             var targetId = GetTargetIdByScope(req.Scope, req);
             if (string.IsNullOrWhiteSpace(targetId))
-                return Fail($"Missing target id for scope '{req.Scope}'.");
+                return Fail($"Thiếu ID đối tượng cho phạm vi '{req.Scope}'.");
 
             if (req.Scope == ReportScope.User && string.Equals(targetId, reporterId, StringComparison.Ordinal))
-                return Fail("You can't report yourself.");
-
+                return Fail("Bạn không thể báo cáo chính mình.");
 
             var now = TimeHelper.NowTicks;
 
-            // 1) Cooldown per user
+            // 1) Thời gian chờ giữa các báo cáo
             var cooldownFrom = now - SecToTicks(COOLDOWN_SECONDS);
             var cooldownCount = await _reportRepo.CountByReporterAsync(reporterId!, cooldownFrom);
             if (cooldownCount > 0)
-                return Fail($"Please wait {COOLDOWN_SECONDS} seconds before sending another report.");
+                return Fail($"Vui lòng chờ {COOLDOWN_SECONDS} giây trước khi gửi báo cáo tiếp theo.");
 
-            // 2) Daily cap
+            // 2) Giới hạn báo cáo trong ngày
             var dayFrom = now - TimeSpan.TicksPerDay;
             var dailyCount = await _reportRepo.CountByReporterAsync(reporterId!, dayFrom);
             if (dailyCount >= DAILY_LIMIT)
-                return Fail("You've reached today's report limit.");
+                return Fail("Bạn đã đạt giới hạn báo cáo trong ngày.");
 
             // 3) Duplicate window: cùng target + reason trong 10 phút và còn Pending
             var dupFrom = now - SecToTicks(DUP_WINDOW_SECONDS);
@@ -108,11 +107,11 @@ namespace Application.Features.Report.Command
                 fromTicks: dupFrom
             );
             if (duplicate)
-                return Fail("You already reported this item recently. We're reviewing it.");
+                return Fail("Bạn đã báo cáo mục này gần đây. Chúng tôi đang xem xét.");
 
             var (resId, parentNovelId) = await ValidateAndExtractResourceAsync(req.Scope, req);
             if (string.IsNullOrEmpty(resId))
-                return Fail("Resource not found or information does not match.");
+                return Fail("Không tìm thấy tài nguyên hoặc thông tin không khớp.");
 
             var report = new ReportEntity
             {

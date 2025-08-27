@@ -80,7 +80,7 @@ namespace Application.Features.NovelFollower.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Novel Follower create succesfully",
+                Message = "Novel Follower đã được tạo thành công",
                 Data = response
             };
         }

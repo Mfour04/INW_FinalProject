@@ -48,7 +48,7 @@ namespace Application.Features.ReadingProcess.Command
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "User not found."
+                    Message = "Không tìm thấy người dùng."
                 };
             }
 
@@ -58,7 +58,7 @@ namespace Application.Features.ReadingProcess.Command
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Novel not found."
+                    Message = "Không tìm thấy tiểu thuyết."
                 };
             }
 
@@ -68,7 +68,7 @@ namespace Application.Features.ReadingProcess.Command
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Chapter not found."
+                    Message = "Chương không tìm thấy."
                 };
             }
 
@@ -80,7 +80,7 @@ namespace Application.Features.ReadingProcess.Command
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Novel has no valid tags."
+                    Message = "Tiểu thuyết không có thẻ hợp lệ."
                 };
             }
 
@@ -105,7 +105,7 @@ namespace Application.Features.ReadingProcess.Command
                 return new ApiResponse
                 {
                     Success = true,
-                    Message = "Reading process updated successfully.",
+                    Message = "Reading process đã được cập nhật thành công.",
                     Data = updatedResponse
                 };
             }
@@ -134,7 +134,7 @@ namespace Application.Features.ReadingProcess.Command
                 return new ApiResponse
                 {
                     Success = true,
-                    Message = "Reading process created successfully.",
+                    Message = "Reading process đã tạo thành công.",
                     Data = createResponse
                 };
             }

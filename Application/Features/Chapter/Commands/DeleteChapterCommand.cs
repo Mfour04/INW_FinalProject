@@ -24,7 +24,7 @@ namespace Application.Features.Chapter.Commands
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Chapter not found"
+                    Message = "Không tìm thấy chương"
                 };
             }
             var deleted= await _chapterRepository.DeleteAsync(request.ChapterId);
@@ -36,7 +36,7 @@ namespace Application.Features.Chapter.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Chapter Deleted Succuessfully",
+                Message = "Xóa chương thành công",
                 Data = deleted
             };
         }

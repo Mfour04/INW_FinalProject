@@ -62,7 +62,7 @@ namespace WebApi.Controllers
                 return Unauthorized(new ApiResponse
                 {
                     Success = false,
-                    Message = "User not authenticated."
+                    Message = "Người dùng không được xác thực"
                 });
             }
 
