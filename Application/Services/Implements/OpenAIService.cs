@@ -24,7 +24,12 @@ namespace Application.Services.Implements
 
         public async Task<ModerationResult> CheckModerationAsync(string input)
         {
-            var requestBody = new { input };
+            var requestBody = new
+            {
+                input,
+                model = _config.ModerationModel 
+            };
+
             var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
             using var request = new HttpRequestMessage(HttpMethod.Post, _config.ModerationUrl)

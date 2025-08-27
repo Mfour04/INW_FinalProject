@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -42,12 +42,25 @@ namespace Application.Features.Forum.Commands
 
             var deleted = await _commentRepo.DeleteAsync(request.Id);
             if (!deleted)
-                return Fail("Failed to delete the comment.");
+                return Fail("Failed to delete the comment!");
 
-            if (!string.IsNullOrWhiteSpace(comment.post_id))
+            // Giảm comment count cho post
+            string postId = comment.post_id;
+
+            // Nếu đây là reply, tìm post_id từ parent comment
+            if (string.IsNullOrWhiteSpace(postId) && !string.IsNullOrWhiteSpace(comment.parent_comment_id))
+            {
+                var parentComment = await _commentRepo.GetByIdAsync(comment.parent_comment_id);
+                if (parentComment != null)
+                {
+                    postId = parentComment.post_id;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(postId))
             {
                 var totalDeleted = 1 + replyIds.Count;
-                await _postRepo.DecrementCommentsAsync(comment.post_id, totalDeleted);
+                await _postRepo.DecrementCommentsAsync(postId, totalDeleted);
             }
 
             return new ApiResponse
