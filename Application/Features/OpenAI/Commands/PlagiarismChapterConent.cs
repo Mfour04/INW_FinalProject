@@ -21,7 +21,7 @@ namespace Application.Features.OpenAI.Commands
         private readonly INovelRepository _novelRepository;
 
         private const int WordsPerChunk = 200;
-        private const double SimilarityThreshold = 0.8;
+        private const double SimilarityThreshold = 0.75;
 
         public PlagiarismChapterContentHandler(
             IOpenAIService openAIService,
@@ -127,7 +127,9 @@ namespace Application.Features.OpenAI.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Plagiarism check completed.",
+                Message = suspectedChapters.Any()
+                    ? "Plagiarism check completed."
+                    : "No plagiarism detected.",
                 Data = new
                 {
                     SuspectedChapters = suspectedChapters
