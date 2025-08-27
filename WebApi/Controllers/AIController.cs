@@ -24,7 +24,7 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("plagiarism")]
-        public async Task<IActionResult> CheckPlagiarism([FromBody] PlagiarismChapterConent command)
+        public async Task<IActionResult> CheckPlagiarism([FromBody] PlagiarismChapterContentCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);

@@ -28,6 +28,10 @@ namespace Infrastructure.Repositories.Interfaces
         /// <summary>
         /// End Embedding methods
         /// </summary>
+        /// Chapter chunk embedding methods
 
+        Task<List<ChapterChunkEmbeddingEntity>> GetChunksByChapterIdAsync(string chapterId);
+
+        Task SaveChapterChunksAsync(string chapterId, List<string> chunkTexts, List<List<float>> chunkEmbeddings, string novelId);
     }
 }

@@ -79,26 +79,26 @@ namespace Application.Services.Implements
                 input = inputs
             };
 
-            Console.WriteLine("INPUT TO OPENAI:");
-            Console.WriteLine(JsonSerializer.Serialize(body));
+            var json = JsonSerializer.Serialize(body);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Post, _config.EmbeddingUrl);
+            var request = new HttpRequestMessage(HttpMethod.Post, _config.EmbeddingUrl)
+            {
+                Content = content
+            };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _config.ApiKey);
-            request.Content = content;
 
             var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
                 throw new Exception($"OpenAI error: {response.StatusCode} - {error}");
             }
 
-            var stream = await response.Content.ReadAsStreamAsync();
+            using var stream = await response.Content.ReadAsStreamAsync();
             using var doc = await JsonDocument.ParseAsync(stream);
 
-            var embeddings = doc.RootElement
+            return doc.RootElement
                 .GetProperty("data")
                 .EnumerateArray()
                 .Select(item => item.GetProperty("embedding")
@@ -106,9 +106,8 @@ namespace Application.Services.Implements
                     .Select(x => x.GetSingle())
                     .ToList()
                 ).ToList();
-
-            return embeddings;
         }
+
 
         public async Task<string> SummarizeContentAsync(string content)
         {
