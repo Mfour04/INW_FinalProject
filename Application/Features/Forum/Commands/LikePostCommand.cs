@@ -1,4 +1,6 @@
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -16,13 +18,18 @@ namespace Application.Features.Forum.Commands
     {
         private readonly IForumPostLikeRepository _postLikeRepo;
         private readonly IForumPostRepository _postRepo;
-
+        private readonly INotificationService _notificationService;
+        private readonly IUserRepository _userRepo;
         public LikePostCommandHandler(
             IForumPostLikeRepository postLikeRepo,
-            IForumPostRepository postRepo)
+            IForumPostRepository postRepo,
+            INotificationService notificationService,
+            IUserRepository userRepository)
         {
             _postLikeRepo = postLikeRepo;
             _postRepo = postRepo;
+            _notificationService = notificationService;
+            _userRepo = userRepository;
         }
 
         public async Task<ApiResponse> Handle(LikePostCommand request, CancellationToken cancellationToken)
@@ -48,7 +55,16 @@ namespace Application.Features.Forum.Commands
 
             await _postLikeRepo.LikePostAsync(like);
             await _postRepo.IncrementLikesAsync(request.PostId);
-
+            if (!string.IsNullOrEmpty(post.user_id) && post.user_id != request.UserId)
+            {
+                var liker = await _userRepo.GetById(request.UserId);
+                string message = $"{liker.displayname} đã thích bài viết của bạn.";
+                await _notificationService.SendNotificationToUsersAsync(
+                    new[] { post.user_id },
+                    message,
+                    NotificationType.LikePostCreated
+                );
+            }
             return new ApiResponse
             {
                 Success = true,

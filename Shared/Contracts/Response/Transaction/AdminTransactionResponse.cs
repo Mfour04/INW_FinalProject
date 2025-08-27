@@ -30,6 +30,7 @@ namespace Shared.Contracts.Response.Transaction
         public class UserBankInfomation
         {
             public int BankBin { get; set; }
+            public string BankShortName { get; set; }
             public long BankAccountNumber { get; set; }
             public string BankAccountName { get; set; }
         }

@@ -1,7 +1,10 @@
+﻿using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
+using Microsoft.Extensions.Hosting;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Forum;
 using Shared.Helpers;
@@ -22,17 +25,20 @@ namespace Application.Features.Forum.Commands
         private readonly IForumCommentRepository _postCommentRepo;
         private readonly IForumPostRepository _postRepo;
         private readonly IUserRepository _userRepo;
+        private readonly INotificationService _notificationService;
 
         public CreatePostCommentCommandHandler(
             IMapper mapper,
             IForumCommentRepository postCommentRepo,
             IForumPostRepository postRepo,
-            IUserRepository userRepo)
+            IUserRepository userRepo,
+            INotificationService notificationService)
         {
             _mapper = mapper;
             _postCommentRepo = postCommentRepo;
             _postRepo = postRepo;
             _userRepo = userRepo;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(CreatePostCommentCommand request, CancellationToken cancellationToken)
@@ -78,12 +84,31 @@ namespace Application.Features.Forum.Commands
                 {
                     var incResult = await IncrementCommentCount(parentComment.post_id);
                     if (incResult != null) return incResult;
+                    if (!string.IsNullOrWhiteSpace(parentComment.user_id) && parentComment.user_id != request.UserId)
+                    {
+                        string message = $"{user?.displayname ?? "Ai đó"} đã trả lời bình luận của bạn: \"{request.Content}\"";
+                        await _notificationService.SendNotificationToUsersAsync(
+                            new[] { parentComment.user_id },
+                            message,
+                            NotificationType.RelyCommentPost
+                        );
+                    }
                 }
             }
             else if (!string.IsNullOrEmpty(comment.post_id))
             {
                 var incResult = await IncrementCommentCount(comment.post_id);
                 if (incResult != null) return incResult;
+                var post = await _postRepo.GetByIdAsync(comment.post_id);
+                if (post != null && !string.IsNullOrWhiteSpace(post.user_id) && post.user_id != request.UserId)
+                {
+                    string message = $"{user?.displayname} đã bình luận bài viết của bạn: \"{request.Content}\"";
+                    await _notificationService.SendNotificationToUsersAsync(
+                        new[] { post.user_id },
+                        message,
+                        NotificationType.CommentPostCreated
+                    );
+                }
             }
 
             return new ApiResponse

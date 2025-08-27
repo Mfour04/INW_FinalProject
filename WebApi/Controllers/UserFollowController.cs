@@ -76,5 +76,19 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(command);
             return Ok(result);
         }
+
+        [HttpGet("status/{targetUserId}")]
+        [Authorize]
+        public async Task<IActionResult> CheckFollowStatus(string targetUserId)
+        {
+            CheckFollowStatus command = new()
+            {
+                FollowerId = currentUserId,
+                TargetUserId = targetUserId
+            };
+
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
     }
 }

@@ -270,18 +270,27 @@ namespace Infrastructure.Repositories.Implements
                     {
                         var keyword = creterias.SearchTerm[0];
 
-                        // ✅ THAY builder.Eq thành Regex để chứa từ đó (fuzzy nhẹ)
-                        filtered &= builder.Regex(
-                            x => x.displayname_unsigned,
-                            new BsonRegularExpression(keyword, "i")
+                        // Search theo cả username và displayname_unsigned
+                        var usernameFilter = builder.Regex(
+                            x => x.username,
+                            new BsonRegularExpression($".*{keyword}.*", "i")
                         );
+                        var displaynameFilter = builder.Regex(
+                            x => x.displayname_unsigned,
+                            new BsonRegularExpression($".*{keyword}.*", "i")
+                        );
+
+                        filtered &= builder.Or(usernameFilter, displaynameFilter);
                     }
                     else
                     {
-                        // Fuzzy match: tất cả từ phải khớp
+                        // Fuzzy match: tất cả từ phải khớp với username hoặc displayname_unsigned
                         var regexFilters = creterias.SearchTerm.Select(term =>
-                            builder.Regex(x => x.displayname_unsigned, new BsonRegularExpression(term, "i"))
-                        );
+                        {
+                            var usernameFilter = builder.Regex(x => x.username, new BsonRegularExpression($".*{SystemHelper.RemoveDiacritics(term).ToLower()}.*", "i"));
+                            var displaynameFilter = builder.Regex(x => x.displayname_unsigned, new BsonRegularExpression($".*{SystemHelper.RemoveDiacritics(term).ToLower()}.*", "i"));
+                            return builder.Or(usernameFilter, displaynameFilter);
+                        });
                         filtered &= builder.And(regexFilters);
                     }
                 }
@@ -373,6 +382,49 @@ namespace Infrastructure.Repositories.Implements
             }).ToList();
 
             return result;
+        }
+        public async Task<UserEntity> FindOrCreateUserFromGoogleAsync(string email, string name, string avatarUrl)
+        {
+            var user = await _collection.Find(u => u.email == email).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                user = new UserEntity
+                {
+                    id = SystemHelper.RandomId(),
+                    email = email,
+                    displayname = name,
+                    displayname_unsigned = SystemHelper.RemoveDiacritics(name),
+                    avata_url = avatarUrl,
+                    role = Role.User,
+                    is_verified = true,
+                    created_at = TimeHelper.NowTicks,
+                    last_login = TimeHelper.NowTicks
+                };
+
+                Console.WriteLine("Creating new user: " + email);
+                await _collection.InsertOneAsync(user);
+                Console.WriteLine("User created: " + user.id);
+            }
+            else
+            {
+                user.last_login = TimeHelper.NowTicks;
+                var update = Builders<UserEntity>.Update.Set(u => u.last_login, user.last_login);
+                await _collection.UpdateOneAsync(u => u.email == email, update);
+            }
+
+            return user; // Fix: Return the user's ID as a string instead of the UserEntity object.
+        }
+
+        public async Task<List<UserEntity>> GetManyAdmin()
+        {
+            try
+            {
+                return await _collection.Find(u => u.role == Role.Admin).ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
     }
 }

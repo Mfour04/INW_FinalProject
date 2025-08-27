@@ -1,3 +1,4 @@
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -18,13 +19,16 @@ namespace Application.Features.Transaction.Commands
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly IUserRepository _userRepository;
+        private readonly INotificationService _notificationService;
 
         public WithdrawRequestCommandHandler(
             ITransactionRepository transactionRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            INotificationService notificationService)
         {
             _transactionRepository = transactionRepository;
             _userRepository = userRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(WithdrawRequestCommand request, CancellationToken cancellationToken)
@@ -55,7 +59,20 @@ namespace Application.Features.Transaction.Commands
             };
 
             await _transactionRepository.AddAsync(transaction);
+            await _notificationService.SendNotificationToUsersAsync(
+                new[] { user.id },
+                $"Bạn đã gửi yêu cầu rút {request.CoinAmount} coin. Vui lòng chờ admin duyệt.",
+                NotificationType.WithdrawRequest
+            );
 
+            var admins = await _userRepository.GetManyAdmin();
+            var adminIds = admins.Select(a => a.id).ToArray();
+
+            await _notificationService.SendNotificationToUsersAsync(
+                adminIds,
+                $"{user.displayname} đã gửi yêu cầu rút {request.CoinAmount} coin.",
+                NotificationType.WithdrawRequest
+            );
             return new ApiResponse
             {
                 Success = true,

@@ -12,11 +12,13 @@ namespace Infrastructure.Repositories.Implements
         private readonly IMongoCollection<UserEmbeddingEntity> _userCollection;
         private readonly IMongoCollection<NovelEmbeddingEntity> _novelCollection;
         private readonly IMongoCollection<ChapterContentEmbeddingEntity> _chapterContentCollection;
+        private readonly IMongoCollection<ChapterChunkEmbeddingEntity> _chapterChunkCollection;
         public OpenAIRepository(MongoDBHelper mongoDBHelper)
         {
             _userCollection = mongoDBHelper.GetCollection<UserEmbeddingEntity>("user_embedding");
             _novelCollection = mongoDBHelper.GetCollection<NovelEmbeddingEntity>("novel_embedding");
             _chapterContentCollection = mongoDBHelper.GetCollection<ChapterContentEmbeddingEntity>("chapter_content_embeddings");
+            _chapterChunkCollection = mongoDBHelper.GetCollection<ChapterChunkEmbeddingEntity>("chapter_chunk_embeddings");
         }
         /// <summary>
         /// Embedding methods
@@ -192,6 +194,33 @@ namespace Infrastructure.Repositories.Implements
             var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(x => x.chapter_id, entity.chapter_id);
             await _chapterContentCollection.ReplaceOneAsync(filter, entity, new ReplaceOptions { IsUpsert = false });
         }
+
+        public async Task<List<ChapterChunkEmbeddingEntity>> GetChunksByChapterIdAsync(string chapterId)
+        {
+            return await _chapterChunkCollection.Find(c => c.chapter_id == chapterId)
+                                         .SortBy(c => c.chunk_index)
+                                         .ToListAsync();
+        }
+
+        public async Task SaveChapterChunksAsync(string chapterId, List<string> chunkTexts, List<List<float>> chunkEmbeddings, string novelId)
+        {
+            if (chunkTexts.Count != chunkEmbeddings.Count)
+                throw new ArgumentException("Số lượng chunkTexts và chunkEmbeddings không khớp.");
+
+            var docs = chunkTexts.Select((text, idx) => new ChapterChunkEmbeddingEntity
+            {
+                chunk_id = SystemHelper.RandomId(),
+                chapter_id = chapterId,
+                novel_id = novelId,
+                chunk_index = idx,
+                chunk_text = text,
+                vector_chunk_content = chunkEmbeddings[idx],
+                created_at = TimeHelper.NowTicks
+            }).ToList();
+
+            await _chapterChunkCollection.InsertManyAsync(docs);
+        }
+
 
         /// <summary>
         /// End Embedding methods

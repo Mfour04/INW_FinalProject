@@ -1,114 +1,58 @@
 ﻿using Application.Features.Report.Command;
 using Application.Features.Report.Queries;
-using Domain.Entities.System;
-using Domain.Enums;
 using MediatR;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/reports")]
     [ApiController]
     public class ReportsController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly FindCreterias _findCreterias;
         public ReportsController(IMediator mediator)
         {
             _mediator = mediator;
-            _findCreterias = new FindCreterias();
         }
+
         [HttpGet]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] int page = 0,
-            [FromQuery] int limit = 10,
-            [FromQuery] string userId = null,
-            [FromQuery] string novelId = null,
-            [FromQuery] string chapterId = null,
-            [FromQuery] string commentId = null,
-            [FromQuery] string forumPostId = null,
-            [FromQuery] string forumCommentId = null,
-            [FromQuery] ReportTypeStatus? type = null,
-            [FromQuery] ReportStatus? status = null)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllReports([FromQuery] GetReports query)
         {
-            var query = new GetReports
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReportById(string id)
+        {
+            GetReportById query = new()
             {
-                Page = page,
-                Limit = limit,
-                UserId = userId,
-                NovelId = novelId,
-                ChapterId = chapterId,
-                CommentId = commentId,
-                ForumPostId = forumPostId,
-                ForumCommentId = forumCommentId,
-                Type = type,
-                Status = status
+                ReportId = id
             };
 
             var result = await _mediator.Send(query);
             return Ok(result);
         }
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateReport([FromBody] CreateReportCommand report)
-        {
-            if (report == null)
-            {
-                return BadRequest("Invalid report data.");
-            }
 
-            var result = await _mediator.Send(report);
-            if (result.Success)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result.Message);
+        [HttpPost()]
+        [Authorize]
+        public async Task<IActionResult> CreateReport([FromBody] CreateReportCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetReportById(string id)
+
+        [HttpPut("{id}/moderate")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Moderate(string id, [FromBody] ModerateReportCommand command)
         {
-            if (string.IsNullOrEmpty(id))
-            {
-                return BadRequest("Report ID cannot be null or empty.");
-            }
+            command.ReportId = id;
 
-            var report = await _mediator.Send(new GetReportById { ReportId = id });
-            if (report == null)
-            {
-                return NotFound("Report not found.");
-            }
-
-            return Ok(report);
-        }
-        [HttpPut("update")]
-        public async Task<IActionResult> UpdateReport([FromBody] UpdateReportCommand report)
-        {
-            if (report == null || report.ReportIds == null || !report.ReportIds.Any())
-            {
-                return BadRequest("Invalid report data.");
-            }
-
-            var result = await _mediator.Send(report);
-            if (result.Success)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result.Message);
-        }   
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteReport(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-            {
-                return BadRequest("Report ID cannot be null or empty.");
-            }
-
-            var result = await _mediator.Send(new DeleteReportCommand { ReportId = id });
-            if (result.Success)
-            {
-                return Ok(result);
-            }
-            return BadRequest(result.Message);
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
     }
 }

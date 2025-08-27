@@ -4,14 +4,8 @@ using Domain.Enums;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
-using Org.BouncyCastle.Crypto;
 using Shared.Exceptions;
 using Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -23,6 +17,79 @@ namespace Infrastructure.Repositories.Implements
             mongoDBHelper.CreateCollectionIfNotExistsAsync("report").Wait();
             _collection = mongoDBHelper.GetCollection<ReportEntity>("report");
         }
+
+        public async Task<List<ReportEntity>> GetAllAsync(
+            ReportScope? scope,
+            ReportStatus? status,
+            FindCreterias creterias,
+            List<SortCreterias> sortCreterias)
+        {
+            try
+            {
+                var builder = Builders<ReportEntity>.Filter;
+                var filter = builder.Empty;
+
+                if (scope.HasValue)
+                {
+                    filter &= builder.Eq(t => t.scope, scope.Value);
+                }
+
+                if (status.HasValue)
+                {
+                    filter &= builder.Eq(t => t.status, status.Value);
+                }
+
+                var query = _collection.Find(filter);
+
+                var sortBuilder = Builders<ReportEntity>.Sort;
+                var sortDefinitions = new List<SortDefinition<ReportEntity>>();
+
+                foreach (var criterion in sortCreterias)
+                {
+                    SortDefinition<ReportEntity>? sortDef = criterion.Field switch
+                    {
+                        "created_at" => criterion.IsDescending
+                            ? sortBuilder.Descending(t => t.created_at)
+                            : sortBuilder.Ascending(t => t.created_at),
+
+                        _ => null
+                    };
+
+                    if (sortDef != null)
+                        sortDefinitions.Add(sortDef);
+                }
+
+                if (sortDefinitions.Any())
+                {
+                    query = query.Sort(sortBuilder.Combine(sortDefinitions));
+                }
+
+                query = query
+                    .Skip(creterias.Page * creterias.Limit)
+                    .Limit(creterias.Limit);
+
+                return await query.ToListAsync();
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<ReportEntity> GetByIdAsync(string id)
+        {
+            try
+            {
+                var filter = Builders<ReportEntity>.Filter.Eq(r => r.id, id);
+                var result = await _collection.Find(filter).FirstOrDefaultAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
         public async Task<ReportEntity> CreateAsync(ReportEntity report)
         {
             try
@@ -50,271 +117,32 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<bool> ExistsAsync(string userId, ReportTypeStatus type, string targetId)
+        public async Task<bool> UpdateAsync(string id, ReportEntity entity)
         {
             try
             {
-                var filter = Builders<ReportEntity>.Filter.And(
-                    Builders<ReportEntity>.Filter.Eq(r => r.user_id, userId),
-                    Builders<ReportEntity>.Filter.Eq(r => r.type, type)
-                );
+                var filter = Builders<ReportEntity>.Filter.Eq(x => x.id, id);
 
-                switch(type)
-                {
-                    case ReportTypeStatus.UserReport:
-                        filter = Builders<ReportEntity>.Filter.And(filter, Builders<ReportEntity>.Filter.Eq(r => r.member_id, targetId));
-                        break;
-                    case ReportTypeStatus.NovelReport:
-                        filter = Builders<ReportEntity>.Filter.And(filter, Builders<ReportEntity>.Filter.Eq(r => r.novel_id, targetId));
-                        break;
-                    case ReportTypeStatus.ChapterReport:
-                        filter = Builders<ReportEntity>.Filter.And(filter, Builders<ReportEntity>.Filter.Eq(r => r.chapter_id, targetId));
-                        break;
-                    case ReportTypeStatus.CommentReport:
-                        filter = Builders<ReportEntity>.Filter.And(filter, Builders<ReportEntity>.Filter.Eq(r => r.comment_id, targetId));
-                        break;
-                    case ReportTypeStatus.ForumPostReport:
-                        filter = Builders<ReportEntity>.Filter.And(filter, Builders<ReportEntity>.Filter.Eq(r => r.forum_post_id, targetId));
-                        break;
-                    case ReportTypeStatus.ForumCommentReport:
-                        filter = Builders<ReportEntity>.Filter.And(filter, Builders<ReportEntity>.Filter.Eq(r => r.forum_comment_id, targetId));
-                        break;
-                }
+                var report = await _collection.Find(filter).FirstOrDefaultAsync();
 
-                var count = await _collection.CountDocumentsAsync(filter);
-                return count > 0;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
+                var update = Builders<ReportEntity>
+                    .Update.Set(x => x.moderator_id, entity.moderator_id ?? report.moderator_id)
+                    .Set(x => x.moderator_note, entity.moderator_note ?? report.moderator_note)
+                    .Set(x => x.status, entity?.status ?? report.status)
+                    .Set(x => x.action, entity?.action ?? report.action)
+                    .Set(x => x.moderated_at, entity?.moderated_at ?? 0)
+                    .Set(x => x.updated_at, TimeHelper.NowTicks);
 
-        public async Task<List<ReportEntity>> GetAllAsync(FindCreterias findCreterias)
-        {
-            try
-            {
-                var result = await _collection
-                    .Find(_ => true)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
+                var updated = await _collection.FindOneAndUpdateAsync(
+                  filter,
+                  update,
+                  new FindOneAndUpdateOptions<ReportEntity>
+                  {
+                      ReturnDocument = ReturnDocument.After,
+                  }
+              );
 
-        public async Task<List<ReportEntity>> GetByChapterIdAsync(FindCreterias findCreterias, string chapterId)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.chapter_id, chapterId);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetByCommentIdAsync(FindCreterias findCreterias, string commentId)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.comment_id, commentId);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetByForumCommentIdAsync(FindCreterias findCreterias, string forumCommentId)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.forum_comment_id, forumCommentId);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetByForumPostIdAsync(FindCreterias findCreterias, string forumPostId)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.forum_post_id, forumPostId);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<ReportEntity> GetByIdAsync(string id)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.id, id);
-                var result = await _collection.Find(filter).FirstOrDefaultAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetByMemberIdAsync(FindCreterias findCreterias, string memberId)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.member_id, memberId);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetByNovelIdAsync(FindCreterias findCreterias, string novelId)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.novel_id, novelId);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetByStatusAsync(FindCreterias findCreterias, ReportStatus status)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.status, status);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetByTypeAsync(FindCreterias findCreterias, ReportTypeStatus type)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.type, type);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetByUserIdAsync(FindCreterias findCreterias, string userId)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.user_id, userId);
-                var result = await _collection
-                    .Find(filter)
-                    .SortByDescending(x => x.created_at)
-                    .Skip(findCreterias.Page * findCreterias.Limit)
-                    .Limit(findCreterias.Limit)
-                    .ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<List<ReportEntity>> GetManyByIdsAsync(List<string> ids)
-        {
-            try
-            {
-                var filter = Builders<ReportEntity>.Filter.In(r => r.id, ids);
-                var result = await _collection.Find(filter).ToListAsync();
-                return result;
-            }
-            catch
-            {
-                throw new InternalServerException();
-            }
-        }
-
-        public async Task<ReportEntity> UpdateAsync(ReportEntity report)
-        {
-            try
-            {
-                report.updated_at = TimeHelper.NowTicks;
-                var filter = Builders<ReportEntity>.Filter.Eq(r => r.id, report.id);
-                var result = await _collection.ReplaceOneAsync(filter, report);
-                return report;
+                return updated != null;
             }
             catch
             {
@@ -326,9 +154,9 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                var filter = Builders<ReportEntity>.Filter.In(r => r.id, ids); 
+                var filter = Builders<ReportEntity>.Filter.In(r => r.id, ids);
                 var update = Builders<ReportEntity>.Update
-                    .Set(r => r.status, newStatus) 
+                    .Set(r => r.status, newStatus)
                     .Set(r => r.updated_at, TimeHelper.NowTicks);
                 await _collection.UpdateManyAsync(filter, update);
                 return await _collection.Find(filter).ToListAsync();
@@ -338,5 +166,122 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<long> CountAsync(ReportScope? scope, ReportStatus? status)
+        {
+            try
+            {
+                var filter = Builders<ReportEntity>.Filter.Empty;
+
+                if (scope.HasValue)
+                {
+                    filter &= Builders<ReportEntity>.Filter.Eq(x => x.scope, scope.Value);
+                }
+
+                if (status.HasValue)
+                {
+                    filter &= Builders<ReportEntity>.Filter.Eq(x => x.status, status.Value);
+                }
+
+                return await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<long> CountByReporterAsync(string reporterId, long fromTicks)
+        {
+            try
+            {
+                var f = Builders<ReportEntity>.Filter.And(
+                    Builders<ReportEntity>.Filter.Eq(x => x.reporter_id, reporterId),
+                    Builders<ReportEntity>.Filter.Gte(x => x.created_at, fromTicks)
+                    );
+
+                return await _collection.CountDocumentsAsync(f);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> ExistsAsync(
+            string reporterId,
+            ReportScope scope,
+            string? novelId,
+            string? chapterId,
+            string? commentId,
+            string? forumPostId,
+            string? forumCommentId,
+            string? targetUserId,
+            ReportReason reason,
+            ReportStatus? status,
+            long fromTicks)
+        {
+            try
+            {
+                string? targetId = scope switch
+                {
+                    ReportScope.Novel => novelId,
+                    ReportScope.Chapter => chapterId,
+                    ReportScope.Comment => commentId,
+                    ReportScope.ForumPost => forumPostId,
+                    ReportScope.ForumComment => forumCommentId,
+                    ReportScope.User => targetUserId,
+                    _ => null
+                };
+                if (string.IsNullOrWhiteSpace(targetId)) return false;
+
+                var fb = Builders<ReportEntity>.Filter;
+                var filters = new List<FilterDefinition<ReportEntity>>
+                {
+                    fb.Eq(x => x.reporter_id, reporterId),
+                    fb.Eq(x => x.scope, scope),
+                    fb.Eq(x => x.reason, reason),
+                    fb.Gte(x => x.created_at, fromTicks)
+                };
+                if (status.HasValue)
+                    filters.Add(fb.Eq(x => x.status, status.Value));
+
+                switch (scope)
+                {
+                    case ReportScope.Novel:
+                        filters.Add(fb.Eq(x => x.novel_id, targetId));
+                        break;
+                    case ReportScope.Chapter:
+                        filters.Add(fb.Eq(x => x.chapter_id, targetId));
+                        break;
+                    case ReportScope.Comment:
+                        filters.Add(fb.Eq(x => x.comment_id, targetId));
+                        break;
+                    case ReportScope.ForumPost:
+                        filters.Add(fb.Eq(x => x.forum_post_id, targetId));
+                        break;
+                    case ReportScope.ForumComment:
+                        filters.Add(fb.Eq(x => x.forum_comment_id, targetId));
+                        break;
+                    case ReportScope.User:
+                        filters.Add(fb.Eq(x => x.target_user_id, targetId));
+                        break;
+                }
+
+                var filter = fb.And(filters);
+
+                var exists = await _collection.Find(filter)
+                    .Project(x => x.id)
+                    .Limit(1)
+                    .FirstOrDefaultAsync();
+
+                return exists != null;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
     }
 }

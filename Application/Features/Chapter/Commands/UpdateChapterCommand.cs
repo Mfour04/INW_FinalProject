@@ -21,7 +21,7 @@ namespace Application.Features.Chapter.Commands
         public bool? IsPaid { get; set; }
         public bool? AllowComment { get; set; }
         public int? Price { get; set; }
-        public DateTime? ScheduledAt { get; set; }
+        public long? ScheduledAt { get; set; }
         public bool IsDraft { get; set; }
         public bool IsPublic { get; set; }
     }
@@ -60,7 +60,23 @@ namespace Application.Features.Chapter.Commands
             chapter.price = request.Price ?? chapter.price;
             if (request.ScheduledAt.HasValue)
             {
-                chapter.scheduled_at = request.ScheduledAt.Value.ToUniversalTime().Ticks;
+                var scheduleAt = TimeHelper.FromUnixMillisecondsToVNTicks(request.ScheduledAt.Value);
+
+                var today = TimeHelper.NowVN.Date;
+                var scheduledDate = new DateTime(scheduleAt).Date;
+
+                if (scheduledDate <= today)
+                {
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Ngày lên lịch xuất bản chỉ được cho phép từ ngày tiếp theo trở đi."
+                    };
+                }
+
+                chapter.scheduled_at = scheduleAt;
+                chapter.is_draft = false;
+                chapter.is_public = false;
             }
             chapter.updated_at = TimeHelper.NowTicks;
 
@@ -121,10 +137,7 @@ namespace Application.Features.Chapter.Commands
                         {
                             chapter_id = chapter.id,
                             novel_id = chapter.novel_id,
-                            novel_title = novel?.title,
-                            slug = novel?.slug,
                             vector_chapter_content = embedding[0],
-                            chapter_content = chapter.content,
                             updated_at = TimeHelper.NowTicks
                         };
                         await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);

@@ -1,6 +1,5 @@
 ﻿using Application.Features.ReadingProcess.Command;
 using Application.Features.ReadingProcess.Queries;
-using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +11,10 @@ namespace WebApi.Controllers
     public class ReadingProcessesController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly FindCreterias _findCreterias;
 
         public ReadingProcessesController(IMediator mediator)
         {
             _mediator = mediator;
-            _findCreterias = new FindCreterias();
         }
 
         [HttpGet("history")]

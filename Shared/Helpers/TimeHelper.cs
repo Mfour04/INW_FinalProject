@@ -64,6 +64,7 @@ namespace Shared.Helpers
         /// Ticks tại 23:59:59.9999999 Chủ nhật tuần này (giờ VN)
         public static long EndOfCurrentWeekTicksVN =>
             new DateTime(StartOfCurrentWeekTicksVN).AddDays(7).AddTicks(-1).Ticks;
+            
         public static List<DateTime> GetDaysFromStartOfWeekToTodayVN()
         {
             var today = NowVN.Date;
@@ -93,5 +94,17 @@ namespace Shared.Helpers
 
         public static bool IsBanExpired(long? bannedUntilTicks) =>
             bannedUntilTicks.HasValue && NowTicks > bannedUntilTicks.Value;
+
+        public static long FromUnixMillisecondsToVNTicks(long unixMs)
+        {
+            // unixMs là UTC (FE gửi lên chuẩn UTC)
+            var utcDateTime = DateTimeOffset.FromUnixTimeMilliseconds(unixMs).UtcDateTime;
+
+            // Convert về giờ VN
+            var vnDateTime = ToVN(utcDateTime);
+
+            // Trả về ticks (theo giờ VN)
+            return vnDateTime.Ticks;
+        }
     }
 }

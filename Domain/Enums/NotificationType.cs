@@ -32,6 +32,7 @@ namespace Domain.Enums
         // ============================
         // 💬 Comment (cả novel & chapter)
         // ============================
+        CommentLike,                   // Thích bình luận
         ReportComment,                 // Báo cáo bình luận
 
         // ============================
@@ -39,7 +40,22 @@ namespace Domain.Enums
         // ============================
         UserReport,                    // Báo cáo người dùng
         BanUser,                       // Khoá tài khoản người dùng
-        UnBanUser                      // Mở khoá tài khoản người dùng
+        UnBanUser,            // Mở khoá tài khoản người dùng
+        // ============================
+        // 💬 Report 
+        // ============================
+        CreateReport,
+        ReportModerated,
+        // ============================
+        // 🛠️ Forum
+        CommentPostCreated,
+        RelyCommentPost,
+        LikePostCreated,
+        LikePostComment,
+        WithdrawRequest,
+        WithdrawCancelled,
+        WithdrawApproved,
+        WithdrawRejected
     }
 
 }
