@@ -101,15 +101,7 @@ namespace Application.Features.Chapter.Queries
             //            {
             //                chapter_id = chapter.id,
             //                novel_id = chapter.novel_id,
-            //                novel_title = novelDictionary.ContainsKey(chapter.novel_id)
-            //                    ? novelDictionary[chapter.novel_id].title
-            //                    : "Unknown",
-            //                slug = novelDictionary.ContainsKey(chapter.novel_id)
-            //                    ? novelDictionary[chapter.novel_id].slug
-            //                    : "unknown-slug",
-            //                chapter_title = chapter.title,
             //                vector_chapter_content = embedding[0],
-            //                chapter_content = chapter.content,
             //                updated_at = TimeHelper.NowTicks
             //            };
 

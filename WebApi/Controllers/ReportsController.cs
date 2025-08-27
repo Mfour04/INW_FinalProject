@@ -1,6 +1,5 @@
 ﻿using Application.Features.Report.Command;
 using Application.Features.Report.Queries;
-using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
