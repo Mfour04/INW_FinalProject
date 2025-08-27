@@ -42,7 +42,7 @@ namespace Application.Features.Forum.Commands
 
             var deleted = await _commentRepo.DeleteAsync(request.Id);
             if (!deleted)
-                return Fail("Failed to delete the comment.");
+                return Fail("Failed to delete the comment!");
 
             if (!string.IsNullOrWhiteSpace(comment.post_id))
             {
