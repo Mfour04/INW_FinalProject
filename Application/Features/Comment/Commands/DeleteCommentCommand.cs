@@ -33,10 +33,10 @@ namespace Application.Features.Comment.Commands
         {
             var existComment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (existComment == null)
-                return Fail("Comment not found.");
+                return Fail("Không tìm thấy bình luận.");
 
             if (!_currentUser.IsAdmin() && _currentUser.UserId != existComment.user_id)
-                return Fail("You are not authorized to delete this comment.");
+                return Fail("Bạn không có quyền xóa bình luận này.");
 
             int totalDeleted = 1;
 
@@ -54,7 +54,7 @@ namespace Application.Features.Comment.Commands
             var deleted = await _commentRepo.DeleteAsync(request.CommentId);
             if (!deleted)
             {
-                return Fail("Failed to delete comment.");
+                return Fail("Xóa bình luận thất bại.");
             }
 
             if (string.IsNullOrWhiteSpace(existComment.parent_comment_id))
@@ -70,7 +70,7 @@ namespace Application.Features.Comment.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment Deleted Successfully"
+                Message = "Xóa bình luận thành công"
             };
         }
 

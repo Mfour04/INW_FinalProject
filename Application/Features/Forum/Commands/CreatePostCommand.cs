@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
@@ -70,7 +70,7 @@ namespace Application.Features.Forum.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Post created successfully.",
+                Message = "Bài viết đã được tạo thành công.",
                 Data = response
             };
         }
@@ -85,7 +85,7 @@ namespace Application.Features.Forum.Commands
                 return (false, new ApiResponse
                 {
                     Success = false,
-                    Message = "You must provide content or at least one image."
+                    Message = "Bạn phải cung cấp nội dung hoặc ít nhất một hình ảnh."
                 });
             }
 

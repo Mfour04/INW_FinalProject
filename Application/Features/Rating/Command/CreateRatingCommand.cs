@@ -56,25 +56,25 @@ namespace Application.Features.Rating.Command
             return new ApiResponse
             {
                 Success = true,
-                Message = "Rating created successfully."
+                Message = "Đã tạo rating thành công."
             };
         }
 
         private async Task<(bool IsValid, ApiResponse? Response)> ValidateRequestAsync(CreateRatingCommand request)
         {
             if (string.IsNullOrWhiteSpace(request.NovelId))
-                return (false, Fail("Novel ID is required."));
+                return (false, Fail("Cần phải có ID truyện."));
 
             if (request.Score < 1 || request.Score > 5)
-                return (false, Fail("Score must be between 1 and 5."));
+                return (false, Fail("Điểm đánh giá phải từ 1 đến 5."));
 
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
-                return (false, Fail("Novel not found."));
+                return (false, Fail("Không tìm thấy truyện."));
 
             var hasRated = await _ratingRepository.HasUserRatedNovelAsync(_currentUser.UserId, request.NovelId);
             if (hasRated)
-                return (false, Fail("You have already rated this novel."));
+                return (false, Fail("Bạn đã đánh giá truyện này rồi."));
 
             return (true, null);
         }

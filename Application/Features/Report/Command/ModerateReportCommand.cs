@@ -54,38 +54,38 @@ namespace Application.Features.Report.Command
         public async Task<ApiResponse> Handle(ModerateReportCommand request, CancellationToken cancellationToken)
         {
             if (!_currentUser.IsAdmin())
-                return Fail("You don't have permission to moderate reports.");
+                return Fail("Bạn không có quyền quản lý báo cáo.");
 
             if (string.IsNullOrWhiteSpace(request.ReportId))
-                return Fail("Invalid report id.");
+                return Fail("ID báo cáo không hợp lệ.");
 
             var report = await _reportRepo.GetByIdAsync(request.ReportId);
             if (report == null)
-                return Fail("Report not found.");
+                return Fail("Không tìm thấy báo cáo.");
 
             if (report.status != ReportStatus.Pending)
-                return Fail("This report has already been processed and cannot be updated.");
+                return Fail("Báo cáo này đã được xử lý và không thể cập nhật.");
 
             if (request.Status == ReportStatus.Pending)
-                return Fail("Cannot update report status to Pending.");
+                return Fail("Không thể cập nhật trạng thái báo cáo thành Đang chờ xử lý.");
 
             if (request.Status != ReportStatus.Resolved &&
                 request.Status != ReportStatus.Rejected &&
                 request.Status != ReportStatus.Ignored)
-                return Fail("Invalid target status. Must be Resolved, Rejected, or Ignored.");
+                return Fail("Trạng thái mục tiêu không hợp lệ. Phải là Đã xử lý, Bị từ chối hoặc Bị bỏ qua.");
 
             if (request.Status == ReportStatus.Resolved)
             {
                 if (request.Action == ModerationAction.None)
-                    return Fail("A moderation action is required when status is Resolved.");
+                    return Fail("Phải có hành động kiểm duyệt khi trạng thái là Đã xử lý.");
 
                 var ok = await ApplyModerationActionAsync(report, request.Action, request.SuspendUntilTicks);
-                if (!ok) return Fail("Failed to apply moderation action on the resource.");
+                if (!ok) return Fail("Áp dụng hành động kiểm duyệt trên tài nguyên thất bại.");
             }
             else
             {
                 if (request.Action != ModerationAction.None)
-                    return Fail("Moderation action must be None when status is Rejected or Ignored.");
+                    return Fail("Hành động kiểm duyệt phải là Không khi trạng thái là Bị từ chối hoặc Bỏ qua.");
             }
 
             ReportEntity updated = new()
@@ -99,7 +99,7 @@ namespace Application.Features.Report.Command
 
             var success = await _reportRepo.UpdateAsync(request.ReportId, updated);
             if (!success)
-                return Fail("Failed to update the report.");
+                return Fail("Không cập nhật được báo cáo.");
 
             var reporter = await _userRepo.GetById(report.reporter_id);
             if (reporter != null)
@@ -123,7 +123,7 @@ namespace Application.Features.Report.Command
             return new ApiResponse
             {
                 Success = true,
-                Message = "Report updated successfully."
+                Message = "Báo cáo đã được cập nhật thành công."
             };
         }
 

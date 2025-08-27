@@ -50,17 +50,17 @@ namespace Application.Features.Novel.Commands
         {
             var novel = await _novelRepository.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
-                return new ApiResponse { Success = false, Message = "Novel not found" };
-            
+                return new ApiResponse { Success = false, Message = "Không tìm thấy truyện" };
+
             if (novel.author_id != _currentUserService.UserId)
             {
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Unauthorized: You are not the author of this novel"
+                    Message = "Không có quyền: Bạn không phải là tác giả của truyện này"
                 };
             }
-            
+
             novel.title = request.Title ?? novel.title; 
             novel.description = request.Description ?? novel.description;
             if (request.NovelImage != null)
@@ -78,7 +78,7 @@ namespace Application.Features.Novel.Commands
             {
                 var slugExists = await _novelRepository.IsSlugExistsAsync(request.Slug);
                 if (slugExists)
-                    return new ApiResponse { Success = false, Message = "Slug already exists." };
+                    return new ApiResponse { Success = false, Message = "Slug đã tồn tại." };
 
                 novel.slug = request.Slug; // Gán sau khi đã chắc chắn không trùng
             }
@@ -109,7 +109,7 @@ namespace Application.Features.Novel.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Novel Updated Successfullly",
+                Message = "Đã cập nhật tiểu thuyết thành công.",
                 Data = response,
             };
         }

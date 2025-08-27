@@ -1,4 +1,4 @@
-using Infrastructure.Repositories.Interfaces;
+﻿using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 
@@ -25,7 +25,7 @@ namespace Application.Features.UserFollow.Commands
         {
             var success = await _followRepo.UnfollowAsync(request.FollowerId, request.FollowingId);
             if (!success)
-                return new ApiResponse { Success = false, Message = "The follow does not exist to unfollow." };
+                return new ApiResponse { Success = false, Message = "Không thể bỏ theo dõi." };
 
             await _userRepo.IncrementFollowerCountAsync(request.FollowingId, -1);
             await _userRepo.IncrementFollowingCountAsync(request.FollowerId, -1);
@@ -33,7 +33,7 @@ namespace Application.Features.UserFollow.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Unfollowed successfully.",
+                Message = "Bỏ theo dõi thành công.",
             };
         }
     }

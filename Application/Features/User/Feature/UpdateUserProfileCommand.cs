@@ -18,11 +18,11 @@ namespace Application.Features.User.Feature
     public class UpdateUserProfileCommand : IRequest<ApiResponse>
     {
         public string UserId { get; set; }
-        [Required(ErrorMessage = "DisplayName is required")]
-        [StringLength(100, MinimumLength = 2, ErrorMessage = "DisplayName must be between 2 and 100 characters")]
+        [Required(ErrorMessage = "Tên hiển thị là bắt buộc")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Tên hiển thị phải từ 2 đến 100 ký tự")]
         public string DisplayName { get; set; }
 
-        [StringLength(500, ErrorMessage = "Bio cannot exceed 500 characters")]
+        [StringLength(500, ErrorMessage = "Tiểu sử không được vượt quá 500 ký tự")]
         public string Bio { get; set; }
 
         public IFormFile? AvatarUrl { get; set; }
@@ -53,7 +53,7 @@ namespace Application.Features.User.Feature
         {
             var user = await _userRepository.GetById(request.UserId);
             if(user == null)
-                return new ApiResponse { Success = false, Message = "User not found." };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy người dùng." };
             var oldFavouriteTypes = user.favourite_type ?? new List<string>();
             user.displayname = request.DisplayName;
             user.displayname_unsigned = SystemHelper.RemoveDiacritics(request.DisplayName);
@@ -117,7 +117,7 @@ namespace Application.Features.User.Feature
             return new ApiResponse 
             { 
                 Success = true, 
-                Message = "Profile updated successfully.",
+                Message = "Hồ sơ đã được cập nhật thành công.",
                 Data = response
             };
         }

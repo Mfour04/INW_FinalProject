@@ -51,7 +51,7 @@ namespace Application.Features.Comment.Commands
         public async Task<ApiResponse> Handle(CreateCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.Content))
-                return Fail("Content is required.");
+                return Fail("Content là bắt buộc phải nhập.");
 
             bool isReply = !string.IsNullOrWhiteSpace(request.ParentCommentId);
 
@@ -60,7 +60,7 @@ namespace Application.Features.Comment.Commands
             {
                 var parentComment = await _commentRepo.GetByIdAsync(request.ParentCommentId);
                 if (parentComment == null)
-                    return Fail("Parent comment not found.");
+                    return Fail("Không tìm thấy bình luận của phụ huynh.");
 
                 request.NovelId = parentComment.novel_id;
                 request.ChapterId = parentComment.chapter_id;
@@ -69,24 +69,24 @@ namespace Application.Features.Comment.Commands
             {
                 // Nếu là comment gốc yêu cầu NovelId hoặc ChapterId
                 if (string.IsNullOrWhiteSpace(request.NovelId) && string.IsNullOrWhiteSpace(request.ChapterId))
-                    return Fail("Either NovelId or ChapterId must be provided.");
+                    return Fail("Phải cung cấp NovelId hoặc ChapterId.");
 
                 if (!string.IsNullOrWhiteSpace(request.ChapterId))
                 {
                     var chapter = await _chapterRepo.GetByIdAsync(request.ChapterId);
                     if (chapter == null)
-                        return Fail("Chapter not found.");
+                        return Fail("Không tìm thấy chương.");
 
                     var foundNovel = await _novelRepo.GetByNovelIdAsync(chapter.novel_id);
                     if (foundNovel == null)
-                        return Fail("Novel not found.");
+                        return Fail("Không tìm thấy tiểu thuyết.");
 
                     request.NovelId = foundNovel.id;
                 }
 
                 var novel = await _novelRepo.GetByNovelIdAsync(request.NovelId);
                 if (novel == null)
-                    return Fail("Novel not found.");
+                    return Fail("Không tìm thấy tiểu thuyết.");
             }
 
             bool isChapter = !string.IsNullOrWhiteSpace(request.ChapterId);
@@ -116,7 +116,7 @@ namespace Application.Features.Comment.Commands
                 (false, true, true) => NotificationType.CommentChapterNotification,
                 (true, false, true) => NotificationType.RelyCommentNovel,
                 (true, true, true) => NotificationType.RelyCommentChapter,
-                _ => throw new Exception("Invalid combination of comment context.")
+                _ => throw new Exception("Sự kết hợp ngữ cảnh bình luận không hợp lệ.")
             };
 
             var notiResponse = await _mediator.Send(new SendNotificationToUserCommand
@@ -156,7 +156,7 @@ namespace Application.Features.Comment.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment created successfully and SignalR sent.",
+                Message = "Bình luận đã được tạo thành công",
                 Data = response
             };
         }

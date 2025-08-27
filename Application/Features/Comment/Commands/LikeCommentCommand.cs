@@ -36,21 +36,21 @@ namespace Application.Features.Comment.Commands
         public async Task<ApiResponse> Handle(LikeCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.CommentId) || string.IsNullOrWhiteSpace(request.UserId))
-                return Fail("Missing required fields: CommentId or UserId.");
+                return Fail("Thiếu trường bắt buộc: CommentId hoặc UserId.");
 
             if (!Enum.TryParse<CommentType>(request.Type.ToString(), out var commentType)
                  || (commentType != CommentType.Novel && commentType != CommentType.Chapter))
             {
-                return Fail("Invalid or unsupported comment type.");
+                return Fail("Loại bình luận không hợp lệ hoặc không được hỗ trợ.");
             }
 
             var targetComment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (targetComment == null)
-                return Fail("Comment does not exist.");
+                return Fail("Bình luận không tồn tại.");
 
             var hasLiked = await _commentLikeRepo.HasUserLikedCommentAsync(request.CommentId, request.UserId);
             if (hasLiked)
-                return Fail("User has already liked this comment.");
+                return Fail("Người dùng đã thích bình luận này.");
 
             var like = new CommentLikeEntity
             {
@@ -78,7 +78,7 @@ namespace Application.Features.Comment.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Like successfully.",
+                Message = "Thích thành công.",
                 Data = like
             };
         }

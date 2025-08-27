@@ -33,7 +33,7 @@ namespace Application.Features.Tag.Command
         {
             var tag = await _tagRepository.GetByTagIdAsync(request.TagId);
             if (tag == null)
-                return new ApiResponse { Success = false, Message = "Tag not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy tag" };
 
             tag.name = request.Name ?? tag.name;
 
@@ -43,7 +43,7 @@ namespace Application.Features.Tag.Command
             return new ApiResponse
             {
                 Success = true,
-                Message = "Tag Updated Successfullly",
+                Message = "Tag được cập nhập thành công",
                 Data = response,
             };
         }

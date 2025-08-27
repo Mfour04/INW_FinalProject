@@ -35,20 +35,20 @@ namespace Application.Features.Transaction.Commands
             var transaction = await _transactionRepository.GetByIdAsync(request.TransactionId);
 
             if (transaction == null)
-                return Fail("Transaction not found.");
+                return Fail("Không tìm thấy giao dịch.");
 
             if (transaction.requester_id != request.UserId)
-                return Fail("Permission denied.");
+                return Fail("Không có quyền thực hiện.");
 
             if (transaction.type != PaymentType.WithdrawCoin)
-                return Fail("Not a withdraw transaction.");
+                return Fail("Giao dịch không phải rút coin.");
 
             if (transaction.status != PaymentStatus.Pending)
-                return Fail("Only pending withdraws can be cancelled.");
+                return Fail("Chỉ những giao dịch rút đang chờ mới có thể hủy.");
 
             var user = await _userRepository.GetById(request.UserId);
             if (user == null)
-                return Fail("User not found.");
+                return Fail("Không tìm thấy người dùng.");
 
             // huỷ: trả block coin
             user.block_coin -= transaction.amount;
@@ -71,7 +71,7 @@ namespace Application.Features.Transaction.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Withdraw request cancelled successfully.",
+                Message = "Yêu cầu rút tiền đã bị hủy thành công.",
                 Data = transaction
             };
         }
