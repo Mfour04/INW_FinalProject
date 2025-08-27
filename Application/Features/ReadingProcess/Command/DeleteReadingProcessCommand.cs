@@ -30,13 +30,13 @@ namespace Application.Features.ReadingProcess.Command
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Reading process not found or already deleted"
+                    Message = "Reading process không tìm thấy hoặc đã xóa"
                 };
             }
             return new ApiResponse
             {
                 Success = true,
-                Message = "Reading process deleted successfully",
+                Message = "Reading process đã được xóa thành công",
                 Data = deleted
             };
         }

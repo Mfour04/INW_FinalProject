@@ -20,7 +20,7 @@ namespace Application.Features.Notification.Commands
         public async Task<ApiResponse> Handle(MarkNotificationsAsReadCommand request, CancellationToken cancellationToken)
         {
             await _repository.MarkAsReadAsync(request.NotificationIds);
-            return new ApiResponse { Success = true, Message = "Notifications marked as read." };   
+            return new ApiResponse { Success = true, Message = "Thông báo được đánh dấu là đã đọc." };   
         }
     }
 

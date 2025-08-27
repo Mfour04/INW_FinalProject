@@ -16,7 +16,7 @@ namespace WebApi.Controllers
 
         private string currentUserId =>
             User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? throw new UnauthorizedAccessException("User ID not found in token");
+            ?? throw new UnauthorizedAccessException("User ID không tìm thấy trong token");
 
         public TransactionController(IMediator mediator, IConfiguration config)
         {

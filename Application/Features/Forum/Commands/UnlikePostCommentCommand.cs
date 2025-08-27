@@ -1,4 +1,4 @@
-using Infrastructure.Repositories.Interfaces;
+﻿using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 
@@ -26,24 +26,24 @@ namespace Application.Features.Forum.Commands
         public async Task<ApiResponse> Handle(UnlikePostCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.CommentId) || string.IsNullOrWhiteSpace(request.UserId))
-                return Fail("Missing required fields: CommentId or UserId.");
+                return Fail("Thiếu trường bắt buộc: CommentId hoặc UserId.");
 
             var comment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (comment == null)
-                return Fail("Comment does not exist.");
+                return Fail("Bình luận không tồn tại.");
 
             var hasLiked = await _commentLikeRepo.HasUserLikedCommentAsync(request.CommentId, request.UserId);
             if (!hasLiked)
-                return Fail("User has not liked this comment.");
+                return Fail("Người dùng chưa thích bình luận này.");
 
             var isSuccess = await _commentLikeRepo.UnlikeCommentAsync(request.CommentId, request.UserId);
             if (!isSuccess)
-                return Fail("Failed to unlike the comment.");
+                return Fail("Hủy thích bình luận thất bại.");
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Unlike successfully."
+                Message = "Hủy thích thành công."
             };
         }
 

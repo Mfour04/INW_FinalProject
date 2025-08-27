@@ -55,14 +55,14 @@ namespace Application.Features.Novel.Commands
         {
             var author = await _userRepository.GetById(request.AuthorId);
             if (author == null)
-                return Fail("Author not found");
+                return Fail("Không tìm thấy tác giả.");
 
             if (string.IsNullOrWhiteSpace(request.Slug))
-                return Fail("Slug is required.");
+                return Fail("Slug là bắt buộc.");
 
             var slugExists = await _novelRepository.IsSlugExistsAsync(request.Slug);
             if (slugExists)
-                return Fail("Slug already exists.");
+                return Fail("Slug đã tồn tại.");
 
             var validTagIds = new List<string>();
             if (request.Tags != null && request.Tags.Any())
@@ -125,7 +125,7 @@ namespace Application.Features.Novel.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Created Novel Successfully",
+                Message = "Đã tạo tiểu thuyết thành công.",
                 Data = response
             };
         }

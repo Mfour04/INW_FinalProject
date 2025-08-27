@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -28,24 +28,24 @@ namespace Application.Features.BankAccount.Commands
             var bankAccount = await _bankRepo.GetByIdAsync(request.Id);
             if (bankAccount == null)
             {
-                return Fail("Bank account not found.");
+                return Fail("Tài khoản ngân hàng không tìm thấy.");
             }
 
             if (!_currentUser.IsAdmin() && bankAccount.user_id != _currentUser.UserId)
             {
-                return Fail("You are not authorized to delete this bank account.");
+                return Fail("Bạn không được phép xóa tài khoản ngân hàng này.");
             }
 
             var deleted = await _bankRepo.DeleteAsync(request.Id);
             if (!deleted)
             {
-                return Fail("Failed to delete user bank account.");
+                return Fail("Không xóa được tài khoản ngân hàng của người dùng.");
             }
 
             return new ApiResponse
             {
                 Success = deleted,
-                Message = "User bank account deleted successfully."
+                Message = "Tài khoản ngân hàng của người dùng đã được xóa thành công."
             };
         }
 

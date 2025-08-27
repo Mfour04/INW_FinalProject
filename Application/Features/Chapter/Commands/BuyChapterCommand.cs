@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -42,31 +42,31 @@ namespace Application.Features.Chapter.Commands
         public async Task<ApiResponse> Handle(BuyChapterCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.ChapterId))
-                return Fail("Missing user or chapter ID.");
+                return Fail("Thiếu ID người dùng hoặc ID chương.");
 
             var chapter = await _chapterRepo.GetByIdAsync(request.ChapterId);
             if (chapter == null)
-                return Fail("Chapter not found.");
+                return Fail("Không tim thấy chương.");
             if (!chapter.is_paid)
-                return Fail("This chapter is free and does not need to be purchased.");
+                return Fail("Chương này miễn phí và không cần phải mua.");
 
             var novel = await _novelRepo.GetByNovelIdAsync(chapter.novel_id);
             if (novel == null)
-                return Fail("Novel not found.");
+                return Fail("Không tìm thấy truyện.");
 
             if (await _purchaserRepo.HasPurchasedChapterAsync(request.UserId, novel.id, request.ChapterId))
-                return Fail("Chapter already purchased.");
+                return Fail("Chương này bạn đã mua rồi.");
 
             var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, novel.id);
             if (existing?.is_full == true)
-                return Fail("You have already purchased the full novel.");
+                return Fail("Bạn đã mua trọn bộ truyện này.");
 
             var user = await _userRepo.GetById(request.UserId);
             if (user == null || user.coin < request.CoinCost)
-                return Fail("Not enough coins.");
+                return Fail("Số coin không đủ.");
 
             if (!await _userRepo.DecreaseCoinAsync(request.UserId, request.CoinCost))
-                return Fail("Failed to deduct coins.");
+                return Fail("Trừ coin thất bại.");
 
             if (existing == null)
             {
@@ -125,7 +125,7 @@ namespace Application.Features.Chapter.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Purchase chapter successfully.",
+                Message = "Mua chương truyện thành công.",
                 Data = new { Transaction = transaction }
             };
         }

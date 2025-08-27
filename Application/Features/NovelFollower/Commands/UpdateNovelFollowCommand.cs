@@ -30,7 +30,7 @@ namespace Application.Features.NovelFollower.Commands
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Novel follow not found."
+                    Message = "Không tìm thấy Novel follow."
                 };
             }
             novelFollow.is_notification = request.IsNotification;
@@ -40,7 +40,7 @@ namespace Application.Features.NovelFollower.Commands
                 return new ApiResponse
                 {
                     Success = true,
-                    Message = "Novel follow updated successfully.",
+                    Message = "Novel follow được cập nhập thành công.",
                     Data = response
                 };           
         }

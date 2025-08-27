@@ -129,8 +129,8 @@ namespace Application.Features.OpenAI.Commands
             {
                 Success = true,
                 Message = suspectedChapters.Any()
-                    ? "Plagiarism check completed."
-                    : "No plagiarism detected.",
+                    ? "Đã hoàn tất kiểm tra đạo văn."
+                    : "Không phát hiện đạo văn.",
                 Data = new
                 {
                     InputContentLength = cleanInput.Length,

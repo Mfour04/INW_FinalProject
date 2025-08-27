@@ -24,10 +24,10 @@ namespace Application.Features.Comment.Commands
         {
             var comment = await _commentRepository.GetByIdAsync(request.CommentId!);
             if (comment == null)
-                return Fail("Comment not found.");
+                return Fail("Không tìm thấy bình luận.");
 
             if (comment.user_id != request.UserId)
-                return Fail("You are not authorized to update this comment.");
+                return Fail("Bạn không có quyền cập nhật bình luận này.");
 
             CommentEntity updated = new()
             {
@@ -36,12 +36,12 @@ namespace Application.Features.Comment.Commands
 
             var success = await _commentRepository.UpdateAsync(request.CommentId, updated);
             if (!success)
-                return Fail("Failed to update the badge.");
+                return Fail("Cập nhật bình luận thất bại.");
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment Updated Successfully."
+                Message = "Cập nhật bình luận thành công."
             };
         }
 

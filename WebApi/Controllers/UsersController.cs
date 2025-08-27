@@ -80,8 +80,8 @@ namespace WebApi.Controllers
                 {
                     return Unauthorized(new
                     {
-                        Message = "Invalid Google access token",
-                        Error = "User info not found",
+                        Message = "Token truy cập Google không hợp lệ",
+                        Error = "Không tìm thấy thông tin người dùng",
                         RawResponse = response   // 👈 thêm raw response để debug
                     });
                 }
@@ -101,7 +101,7 @@ namespace WebApi.Controllers
                 Console.WriteLine($"[GoogleLogin Error] {ex}");
                 return Unauthorized(new
                 {
-                    Message = "Invalid Google access token",
+                    Message = "Token truy cập Google không hợp lệ",
                     Error = ex.Message,
                     Stack = ex.StackTrace
                 });
@@ -149,7 +149,7 @@ namespace WebApi.Controllers
 
             return Ok(new
             {
-                message = "Login success",
+                message = "Đăng nhập thành công",
                 token = result.Data
             });
         }
@@ -189,7 +189,7 @@ namespace WebApi.Controllers
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(new { message = "Invalid token" });
+                return Unauthorized(new { message = "Token không hợp lệ" });
             }
 
             var result = await _mediator.Send(new GetUserById { UserId = userId });
@@ -223,7 +223,7 @@ namespace WebApi.Controllers
         public IActionResult Logout()
         {
             Response.Cookies.Delete("jwt");
-            return Ok(new { message = "Logout success" });
+            return Ok(new { message = "Đăng xuất thành công" });
         }
 
         [HttpGet("verify-email")]
@@ -233,11 +233,11 @@ namespace WebApi.Controllers
             {
                 var jwtToken = _jwtHelpers.Verify(token);
                 if (jwtToken == null)
-                    return BadRequest("Invalid or expired token.");
+                    return BadRequest("Token không hợp lệ hoặc đã hết hạn.");
 
                 var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
                 if (string.IsNullOrEmpty(userId))
-                    return BadRequest("Invalid token content.");
+                    return BadRequest("Token không hợp lệ hoặc đã hết hạn.");
 
                 var result = await _mediator.Send(new VerifyUserCommand { UserId = userId });
                 if (!result.Success)

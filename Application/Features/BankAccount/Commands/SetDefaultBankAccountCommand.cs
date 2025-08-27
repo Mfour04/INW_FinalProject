@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -31,27 +31,27 @@ namespace Application.Features.BankAccount.Commands
             var bankAccount = await _bankRepo.GetByIdAsync(request.Id);
             if (bankAccount == null)
             {
-                return Fail("Bank account not found.");
+                return Fail("Không tìm thấy tài khoản ngân hàng.");
             }
 
             if (bankAccount.user_id != currentUserId)
             {
-                return Fail("You are not authorized to set this bank account as default.");
+                return Fail("Bạn không có quyền đặt tài khoản này làm mặc định.");
             }
 
             if (bankAccount.is_default)
-                return Fail("This bank account is already set as default.");
+                return Fail("Tài khoản ngân hàng này đã được đặt làm mặc định.");
 
             var success = await _bankRepo.SetDefaultAsync(currentUserId, bankAccount.id);
             if (!success)
             {
-                return Fail("Failed to update default bank account.");
+                return Fail("Cập nhật tài khoản ngân hàng mặc định thất bại.");
             }
 
             return new ApiResponse
             {
                 Success = success,
-                Message = "Default bank account updated successfully."
+                Message = "Cập nhật tài khoản ngân hàng mặc định thành công."
             };
         }
 

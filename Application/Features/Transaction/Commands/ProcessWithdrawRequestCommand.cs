@@ -40,18 +40,18 @@ namespace Application.Features.Transaction.Commands
             var transaction = await _transactionRepository.GetByIdAsync(request.TransactionId);
 
             if (transaction == null)
-                return Fail("Transaction not found.");
+                return Fail("Không tìm thấy giao dịch.");
 
             if (transaction.type != PaymentType.WithdrawCoin)
-                return Fail("Not a withdraw transaction.");
+                return Fail("Giao dịch không phải rút coin.");
 
             if (transaction.status != PaymentStatus.Pending)
-                return Fail("Transaction already processed.");
+                return Fail("Giao dịch đã được xử lý.");
 
             var user = await _userRepository.GetById(transaction.requester_id);
 
             if (!request.IsApproved && string.IsNullOrWhiteSpace(request.Message))
-                return Fail("Rejection reason is required.");
+                return Fail("Cần cung cấp lý do từ chối.");
             string notifyMessage;
             if (request.IsApproved)
             {
@@ -105,8 +105,8 @@ namespace Application.Features.Transaction.Commands
             {
                 Success = true,
                 Message = request.IsApproved
-                ? "Withdraw approved and coin deducted successfully."
-                : "Withdraw denied and coin unblocked successfully.",
+                ? "Rút tiền được phê duyệt và coin đã bị trừ thành công."
+                : "Rút tiền bị từ chối và coin đã được mở khóa thành công.",
                 Data = transaction
             };
         }

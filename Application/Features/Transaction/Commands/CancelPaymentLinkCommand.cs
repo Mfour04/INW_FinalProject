@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -29,7 +29,7 @@ namespace Application.Features.Transaction.Commands
             if (transaction == null || transaction.status != PaymentStatus.Pending)
                 return;
 
-            await _payOS.cancelPaymentLink(request.OrderCode, "User inactive too long");
+            await _payOS.cancelPaymentLink(request.OrderCode, "Người dùng không hoạt động quá lâu");
 
             TransactionEntity updated = new()
             {

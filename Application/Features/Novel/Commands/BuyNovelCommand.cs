@@ -42,27 +42,27 @@ namespace Application.Features.Novel.Commands
         public async Task<ApiResponse> Handle(BuyNovelCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.NovelId))
-                return Fail("Missing user or novel ID.");
+                return Fail("Thiếu ID người dùng hoặc truyện.");
 
             var novel = await _novelRepo.GetByNovelIdAsync(request.NovelId);
             if (novel == null)
-                return Fail("Novel not found.");
+                return Fail("Không tìm thấy truyện.");
 
             if (!novel.is_paid)
-                return Fail("This novel is free and does not need to be purchased.");
+                return Fail("Truyện này miễn phí và không cần mua.");
 
             if (novel.status != NovelStatus.Completed)
-                return Fail("Only completed novels can be purchased in full.");
+                return Fail("Chỉ những truyện hoàn thành mới có thể mua trọn bộ.");
 
             var existing = await _purchaserRepo.GetByUserAndNovelAsync(request.UserId, request.NovelId);
             if (existing?.is_full == true)
-                return Fail("User already owns this novel.");
+                return Fail("Người dùng đã sở hữu truyện này.");
 
             var user = await _userRepo.GetById(request.UserId);
             if (user == null)
-                return Fail("User not found.");
+                return Fail("Không tìm thấy người dùng.");
             if (user.coin < request.CoinCost)
-                return Fail("Insufficient coins.");
+                return Fail("Số coin không đủ.");
 
             var chapterIds = await _chapterRepo.GetIdsByNovelIdAsync(request.NovelId);
             var nowTicks = TimeHelper.NowTicks;
@@ -81,7 +81,7 @@ namespace Application.Features.Novel.Commands
             };
 
             if (!await _userRepo.DecreaseCoinAsync(request.UserId, request.CoinCost))
-                return Fail("Failed to deduct coins.");
+                return Fail("Không trừ được tiền xu.");
 
             await _transactionRepo.AddAsync(transaction);
 
@@ -120,7 +120,7 @@ namespace Application.Features.Novel.Commands
                 return new ApiResponse
                 {
                     Success = true,
-                    Message = "Purchase novel successfully.",
+                    Message = "Đã mua tiểu thuyết thành công.",
                     Data = new { Purchaser = newPurchaser, Transaction = transaction }
                 };
             }
@@ -133,7 +133,7 @@ namespace Application.Features.Novel.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Upgraded to full novel purchase.",
+                Message = "Đã nâng cấp lên mua toàn bộ tiểu thuyết.",
                 Data = new { Purchaser = existing, Transaction = transaction }
             };
         }

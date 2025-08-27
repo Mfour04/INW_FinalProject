@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -26,7 +26,7 @@ namespace Application.Features.UserFollow.Commands
         public async Task<ApiResponse> Handle(FollowUserCommand request, CancellationToken cancellationToken)
         {
             if (await _followRepo.IsFollowingAsync(request.FollowerId, request.FollowingId))
-                return new ApiResponse { Success = false, Message = "Already followed." };
+                return new ApiResponse { Success = false, Message = "Đã theo dõi người dùng rồi." };
 
             UserFollowEntity follow = new()
             {
@@ -43,7 +43,7 @@ namespace Application.Features.UserFollow.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Followed successfully.",
+                Message = "Theo dõi người dùng thành công",
             };
         }
     }
