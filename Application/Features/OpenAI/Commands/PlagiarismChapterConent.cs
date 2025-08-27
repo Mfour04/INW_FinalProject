@@ -2,6 +2,7 @@
 using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Shared.Contracts.Response;
 using Shared.Helpers;
 using System.Text.RegularExpressions;
@@ -132,7 +133,9 @@ namespace Application.Features.OpenAI.Commands
                     : "No plagiarism detected.",
                 Data = new
                 {
-                    SuspectedChapters = suspectedChapters
+                    InputContentLength = cleanInput.Length,
+                    MatchCount = suspectedChapters.Count,
+                    Matches = suspectedChapters.ToList()
                 }
             };
         }
@@ -187,7 +190,7 @@ namespace Application.Features.OpenAI.Commands
                         matches.Add(new
                         {
                             InputChunk = inputChunks[i],
-                            ChapterChunk = chapterChunks[j],
+                            MatchedChunk = chapterChunks[j],
                             Similarity = score
                         });
                     }
