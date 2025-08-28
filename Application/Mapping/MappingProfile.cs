@@ -291,6 +291,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.NotificationId, opt => opt.MapFrom(src => src.id))
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.user_id))
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.type))
+                .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => src.is_read))
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.message))
                 .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => src.updated_at));

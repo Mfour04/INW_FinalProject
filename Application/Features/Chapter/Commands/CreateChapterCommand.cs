@@ -120,6 +120,7 @@ namespace Application.Features.Chapter.Commands
             if (!chapter.is_draft && chapter.is_public)
             {
                 await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
+                await _novelRepository.UpdateNovelPriceAsync(chapter.novel_id);
 
                 var publicChapters = await _chapterRepository.GetPublishedByNovelIdAsync(chapter.novel_id);
                 if (publicChapters.Count == 1 && !novel.is_public)

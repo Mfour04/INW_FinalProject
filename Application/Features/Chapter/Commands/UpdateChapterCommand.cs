@@ -89,6 +89,7 @@ namespace Application.Features.Chapter.Commands
             {
                  var lastChapter = await _chapterRepository.GetLastPublishedAsync(chapter.novel_id);
                  chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
+                 await _novelRepository.UpdateNovelPriceAsync(chapter.novel_id);
             }
             await _chapterRepository.UpdateAsync(chapter);
 

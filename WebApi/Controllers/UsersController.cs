@@ -192,7 +192,7 @@ namespace WebApi.Controllers
                 return Unauthorized(new { message = "Token không hợp lệ" });
             }
 
-            var result = await _mediator.Send(new GetUserById { UserId = userId });
+            var result = await _mediator.Send(new GetUserById { UserId = userId, CurrentUserId = userId });
 
             if (!result.Success) return Unauthorized();
 
@@ -208,7 +208,7 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new GetUserById
             {
                 UserId = userId,
-                CurrentUserId = currentUserId
+                CurrentUserId = currentUserId   
             });
 
             if (!result.Success)

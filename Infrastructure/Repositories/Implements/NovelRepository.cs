@@ -375,5 +375,25 @@ namespace Infrastructure.Repositories.Implements
 
             return result;
         }
+
+        public async Task UpdateNovelPriceAsync(string novelId)
+        {
+            var chapters = await _chapterRepository.GetPublicPaidChaptersByNovelIdAsync(novelId);
+
+            var sum = chapters
+                .Where(c => c.is_paid && c.price > 0)
+                .Sum(c => c.price);
+
+            int newPrice = 0;
+            if (sum > 0)
+            {
+                const double discount = 0.7; // ví dụ giảm 30%
+                newPrice = (int)(sum * discount);
+            }
+
+            var update = Builders<NovelEntity>.Update.Set(n => n.price, newPrice);
+            await _collection.UpdateOneAsync(n => n.id == novelId, update);
+            Console.WriteLine($"[UpdateNovelPrice] NovelId={novelId}, ChaptersCount={chapters.Count}, TotalPrice={sum}, NewPrice={newPrice}");
+        }
     }
 }
