@@ -27,6 +27,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<List<ChapterEntity>> GetSequentialByNovelIdAsync(string novelId);
         Task<List<ChapterEntity>> GetFreeByNovelIdAsync(string novelId);
         Task<List<ChapterEntity>> GetPublishedByNovelIdAsync(string novelId);
+        Task<List<ChapterEntity>> GetPublicPaidChaptersByNovelIdAsync(string novelId);
 
         // Navigational & ordering
         Task<ChapterEntity?> GetLastPublishedAsync(string novelId);
@@ -38,7 +39,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<int> CountPublishedAsync(string novelId);
         Task<bool> IncrementCommentsAsync(string novelId);
         Task<bool> DecrementCommentsAsync(string chapterId, int count = 1);
-        Task<int> ReleaseScheduledAsync();
+        Task<List<ChapterEntity>> ReleaseScheduledAndReturnAsync();
         Task IncreaseViewCountAsync(string chapterId);
         Task UpdateHideChapterStatus(string chapterId, bool isPublic);
         Task UpdateLockChaptersStatus(List<string> chapterIds, bool isLocked);

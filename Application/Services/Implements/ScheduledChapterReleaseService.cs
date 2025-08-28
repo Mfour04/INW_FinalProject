@@ -59,15 +59,24 @@ namespace Application.Services.Implements
                 using var scope = _serviceProvider.CreateScope();
 
                 var chapterRepo = scope.ServiceProvider.GetRequiredService<IChapterRepository>();
-                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                var novelRepo = scope.ServiceProvider.GetRequiredService<INovelRepository>();
 
-                int releasedCount = await chapterRepo.ReleaseScheduledAsync();
-                Console.WriteLine($"[ChapterRelease] Released {releasedCount} chapter(s) at {TimeHelper.NowVN:yyyy-MM-dd HH:mm:ss} VN");
+                var releasedChapters = await chapterRepo.ReleaseScheduledAndReturnAsync();
+                Console.WriteLine($"[ChapterRelease] Released {releasedChapters.Count} chapter(s) at {TimeHelper.NowVN:yyyy-MM-dd HH:mm:ss} VN");
+
+                // ✅ cập nhật price cho các novel liên quan
+                var novelIds = releasedChapters.Select(c => c.novel_id).Distinct().ToList();
+                foreach (var novelId in novelIds)
+                {
+                    await novelRepo.UpdateNovelPriceAsync(novelId);
+                    Console.WriteLine($"[ChapterRelease] Updated price for novel {novelId}");
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ChapterRelease] Error during execution: {ex.Message}");
             }
         }
+
     }
 }
