@@ -51,6 +51,19 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Configuration.AddEnvironmentVariables();
+// Bind appsettings
+builder.Services.Configure<OpenAIConfig>(builder.Configuration.GetSection("OpenAI"));
+
+// Override ApiKey bằng biến môi trường (nếu có)
+builder.Services.PostConfigure<OpenAIConfig>(config =>
+{
+    var envKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+    if (!string.IsNullOrEmpty(envKey))
+    {
+        config.ApiKey = envKey;
+    }
+});
 
 // Program.cs
 builder.Services.Configure<PayOSConfig>(builder.Configuration.GetSection("PayOS"));
