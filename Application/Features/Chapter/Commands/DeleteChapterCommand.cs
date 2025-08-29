@@ -12,9 +12,10 @@ namespace Application.Features.Chapter.Commands
     {
         private readonly IChapterRepository _chapterRepository;
         private readonly INovelRepository _novelRepository;
-        public DeteleChapterHandler(IChapterRepository chapterRepository)
+        public DeteleChapterHandler(IChapterRepository chapterRepository, INovelRepository novelRepository)
         {
             _chapterRepository = chapterRepository;
+            _novelRepository = novelRepository;
         }
         public async Task<ApiResponse> Handle(DeleteChapterCommand request, CancellationToken cancellationToken)
         {
@@ -36,7 +37,7 @@ namespace Application.Features.Chapter.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Xóa chương thành công",
+                Message = "Xóa chương thành công!",
                 Data = deleted
             };
         }

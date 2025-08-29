@@ -45,7 +45,7 @@ namespace Application.Auth.Commands
 
                 var resetToken = _jwtHelpers.GenerateResetToken(claim, 15);
 
-                var resetLink = $"https://localhost:7074/ResetPassword?token={resetToken}";
+                var resetLink = $"http://localhost:5173/reset-password?token={resetToken}";
 
                 var emailBody = CreateResetPasswordEmailBody(user.displayname, resetLink);
 
