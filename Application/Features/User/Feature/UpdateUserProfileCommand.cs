@@ -23,7 +23,7 @@ namespace Application.Features.User.Feature
         public string DisplayName { get; set; }
 
         [StringLength(500, ErrorMessage = "Tiểu sử không được vượt quá 500 ký tự")]
-        public string Bio { get; set; }
+        public string? Bio { get; set; }
 
         public IFormFile? AvatarUrl { get; set; }
         public IFormFile? CoverUrl { get; set; }
