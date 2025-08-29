@@ -59,7 +59,7 @@ namespace Application.Auth.Commands
                 newUser.role.ToString()
             );
 
-            var verifyUrl = $"https://localhost:7242/api/Users/verify-email?token={token}";
+            var verifyUrl = $"https://inkwave-a5aqekhgdmhdducc.southeastasia-01.azurewebsites.net/verify-email?token={token}";
 
             var emailBody = $@"
         <h3>Chào {newUser.username},</h3>
