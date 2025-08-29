@@ -37,7 +37,7 @@ namespace Application.Features.Chapter.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Xóa chương thành công",
+                Message = "Xóa chương thành công!",
                 Data = deleted
             };
         }
