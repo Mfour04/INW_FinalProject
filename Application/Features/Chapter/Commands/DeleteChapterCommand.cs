@@ -12,10 +12,12 @@ namespace Application.Features.Chapter.Commands
     {
         private readonly IChapterRepository _chapterRepository;
         private readonly INovelRepository _novelRepository;
-        public DeteleChapterHandler(IChapterRepository chapterRepository, INovelRepository novelRepository)
+        private readonly IOpenAIRepository _openAIRepository;
+        public DeteleChapterHandler(IChapterRepository chapterRepository, INovelRepository novelRepository, IOpenAIRepository openAIRepository)
         {
             _chapterRepository = chapterRepository;
             _novelRepository = novelRepository;
+            _openAIRepository = openAIRepository;
         }
         public async Task<ApiResponse> Handle(DeleteChapterCommand request, CancellationToken cancellationToken)
         {
@@ -33,6 +35,8 @@ namespace Application.Features.Chapter.Commands
             {
                 await _chapterRepository.RenumberAsync(chapter.novel_id);
                 await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
+                await _openAIRepository.DeleteChapterContentEmbeddingAsync(request.ChapterId);
+                await _openAIRepository.DeleteChapterChunkEmbeddingsByChapterIdAsync(request.ChapterId);
             }
             return new ApiResponse
             {
