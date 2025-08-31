@@ -221,6 +221,17 @@ namespace Infrastructure.Repositories.Implements
             await _chapterChunkCollection.InsertManyAsync(docs);
         }
 
+        public async Task DeleteChapterContentEmbeddingAsync(string chapterId)
+        {
+            var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(x => x.chapter_id, chapterId);
+            await _chapterContentCollection.DeleteOneAsync(filter);
+        }
+
+        public async Task DeleteChapterChunkEmbeddingsByChapterIdAsync(string chapterId)
+        {
+            var filter = Builders<ChapterChunkEmbeddingEntity>.Filter.Eq(x => x.chapter_id, chapterId);
+            await _chapterChunkCollection.DeleteManyAsync(filter);
+        }
 
         /// <summary>
         /// End Embedding methods
