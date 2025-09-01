@@ -434,10 +434,8 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                // var filter = Builders<UserEntity>.Filter.Eq("role", (int)Role.User);
-                // return (int)await _collection.CountDocumentsAsync(filter);
-
-                return 1;
+                var filter = Builders<UserEntity>.Filter.Eq("role", (int)Role.User);
+                return (int)await _collection.CountDocumentsAsync(filter);
             }
             catch
             {
@@ -449,14 +447,12 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                // var f = Builders<UserEntity>.Filter;
-                // var filter = f.And(
-                //     f.Eq("role", (int)Role.User),
-                //     f.Eq("is_verified", true)
-                // );
-                // return (int)await _collection.CountDocumentsAsync(filter);
-
-                return 1;
+                var f = Builders<UserEntity>.Filter;
+                var filter = f.And(
+                    f.Eq("role", (int)Role.User),
+                    f.Eq("is_verified", true)
+                );
+                return (int)await _collection.CountDocumentsAsync(filter);
             }
             catch
             {
@@ -468,22 +464,20 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                // var nowTicks = DateTime.UtcNow.Ticks;
-                // var f = Builders<UserEntity>.Filter;
+                var nowTicks = DateTime.UtcNow.Ticks;
+                var f = Builders<UserEntity>.Filter;
 
-                // var isLocked = f.Or(
-                //     f.Eq("is_banned", true),
-                //     f.Gt("banned_until", nowTicks)
-                // );
+                var isLocked = f.Or(
+                    f.Eq("is_banned", true),
+                    f.Gt("banned_until", nowTicks)
+                );
 
-                // var filter = f.And(
-                //     f.Eq("role", (int)Role.User),
-                //     isLocked
-                // );
+                var filter = f.And(
+                    f.Eq("role", (int)Role.User),
+                    isLocked
+                );
 
-                // return (int)await _collection.CountDocumentsAsync(filter);
-
-                return 1;
+                return (int)await _collection.CountDocumentsAsync(filter);
             }
             catch
             {
