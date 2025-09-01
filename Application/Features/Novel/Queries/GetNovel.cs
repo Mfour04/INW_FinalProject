@@ -1,5 +1,6 @@
 ﻿using Application.Services.Interfaces;
 using AutoMapper;
+using Domain.Entities;
 using Domain.Entities.System;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
@@ -28,8 +29,10 @@ namespace Application.Features.Novel.Queries
         private readonly IUserRepository _userRepository;
         private readonly IOpenAIService _openAIService;
         private readonly IOpenAIRepository _openAIRepository;
+        private readonly ICurrentUserService _currentUserService;
         public GetNovelHandler(INovelRepository novelRepository, IMapper mapper, ITagRepository tagRepository
-            , IUserRepository userRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService)
+            , IUserRepository userRepository, IOpenAIRepository openAIRepository, IOpenAIService openAIService
+            , ICurrentUserService currentUserService)
         {
             _novelRepository = novelRepository;
             _mapper = mapper;
@@ -37,6 +40,7 @@ namespace Application.Features.Novel.Queries
             _userRepository = userRepository;
             _openAIRepository = openAIRepository;
             _openAIService = openAIService;
+            _currentUserService = currentUserService;
         }
 
         public async Task<ApiResponse> Handle(GetNovel request, CancellationToken cancellationToken)
@@ -56,12 +60,14 @@ namespace Application.Features.Novel.Queries
             };
 
             var (novels, totalCount) = await _novelRepository.GetAllNovelAsync(findCriteria, sortBy);
-            
+            // 📌 Apply role-based filter
+            var filteredNovels = ApplyRoleFilter(novels);
             // Fallback: nếu không có, thử fuzzy
             if ((novels == null || novels.Count == 0) && fuzzyTerms.Any())
             {
                 findCriteria.SearchTerm = fuzzyTerms;
                 (novels, totalCount) = await _novelRepository.GetAllNovelAsync(findCriteria, sortBy);
+                filteredNovels = ApplyRoleFilter(novels);
             }
 
             if (novels == null || novels.Count == 0)
@@ -73,7 +79,7 @@ namespace Application.Features.Novel.Queries
                 };
             }
 
-            var novelResponse = _mapper.Map<List<NovelResponse>>(novels);
+            var novelResponse = _mapper.Map<List<NovelResponse>>(filteredNovels);
             // Lấy thông tin tác giả và tag
             var authorIds = novels.Select(n => n.author_id).Distinct().ToList();
             var authors = await _userRepository.GetUsersByIdsAsync(authorIds);
@@ -82,7 +88,7 @@ namespace Application.Features.Novel.Queries
             var allTags = await _tagRepository.GetTagsByIdsAsync(allTagIds);
             var tagDict = allTags.ToDictionary(t => t.id, t => t.name);
 
-            // Xử lý embedding nếu cần
+            //Xử lý embedding nếu cần
             var novelIds = novels.Select(n => n.id).ToList();
             var existingEmbeddingIds = await _openAIRepository.GetExistingNovelEmbeddingIdsAsync(novelIds);
 
@@ -117,15 +123,15 @@ namespace Application.Features.Novel.Queries
                 await _openAIRepository.SaveListNovelEmbeddingAsync(embeddingIds, vectors, tagLists);
             }
 
-            for (int i = 0; i < novels.Count; i++)
+            for (int i = 0; i < filteredNovels.Count; i++)
             {
-                var author = authors.FirstOrDefault(a => a.id == novels[i].author_id);
+                var author = authors.FirstOrDefault(a => a.id == filteredNovels[i].author_id);
                 if (author != null)
                 {
                     novelResponse[i].AuthorName = author.displayname; // hoặc author.FullName, tùy DB bạn lưu
                 }
 
-                var tags = novels[i].tags;
+                var tags = filteredNovels[i].tags;
                 novelResponse[i].Tags = allTags
                     .Where(t => tags.Contains(t.id))
                     .Select(t => new TagListResponse
@@ -133,6 +139,7 @@ namespace Application.Features.Novel.Queries
                         TagId = t.id,
                         Name = t.name
                     }).ToList();
+
             }
 
             int totalPages = (int)Math.Ceiling((double)totalCount / request.Limit);
@@ -156,5 +163,28 @@ namespace Application.Features.Novel.Queries
                 }
             };
         }
+        private List<NovelEntity> ApplyRoleFilter(List<NovelEntity> novels)
+        {
+            var currentUserId = _currentUserService.UserId;
+            var isAdmin = _currentUserService.IsAdmin();
+
+            List<NovelEntity> filtered;
+
+            if (isAdmin)
+            {
+                // Admin thấy hết
+                filtered = novels;
+            }
+            else
+            {
+                // User bình thường: lấy những novel public hoặc của chính họ
+                filtered = novels.Where(n =>
+                    n.is_public && !n.is_lock        // public và không lock
+                    || n.author_id == currentUserId  // hoặc là của chính họ
+                ).ToList();
+            }
+            return filtered;
+        }
+
     }
 }

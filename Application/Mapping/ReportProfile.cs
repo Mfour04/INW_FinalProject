@@ -20,7 +20,8 @@ namespace Application.Mapping
                 .ForMember(dest => dest.ModeratorNote, opt => opt.MapFrom(src => src.moderator_note))
                 .ForMember(dest => dest.ModeratedAt, opt => opt.MapFrom(src => src.moderated_at))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.created_at))
-                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at));
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.updated_at))
+                .ForMember(dest => dest.IsTargetDisappear, opt => opt.Ignore());
             CreateMap<ReportEntity, NovelReportResponse>()
                 .IncludeBase<ReportEntity, BaseReportResponse>()
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))

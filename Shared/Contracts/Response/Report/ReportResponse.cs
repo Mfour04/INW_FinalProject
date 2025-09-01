@@ -28,6 +28,8 @@ namespace Shared.Contracts.Response.Report
             public string? DisplayName { get; set; }
             public string? AvatarUrl { get; set; }
         }
+
+        public bool IsTargetDisappear { get; set; } = false;
     }
 
     // ==== Novel ====

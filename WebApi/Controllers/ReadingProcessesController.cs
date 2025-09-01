@@ -1,7 +1,6 @@
 ﻿using Application.Features.ReadingProcess.Command;
 using Application.Features.ReadingProcess.Queries;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
@@ -73,6 +72,13 @@ namespace WebApi.Controllers
                 return Ok(result);
             }
             return BadRequest(result.Message);
+        }
+
+        [HttpDelete("bulk")]
+        public async Task<IActionResult> DeleteBulk([FromBody] DeleteReadingProcessBulkCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
     }
 }

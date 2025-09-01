@@ -5,6 +5,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -106,7 +107,7 @@ namespace Infrastructure.Repositories.Implements
                 var update = Builders<TransactionEntity>
                    .Update.Set(x => x.status, entity?.status ?? transaction.status)
                    .Set(x => x.completed_at, entity.completed_at)
-                   .Set(x => x.updated_at, entity.updated_at);
+                   .Set(x => x.updated_at, TimeHelper.NowTicks);
 
                 await _collection.UpdateOneAsync(t => t.id == id, update);
 

@@ -64,7 +64,9 @@ namespace Application.Features.Forum.Commands
                 await _notificationService.SendNotificationToUsersAsync(
                     new[] { targetComment.user_id },
                     message,
-                    NotificationType.LikePostComment
+                    NotificationType.LikePostComment,
+                    forumPostId: targetComment.post_id,
+                    avatarUrl: liker.avata_url
                 );
             }
 

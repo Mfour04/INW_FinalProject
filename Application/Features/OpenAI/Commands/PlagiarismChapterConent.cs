@@ -10,6 +10,7 @@ namespace Application.Features.OpenAI.Commands
     public class PlagiarismChapterContentCommand : IRequest<ApiResponse>
     {
         public string Content { get; set; } // nội dung cần kiểm tra (HTML)
+        public string NovelId { get; set; } 
     }
 
     public class PlagiarismChapterContentHandler : IRequestHandler<PlagiarismChapterContentCommand, ApiResponse>
@@ -97,6 +98,12 @@ namespace Application.Features.OpenAI.Commands
 
             foreach (var chapterEmbedding in allChapterEmbeddings)
             {
+                if (chapterEmbedding.novel_id == request.NovelId)
+                {
+                    Console.WriteLine($"[PlagiarismCheck] Skipped ChapterId={chapterEmbedding.chapter_id} vì cùng NovelId={request.NovelId}");
+                    continue;
+                }
+
                 // 5. So sánh input với vector_chapter_content (full chapter)
                 var scoreFull = SystemHelper.CalculateCosineSimilarity(inputEmbedding, chapterEmbedding.vector_chapter_content);
                 if (scoreFull < SimilarityThreshold)

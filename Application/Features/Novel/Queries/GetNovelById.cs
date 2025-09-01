@@ -116,6 +116,7 @@ namespace Application.Features.Novel.Queries
                 .Where(c =>
                     c.is_public ||
                     isAuthor ||
+                    isAdmin ||
                     hasPurchasedFull ||
                     purchasedChapterIds.Contains(c.id)
                 )

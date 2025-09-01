@@ -62,7 +62,9 @@ namespace Application.Features.Forum.Commands
                 await _notificationService.SendNotificationToUsersAsync(
                     new[] { post.user_id },
                     message,
-                    NotificationType.LikePostCreated
+                    NotificationType.LikePostCreated,
+                    forumPostId: post.id,
+                    avatarUrl: liker.avata_url
                 );
             }
             return new ApiResponse
