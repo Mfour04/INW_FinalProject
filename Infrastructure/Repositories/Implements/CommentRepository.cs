@@ -418,5 +418,11 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task DeleteChapterCommentsAsync(string chapterId)
+        {
+            var filter = Builders<CommentEntity>.Filter.Eq(c => c.chapter_id, chapterId);
+            await _collection.DeleteManyAsync(filter);
+        }
     }
 }

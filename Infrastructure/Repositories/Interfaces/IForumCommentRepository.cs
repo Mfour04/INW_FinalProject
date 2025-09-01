@@ -13,6 +13,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> UpdateAsync(string id, ForumCommentEntity entity);
         Task<bool> DeleteAsync(string id);
         Task<bool> DeleteManyAsync(List<string> ids);
+        Task DeleteAllCommentByBlogId(string blogid);
         Task<bool> IncrementReplyCountAsync(string commentId);
     }
 }

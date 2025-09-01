@@ -15,11 +15,13 @@ namespace Application.Features.Forum.Commands
     {
         private readonly IForumPostRepository _postRepo;
         private readonly ICloudDinaryService _cloudDinaryService;
+        private readonly IForumCommentRepository _commentRepo;
 
-        public DeletePostCommandHandler(IForumPostRepository postRepo, ICloudDinaryService cloudDinaryService)
+        public DeletePostCommandHandler(IForumPostRepository postRepo, ICloudDinaryService cloudDinaryService, IForumCommentRepository commentRepo)
         {
             _postRepo = postRepo;
             _cloudDinaryService = cloudDinaryService;
+            _commentRepo = commentRepo;
         }
 
         public async Task<ApiResponse> Handle(DeletePostCommand request, CancellationToken cancellationToken)
@@ -34,7 +36,7 @@ namespace Application.Features.Forum.Commands
             var deleted = await _postRepo.DeleteAsync(request.Id);
             if (!deleted)
                 return Fail("Xóa bài đăng thất bại.");
-
+            await _commentRepo.DeleteAllCommentByBlogId(request.Id);
             if (post.img_urls != null && post.img_urls.Any())
             {
                 foreach (var imgUrl in post.img_urls)

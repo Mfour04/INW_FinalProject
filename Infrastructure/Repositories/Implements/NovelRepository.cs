@@ -58,20 +58,23 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task<(List<NovelEntity> Novels, int TotalCount)> GetAllNovelAsync(FindCreterias creterias, List<SortCreterias> sortCreterias)
+        public async Task<(List<NovelEntity> Novels, int TotalCount)> GetAllNovelAsync(
+            FindCreterias creterias,
+            List<SortCreterias> sortCreterias,
+            bool isAdmin,
+            string currentUserId)
         {
             try
             {
                 var builder = Builders<NovelEntity>.Filter;
                 var filtered = builder.Empty;
-                var isExact = true;
+
+                // 📌 Search theo title_unsigned
                 if (creterias.SearchTerm != null && creterias.SearchTerm.Count > 0)
                 {
                     if (creterias.SearchTerm.Count == 1)
                     {
                         var keyword = creterias.SearchTerm[0];
-
-                        // ✅ THAY builder.Eq thành Regex để chứa từ đó (fuzzy nhẹ)
                         filtered &= builder.Regex(
                             x => x.title_unsigned,
                             new BsonRegularExpression(keyword, "i")
@@ -79,13 +82,13 @@ namespace Infrastructure.Repositories.Implements
                     }
                     else
                     {
-                        // Fuzzy match: tất cả từ phải khớp
                         var regexFilters = creterias.SearchTerm.Select(term =>
                             builder.Regex(x => x.title_unsigned, new BsonRegularExpression(term, "i"))
                         );
                         filtered &= builder.And(regexFilters);
                     }
                 }
+
                 // 📌 Filter theo tag name
                 if (creterias.SearchTagTerm != null && creterias.SearchTagTerm.Any())
                 {
@@ -94,7 +97,7 @@ namespace Infrastructure.Repositories.Implements
 
                     if (tagIds.Any())
                     {
-                        filtered &= builder.In("tags", tagIds);
+                        filtered &= builder.AnyIn(x => x.tags, tagIds);
                     }
                     else
                     {
@@ -103,14 +106,31 @@ namespace Infrastructure.Repositories.Implements
                     }
                 }
 
-                var query = _collection
-                    .Find(filtered)
+                // 📌 Role filter
+                if (!isAdmin)
+                {
+                    var roleFilter = builder.Or(
+                        builder.And(
+                            builder.Eq(x => x.is_public, true),
+                            builder.Eq(x => x.is_lock, false)
+                        ),
+                        builder.Eq(x => x.author_id, currentUserId)
+                    );
+
+                    filtered &= roleFilter;
+                }
+
+                // Count tổng theo filter
+                var totalCount = await _collection.CountDocumentsAsync(filtered);
+
+                // Query theo filter + sort + phân trang
+                var query = _collection.Find(filtered)
                     .Skip(creterias.Page * creterias.Limit)
                     .Limit(creterias.Limit);
 
                 var sortBuilder = Builders<NovelEntity>.Sort;
                 var sortDefinitions = new List<SortDefinition<NovelEntity>>();
-                var totalCount = await _collection.CountDocumentsAsync(filtered);
+
                 foreach (var criterion in sortCreterias)
                 {
                     SortDefinition<NovelEntity>? sortDef = criterion.Field switch
@@ -122,12 +142,15 @@ namespace Infrastructure.Repositories.Implements
                         "total_views" => criterion.IsDescending
                             ? sortBuilder.Descending(x => x.total_views)
                             : sortBuilder.Ascending(x => x.total_views),
+
                         "rating_avg" => criterion.IsDescending
                             ? sortBuilder.Descending(x => x.rating_avg)
                             : sortBuilder.Ascending(x => x.rating_avg),
+
                         "followers" => criterion.IsDescending
                             ? sortBuilder.Descending(x => x.followers)
                             : sortBuilder.Ascending(x => x.followers),
+
                         _ => null
                     };
 
@@ -140,7 +163,9 @@ namespace Infrastructure.Repositories.Implements
                     var combinedSort = sortBuilder.Combine(sortDefinitions);
                     query = query.Sort(combinedSort);
                 }
+
                 var novels = await query.ToListAsync();
+
                 return (novels, (int)totalCount);
             }
             catch
@@ -148,6 +173,7 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
 
         public async Task<NovelEntity> GetByNovelIdAsync(string novelId)
         {

@@ -222,5 +222,11 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task DeleteAllCommentByBlogId(string blogid)
+        {
+            var filter = Builders<ForumCommentEntity>.Filter.Eq(x => x.post_id, blogid);
+            await _collection.DeleteManyAsync(filter);
+        }
     }
 }

@@ -49,6 +49,8 @@ namespace Application.Features.Novel.Queries
             var exact = result.Exact;
             var fuzzyTerms = result.FuzzyTerms;
             var sortBy = SystemHelper.ParseSortCriteria(request.SortBy);
+            var isAdmin = _currentUserService.IsAdmin();
+            var currentUserId = _currentUserService.UserId;
 
             // Exact match trước
             var findCriteria = new FindCreterias
@@ -59,15 +61,23 @@ namespace Application.Features.Novel.Queries
                 SearchTagTerm = request.SearchTagTerm
             };
 
-            var (novels, totalCount) = await _novelRepository.GetAllNovelAsync(findCriteria, sortBy);
-            // 📌 Apply role-based filter
-            var filteredNovels = ApplyRoleFilter(novels);
-            // Fallback: nếu không có, thử fuzzy
+            var (novels, totalCount) = await _novelRepository.GetAllNovelAsync(
+                findCriteria,
+                sortBy,
+                isAdmin,
+                currentUserId
+            );
+
+            // Nếu không có thì fallback sang fuzzy search
             if ((novels == null || novels.Count == 0) && fuzzyTerms.Any())
             {
                 findCriteria.SearchTerm = fuzzyTerms;
-                (novels, totalCount) = await _novelRepository.GetAllNovelAsync(findCriteria, sortBy);
-                filteredNovels = ApplyRoleFilter(novels);
+                (novels, totalCount) = await _novelRepository.GetAllNovelAsync(
+                    findCriteria,
+                    sortBy,
+                    isAdmin,
+                    currentUserId
+                );
             }
 
             if (novels == null || novels.Count == 0)
@@ -79,7 +89,8 @@ namespace Application.Features.Novel.Queries
                 };
             }
 
-            var novelResponse = _mapper.Map<List<NovelResponse>>(filteredNovels);
+
+            var novelResponse = _mapper.Map<List<NovelResponse>>(novels);
             // Lấy thông tin tác giả và tag
             var authorIds = novels.Select(n => n.author_id).Distinct().ToList();
             var authors = await _userRepository.GetUsersByIdsAsync(authorIds);
@@ -93,45 +104,90 @@ namespace Application.Features.Novel.Queries
             var existingEmbeddingIds = await _openAIRepository.GetExistingNovelEmbeddingIdsAsync(novelIds);
 
             var novelsToEmbed = novels.Where(n => !existingEmbeddingIds.Contains(n.id)).ToList();
+            Console.WriteLine($"⚠️ Missing embeddings for: {string.Join(",", novelsToEmbed.Select(n => n.id))}");
 
-            // Chỉ lấy các novel có tags hợp lệ (có trong tagDict)
-            var validEmbeddingData = novelsToEmbed
-                .Select(novel =>
+            var embeddingIds = new List<string>();
+            var embeddingInputs = new List<string>();
+
+            if (novelsToEmbed.Any())
+            {
+                foreach (var novel in novelsToEmbed)
                 {
-                    var validTags = novel.tags
+                    // Lấy tag names hợp lệ nếu có
+                    var tagNames = novel.tags?
                         .Where(tagId => tagDict.ContainsKey(tagId))
                         .Select(tagId => tagDict[tagId])
-                        .ToList();
+                        .ToList() ?? new List<string>();
 
-                    return new
+                    string inputText;
+
+                    if (tagNames.Any())
                     {
-                        NovelId = novel.id,
-                        TagNames = validTags
-                    };
-                })
-                .Where(x => x.TagNames.Any()) // loại bỏ novel không có tag hợp lệ
-                .ToList();
+                        // Dùng tag names + title (nếu có) giống CreateNovelHandler
+                        var titlePart = string.IsNullOrWhiteSpace(novel.title) ? "" : novel.title;
+                        inputText = string.Join(", ", tagNames);
+                        if (!string.IsNullOrWhiteSpace(titlePart))
+                            inputText = $"{inputText} | {titlePart}";
+                    }
+                    else
+                    {
+                        // Dùng title + short description
+                        var titlePart = string.IsNullOrWhiteSpace(novel.title) ? "" : novel.title;
+                        var descPart = string.IsNullOrWhiteSpace(novel.description) ? "" : novel.description;
+                        if (!string.IsNullOrWhiteSpace(descPart) && descPart.Length > 300)
+                            descPart = descPart.Substring(0, 300);
 
-            if (validEmbeddingData.Any())
-            {
-                var embeddingIds = validEmbeddingData.Select(x => x.NovelId).ToList();
-                var tagNamesList = validEmbeddingData.Select(x => string.Join(", ", x.TagNames)).ToList();
-                var tagLists = validEmbeddingData.Select(x => x.TagNames).ToList();
+                        var parts = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(titlePart)) parts.Add(titlePart);
+                        if (!string.IsNullOrWhiteSpace(descPart)) parts.Add(descPart);
 
-                var vectors = await _openAIService.GetEmbeddingAsync(tagNamesList);
+                        inputText = parts.Any() ? string.Join(" | ", parts) : $"novel:{novel.id}";
+                    }
 
-                await _openAIRepository.SaveListNovelEmbeddingAsync(embeddingIds, vectors, tagLists);
-            }
-
-            for (int i = 0; i < filteredNovels.Count; i++)
-            {
-                var author = authors.FirstOrDefault(a => a.id == filteredNovels[i].author_id);
-                if (author != null)
-                {
-                    novelResponse[i].AuthorName = author.displayname; // hoặc author.FullName, tùy DB bạn lưu
+                    embeddingIds.Add(novel.id);
+                    embeddingInputs.Add(inputText);
                 }
 
-                var tags = filteredNovels[i].tags;
+                // Gọi API embedding 1 lần cho tất cả inputs
+                var vectors = await _openAIService.GetEmbeddingAsync(embeddingInputs);
+
+                // Bảo vệ: kiểm tra số lượng vector trả về khớp số ids
+                if (vectors == null || vectors.Count != embeddingIds.Count)
+                {
+                    Console.WriteLine("⚠️ Embedding count mismatch or null. Skipping saving embeddings to avoid inconsistency.");
+                }
+                else
+                {
+                    // Lưu từng vector bằng SaveNovelEmbeddingAsync (giống CreateNovelHandler)
+                    for (int idx = 0; idx < embeddingIds.Count; idx++)
+                    {
+                        var id = embeddingIds[idx];
+                        var vec = vectors[idx];
+                        try
+                        {
+                            if (vec != null)
+                                await _openAIRepository.SaveNovelEmbeddingAsync(id, vec);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log và tiếp tục với các item còn lại
+                            Console.WriteLine($"Error saving embedding for novel {id}: {ex.Message}");
+                        }
+                    }
+
+                    Console.WriteLine($"✅ Newly embedded novels: {string.Join(',', embeddingIds)}");
+                }
+            }
+
+            for (int i = 0; i < novels.Count; i++)
+            {
+                var author = authors.FirstOrDefault(a => a.id == novels[i].author_id);
+                if (author != null)
+                {
+                    novelResponse[i].AuthorName = author.displayname;
+                }
+
+                var tags = novels[i].tags;
                 novelResponse[i].Tags = allTags
                     .Where(t => tags.Contains(t.id))
                     .Select(t => new TagListResponse
@@ -139,7 +195,6 @@ namespace Application.Features.Novel.Queries
                         TagId = t.id,
                         Name = t.name
                     }).ToList();
-
             }
 
             int totalPages = (int)Math.Ceiling((double)totalCount / request.Limit);
@@ -153,37 +208,16 @@ namespace Application.Features.Novel.Queries
                     Novels = novelResponse,
                     TotalNovels = totalCount,
                     TotalPages = totalPages,
+                    TotalInPage = novels.Count,
                     EmbeddingStats = new
                     {
                         TotalRequested = novelIds.Count,
                         AlreadyExist = existingEmbeddingIds.Count,
-                        NewlyEmbedded = validEmbeddingData.Count,
-                        NewlyEmbeddedIds = validEmbeddingData.Select(x => x.NovelId).ToList()
+                        NewlyEmbedded = embeddingIds.Count,
+                        NewlyEmbeddedIds = embeddingIds
                     }
                 }
             };
-        }
-        private List<NovelEntity> ApplyRoleFilter(List<NovelEntity> novels)
-        {
-            var currentUserId = _currentUserService.UserId;
-            var isAdmin = _currentUserService.IsAdmin();
-
-            List<NovelEntity> filtered;
-
-            if (isAdmin)
-            {
-                // Admin thấy hết
-                filtered = novels;
-            }
-            else
-            {
-                // User bình thường: lấy những novel public hoặc của chính họ
-                filtered = novels.Where(n =>
-                    n.is_public && !n.is_lock        // public và không lock
-                    || n.author_id == currentUserId  // hoặc là của chính họ
-                ).ToList();
-            }
-            return filtered;
         }
 
     }
