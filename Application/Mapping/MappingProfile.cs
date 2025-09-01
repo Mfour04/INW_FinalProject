@@ -295,6 +295,7 @@ namespace Application.Mapping
                 .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => src.is_read))
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.message))
                 .ForMember(dest => dest.NovelId, opt => opt.MapFrom(src => src.novel_id))
+                .ForMember(dest => dest.NovelSlug, opt => opt.MapFrom(src => src.novel_slug))
                 .ForMember(dest => dest.ForumPostId, opt => opt.MapFrom(src => src.forum_post_id))
                 .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => src.created_at))
                 .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => src.updated_at));
