@@ -313,6 +313,9 @@ namespace Infrastructure.Repositories.Implements
                         "displayname_normalized" => criterion.IsDescending
                             ? sortBuilder.Descending(x => x.displayname_normalized)
                             : sortBuilder.Ascending(x => x.displayname_normalized),
+                        "follower" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.follower_count)
+                            : sortBuilder.Ascending(x => x.follower_count),
                         _ => null
                     };
 

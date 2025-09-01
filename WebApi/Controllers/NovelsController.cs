@@ -205,6 +205,7 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new CheckSlug { Slug = slugName });
             return Ok(result);
         }
+
         [HttpGet("recommend-by-novelid/{novelId}")]
         public async Task<IActionResult> GetRecommendByNovelId(string novelId, [FromQuery] int topN = 10)
         {
@@ -213,6 +214,13 @@ namespace WebApi.Controllers
                 NovelId = novelId,
                 TopN = topN
             });
+            return Ok(result);
+        }
+
+        [HttpGet("total-views")]
+        public async Task<ActionResult> GetTotalViews([FromQuery] GetTotalNovelViews request)
+        {
+            var result = await _mediator.Send(request);
             return Ok(result);
         }
     }
