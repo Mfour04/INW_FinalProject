@@ -125,7 +125,9 @@ namespace Infrastructure.Repositories.Implements
                         "rating_avg" => criterion.IsDescending
                             ? sortBuilder.Descending(x => x.rating_avg)
                             : sortBuilder.Ascending(x => x.rating_avg),
-
+                        "followers" => criterion.IsDescending
+                            ? sortBuilder.Descending(x => x.followers)
+                            : sortBuilder.Ascending(x => x.followers),
                         _ => null
                     };
 
@@ -403,7 +405,7 @@ namespace Infrastructure.Repositories.Implements
                 var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
                 var update = Builders<NovelEntity>.Update
                     .Set(x => x.is_paid, isPaid)
-                    .Set(x => x.updated_at, TimeHelper.NowTicks); 
+                    .Set(x => x.updated_at, TimeHelper.NowTicks);
 
                 var result = await _collection.UpdateOneAsync(filter, update);
             }
@@ -413,5 +415,27 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
+        public async Task<long> GetTotalViewsAsync()
+        {
+            try
+            {
+                var result = await _collection
+                    .Aggregate()
+                    .Group(
+                        _ => 1,
+                        g => new
+                        {
+                            Id = 1,
+                            Total = g.Sum(n => (long)n.total_views)
+                        })
+                    .FirstOrDefaultAsync();
+
+                return result?.Total ?? 0L;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }

@@ -46,10 +46,12 @@ namespace Infrastructure.Repositories.Implements
                 {
                     SortDefinition<TransactionEntity>? sortDef = criterion.Field switch
                     {
+                        "created_at" => criterion.IsDescending
+                           ? sortBuilder.Descending(x => x.created_at)
+                           : sortBuilder.Ascending(x => x.created_at),
                         "completed_at" => criterion.IsDescending
                             ? sortBuilder.Descending(t => t.completed_at)
                             : sortBuilder.Ascending(t => t.completed_at),
-
                         "amount" => criterion.IsDescending
                             ? sortBuilder.Descending(t => t.amount)
                             : sortBuilder.Ascending(t => t.amount),
