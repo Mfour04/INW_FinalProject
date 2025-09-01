@@ -22,11 +22,17 @@ namespace Application.Services.Implements
         public async Task<IEnumerable<NotificationEntity>> SendNotificationToUsersAsync(
             IEnumerable<string> userIds,
             string message,
-            NotificationType type)
+            NotificationType type,
+            string novelId = null,
+            string novelSlug = null,
+            string forumPostId = null,
+            string avatarUrl = null) // ✅ cho phép null
         {
             if (userIds == null || !userIds.Any())
                 return Enumerable.Empty<NotificationEntity>();
+
             Console.WriteLine($"[NotificationService] Sending notification to users: {string.Join(", ", userIds)}");
+
             var nowTicks = TimeHelper.NowTicks;
             var notifications = userIds.Select(uid => new NotificationEntity
             {
@@ -35,6 +41,10 @@ namespace Application.Services.Implements
                 type = type,
                 message = message,
                 is_read = false,
+                novel_id = novelId,
+                novel_slug = novelSlug,
+                forum_post_id = forumPostId,
+                avatar_url = avatarUrl, // ✅ có thể null
                 created_at = nowTicks,
                 updated_at = nowTicks
             }).ToList();
@@ -51,13 +61,16 @@ namespace Application.Services.Implements
                     n.id,
                     n.type,
                     n.message,
+                    n.novel_id,
+                    n.novel_slug,
+                    n.forum_post_id,
+                    n.avatar_url, // ✅ sẽ null nếu không truyền
                     n.created_at
                 });
             });
 
             await Task.WhenAll(sendTasks);
 
-            // Return the created notifications
             return notifications;
         }
     }

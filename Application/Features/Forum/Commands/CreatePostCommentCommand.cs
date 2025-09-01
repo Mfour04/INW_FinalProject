@@ -90,7 +90,9 @@ namespace Application.Features.Forum.Commands
                         await _notificationService.SendNotificationToUsersAsync(
                             new[] { parentComment.user_id },
                             message,
-                            NotificationType.RelyCommentPost
+                            NotificationType.RelyCommentPost,
+                            forumPostId: parentComment.post_id,
+                            avatarUrl: user.avata_url
                         );
                     }
                 }
@@ -106,7 +108,9 @@ namespace Application.Features.Forum.Commands
                     await _notificationService.SendNotificationToUsersAsync(
                         new[] { post.user_id },
                         message,
-                        NotificationType.CommentPostCreated
+                        NotificationType.CommentPostCreated,
+                        forumPostId: post.id,
+                        avatarUrl: user.avata_url
                     );
                 }
             }
