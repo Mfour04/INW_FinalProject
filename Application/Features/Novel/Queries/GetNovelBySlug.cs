@@ -70,6 +70,7 @@ namespace Application.Features.Novel.Queries
 
             // Kiểm tra quyền
             bool isGuest = string.IsNullOrEmpty(_currentUser.UserId);
+            bool isAdmin = _currentUser.IsAdmin();
             bool isAuthor = !isGuest && novel.author_id == _currentUser.UserId;
             bool hasPurchasedFull = !isGuest && await _purchaserRepo.HasPurchasedFullAsync(_currentUser.UserId, novel.id);
 
@@ -99,7 +100,7 @@ namespace Application.Features.Novel.Queries
                 ? new List<string>()
                 : await _purchaserRepo.GetPurchasedChaptersAsync(_currentUser.UserId, novel.id);
 
-            bool isAccessFull = isAuthor || hasPurchasedFull || (!novel.is_paid && novel.is_public);
+            bool isAccessFull = isAdmin || isAuthor || hasPurchasedFull || (!novel.is_paid && novel.is_public);
 
             string message = isAccessFull
                 ? "Bạn có thể truy cập toàn bộ truyện."

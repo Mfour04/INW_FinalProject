@@ -28,5 +28,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<int> CountAsync(Expression<Func<NovelEntity, bool>> filter = null);
         Task<List<WeeklyStatItem>> CountNovelsPerDayCurrentWeekAsync();
         Task UpdateNovelPriceAsync(string novelId);
+        Task UpdateIsPaidAsync(string novelId, bool isPaid);
     }
 }

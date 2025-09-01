@@ -395,5 +395,23 @@ namespace Infrastructure.Repositories.Implements
             await _collection.UpdateOneAsync(n => n.id == novelId, update);
             Console.WriteLine($"[UpdateNovelPrice] NovelId={novelId}, ChaptersCount={chapters.Count}, TotalPrice={sum}, NewPrice={newPrice}");
         }
+
+        public async Task UpdateIsPaidAsync(string novelId, bool isPaid)
+        {
+            try
+            {
+                var filter = Builders<NovelEntity>.Filter.Eq(x => x.id, novelId);
+                var update = Builders<NovelEntity>.Update
+                    .Set(x => x.is_paid, isPaid)
+                    .Set(x => x.updated_at, TimeHelper.NowTicks); 
+
+                var result = await _collection.UpdateOneAsync(filter, update);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
     }
 }

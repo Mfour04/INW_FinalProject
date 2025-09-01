@@ -106,6 +106,12 @@ namespace Application.Features.Chapter.Commands
 
                 var lastChapter = await _chapterRepository.GetLastPublishedAsync(chapter.novel_id);
                 chapter.chapter_number = (lastChapter?.chapter_number ?? 0) + 1;
+                if (chapter.is_paid && !novel.is_paid)
+                {
+                    novel.is_paid = true;
+                    await _novelRepository.UpdateIsPaidAsync(novel.id, true);
+                }
+
             }
             else
             {
@@ -142,7 +148,9 @@ namespace Application.Features.Chapter.Commands
                 await _notificationService.SendNotificationToUsersAsync(
                     distinctFollowers,
                     message,
-                    NotificationType.CreateChapter);
+                    NotificationType.CreateChapter,
+                    novelId: chapter.novel_id,
+                    novelSlug: novel.slug);
 
                 if (!string.IsNullOrWhiteSpace(chapter.content))
                 {
@@ -185,7 +193,7 @@ namespace Application.Features.Chapter.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Tạo chương thành công",
+                Message = "Tạo chương thành công.",
                 Data = new
                 {
                     Chapter = response
