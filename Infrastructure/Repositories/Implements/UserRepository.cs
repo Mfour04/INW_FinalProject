@@ -429,5 +429,60 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<int> CountAllNormalUsersAsync()
+        {
+            try
+            {
+                var filter = Builders<UserEntity>.Filter.Eq("role", (int)Role.User);
+                return (int)await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<int> CountVerifiedNormalUsersAsync()
+        {
+            try
+            {
+                var f = Builders<UserEntity>.Filter;
+                var filter = f.And(
+                    f.Eq("role", (int)Role.User),
+                    f.Eq("is_verified", true)
+                );
+                return (int)await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<int> CountLockedNormalUsersAsync()
+        {
+            try
+            {
+                var nowTicks = DateTime.UtcNow.Ticks;
+                var f = Builders<UserEntity>.Filter;
+
+                var isLocked = f.Or(
+                    f.Eq("is_banned", true),
+                    f.Gt("banned_until", nowTicks)
+                );
+
+                var filter = f.And(
+                    f.Eq("role", (int)Role.User),
+                    isLocked
+                );
+
+                return (int)await _collection.CountDocumentsAsync(filter);
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
     }
 }

@@ -216,12 +216,5 @@ namespace WebApi.Controllers
             });
             return Ok(result);
         }
-
-        [HttpGet("total-views")]
-        public async Task<ActionResult> GetTotalViews([FromQuery] GetTotalNovelViews request)
-        {
-            var result = await _mediator.Send(request);
-            return Ok(result);
-        }
     }
 }
