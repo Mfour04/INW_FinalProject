@@ -152,26 +152,26 @@ namespace Application.Features.Chapter.Commands
                     novelId: chapter.novel_id,
                     novelSlug: novel.slug);
 
-                if (!string.IsNullOrWhiteSpace(chapter.content))
-                {
-                    try
-                    {
-                        var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
-                        var embeddingEntity = new ChapterContentEmbeddingEntity
-                        {
-                            chapter_id = chapter.id,
-                            novel_id = novel.id,
-                            vector_chapter_content = embedding[0],
-                            updated_at = TimeHelper.NowTicks
-                        };
-                        await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Lỗi embedding cho chapter {chapter.id}: {ex.Message}");
-                        // Optional: ghi log, không throw
-                    }
-                }
+                //if (!string.IsNullOrWhiteSpace(chapter.content))
+                //{
+                //    try
+                //    {
+                //        var embedding = await _openAIService.GetEmbeddingAsync(new List<string> { chapter.content });
+                //        var embeddingEntity = new ChapterContentEmbeddingEntity
+                //        {
+                //            chapter_id = chapter.id,
+                //            novel_id = novel.id,
+                //            vector_chapter_content = embedding[0],
+                //            updated_at = TimeHelper.NowTicks
+                //        };
+                //        await _openAIRepository.SaveChapterContentEmbeddingAsync(embeddingEntity);
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Console.WriteLine($"Lỗi embedding cho chapter {chapter.id}: {ex.Message}");
+                //        // Optional: ghi log, không throw
+                //    }
+                //}
                 return new ApiResponse
                 {
                     Success = true,
