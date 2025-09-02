@@ -20,6 +20,7 @@ namespace Shared.Helpers
             }
         }
 
+
         /// <summary>
         /// Lấy thời gian hiện tại theo giờ Việt Nam (UTC+7)
         /// </summary>
@@ -49,7 +50,13 @@ namespace Shared.Helpers
         /// Ticks tại 23:59:59.9999999 hôm nay (giờ VN)
         /// </summary>
         public static long EndOfTodayTicksVN => NowVN.Date.AddDays(1).AddTicks(-1).Ticks;
-        public static long NowUnixTimeSeconds => new DateTimeOffset(NowVN).ToUnixTimeMilliseconds();
+
+        public static DateTimeOffset NowVNOffset => new DateTimeOffset(NowVN, VietNamTimeZone.GetUtcOffset(NowVN));
+
+        public static DateTimeOffset AddMinutes(int minutes) => NowVNOffset.AddMinutes(minutes);
+
+        public static long NowUnixTimeSeconds => NowVNOffset.ToUnixTimeMilliseconds();
+        
         /// Ticks tại 00:00 thứ 2 đầu tuần hiện tại (giờ VN)
         public static long StartOfCurrentWeekTicksVN =>
             NowVN.Date.AddDays(-(int)(NowVN.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)NowVN.DayOfWeek - 1)).Ticks;
@@ -57,6 +64,7 @@ namespace Shared.Helpers
         /// Ticks tại 23:59:59.9999999 Chủ nhật tuần này (giờ VN)
         public static long EndOfCurrentWeekTicksVN =>
             new DateTime(StartOfCurrentWeekTicksVN).AddDays(7).AddTicks(-1).Ticks;
+            
         public static List<DateTime> GetDaysFromStartOfWeekToTodayVN()
         {
             var today = NowVN.Date;
@@ -84,7 +92,19 @@ namespace Shared.Helpers
             };
         }
 
-        public static bool IsBanExpired(long? bannedUntilTicks) => 
+        public static bool IsBanExpired(long? bannedUntilTicks) =>
             bannedUntilTicks.HasValue && NowTicks > bannedUntilTicks.Value;
+
+        public static long FromUnixMillisecondsToVNTicks(long unixMs)
+        {
+            // unixMs là UTC (FE gửi lên chuẩn UTC)
+            var utcDateTime = DateTimeOffset.FromUnixTimeMilliseconds(unixMs).UtcDateTime;
+
+            // Convert về giờ VN
+            var vnDateTime = ToVN(utcDateTime);
+
+            // Trả về ticks (theo giờ VN)
+            return vnDateTime.Ticks;
+        }
     }
 }

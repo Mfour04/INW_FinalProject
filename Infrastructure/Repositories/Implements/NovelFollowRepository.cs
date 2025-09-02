@@ -1,5 +1,6 @@
 ﻿using Domain.Entities;
 using Domain.Entities.System;
+using Domain.Enums;
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Bson;
@@ -74,7 +75,25 @@ namespace Infrastructure.Repositories.Implements
             try
             {
                 var filter = Builders<NovelFollowerEntity>.Filter.Eq(x => x.user_id, userId);
-
+                //filter theo status
+                if (findCreterias.SearchTerm != null && findCreterias.SearchTerm.Any())
+                {
+                    var statusList = new List<NovelFollowReadingStatus>();
+                    foreach (var status in findCreterias.SearchTerm)
+                    {
+                        if (Enum.TryParse<NovelFollowReadingStatus>(status, true, out var parsedStatus))
+                        {
+                            statusList.Add(parsedStatus);
+                        }
+                    }
+                    if (statusList.Any())
+                    {
+                        filter = Builders<NovelFollowerEntity>.Filter.And(
+                            filter,
+                            Builders<NovelFollowerEntity>.Filter.In(x => x.reading_status, statusList)
+                        );
+                    }
+                }
                 var totalCount = await _collection.CountDocumentsAsync(filter);
 
                 var follows = await _collection.Find(filter)
@@ -123,9 +142,8 @@ namespace Infrastructure.Repositories.Implements
             try
             {
                 var filter = Builders<NovelFollowerEntity>.Filter.Eq(x => x.id, entity.id);
-                var result = await _collection.ReplaceOneAsync(filter, entity);
-
-                return entity;
+                await _collection.ReplaceOneAsync(filter, entity);
+                return entity;  
             }
             catch
             {

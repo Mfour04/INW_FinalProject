@@ -1,3 +1,4 @@
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -18,33 +19,38 @@ namespace Application.Features.Comment.Commands
     {
         private readonly ICommentLikeRepository _commentLikeRepo;
         private readonly ICommentRepository _commentRepo;
-
+        private readonly INotificationService _notificationService;
+        private readonly IUserRepository _userRepo;
         public LikeCommentCommandHandler(
             ICommentLikeRepository commentLikeRepo,
-            ICommentRepository commentRepo)
+            ICommentRepository commentRepo,
+            INotificationService notificationService,
+            IUserRepository userRepository)
         {
             _commentLikeRepo = commentLikeRepo;
             _commentRepo = commentRepo;
+            _notificationService = notificationService;
+            _userRepo = userRepository;
         }
 
         public async Task<ApiResponse> Handle(LikeCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.CommentId) || string.IsNullOrWhiteSpace(request.UserId))
-                return Fail("Missing required fields: CommentId or UserId.");
+                return Fail("Thiếu trường bắt buộc: CommentId hoặc UserId.");
 
             if (!Enum.TryParse<CommentType>(request.Type.ToString(), out var commentType)
                  || (commentType != CommentType.Novel && commentType != CommentType.Chapter))
             {
-                return Fail("Invalid or unsupported comment type.");
+                return Fail("Loại bình luận không hợp lệ hoặc không được hỗ trợ.");
             }
 
             var targetComment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (targetComment == null)
-                return Fail("Comment does not exist.");
+                return Fail("Bình luận không tồn tại.");
 
             var hasLiked = await _commentLikeRepo.HasUserLikedCommentAsync(request.CommentId, request.UserId);
             if (hasLiked)
-                return Fail("User has already liked this comment.");
+                return Fail("Người dùng đã thích bình luận này.");
 
             var like = new CommentLikeEntity
             {
@@ -56,11 +62,23 @@ namespace Application.Features.Comment.Commands
             };
 
             await _commentLikeRepo.LikeCommentAsync(like);
+            await _commentRepo.IncreaseLikeCountAsync(request.CommentId, 1);
+
+            var user = await _userRepo.GetById(request.UserId);
+            if (!string.IsNullOrWhiteSpace(targetComment.user_id) && targetComment.user_id != request.UserId)
+            {
+                string message = $"{user.displayname} đã thích bình luận của bạn.";
+                await _notificationService.SendNotificationToUsersAsync(
+                    new[] { targetComment.user_id },
+                    message,
+                    NotificationType.CommentLike
+                );
+            }
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Like successfully.",
+                Message = "Thích thành công.",
                 Data = like
             };
         }

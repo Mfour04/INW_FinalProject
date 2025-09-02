@@ -1,4 +1,4 @@
-using Infrastructure.Repositories.Interfaces;
+﻿using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 
@@ -25,7 +25,7 @@ namespace Application.Features.UserFollow.Commands
         {
             if (string.IsNullOrWhiteSpace(request.CurrentUserId) || string.IsNullOrWhiteSpace(request.FollowerToRemoveId))
             {
-                return new ApiResponse { Success = false, Message = "Invalid input." };
+                return new ApiResponse { Success = false, Message = "Dữ liệu đầu vào không hợp lệ." };
             }
 
             bool isFollowing = await _followRepo.IsFollowingAsync(request.FollowerToRemoveId, request.CurrentUserId);
@@ -34,14 +34,14 @@ namespace Application.Features.UserFollow.Commands
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "This user is not following you."
+                    Message = "Người dùng này không đang theo dõi bạn."
                 };
             }
 
             var success = await _followRepo.UnfollowAsync(request.FollowerToRemoveId, request.CurrentUserId);
             if (!success)
             {
-                return new ApiResponse { Success = false, Message = "Failed to remove follower." };
+                return new ApiResponse { Success = false, Message = "Xóa người theo dõi thất bại." };
             }
 
             await _userRepo.IncrementFollowerCountAsync(request.CurrentUserId, -1);
@@ -50,7 +50,7 @@ namespace Application.Features.UserFollow.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "Follower removed successfully."
+                Message = "Đã xóa người theo dõi thành công."
             };
         }
     }

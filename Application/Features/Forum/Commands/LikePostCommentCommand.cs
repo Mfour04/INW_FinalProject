@@ -1,3 +1,4 @@
+﻿using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -17,27 +18,32 @@ namespace Application.Features.Forum.Commands
     {
         private readonly ICommentLikeRepository _commentLikeRepo;
         private readonly IForumCommentRepository _postCommentRepo;
-
+        private readonly INotificationService _notificationService;
+        private readonly IUserRepository _userRepo;
         public LikePostCommentCommandHandler(
             ICommentLikeRepository commentLikeRepo,
-            IForumCommentRepository postCommentRepo)
+            IForumCommentRepository postCommentRepo,
+            INotificationService notificationService,
+            IUserRepository userRepository)
         {
             _commentLikeRepo = commentLikeRepo;
             _postCommentRepo = postCommentRepo;
+            _notificationService = notificationService;
+            _userRepo = userRepository;
         }
 
         public async Task<ApiResponse> Handle(LikePostCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.CommentId) || string.IsNullOrWhiteSpace(request.UserId))
-                return Fail("Missing required fields: CommentId or UserId.");
+                return Fail("Thiếu trường bắt buộc: CommentId hoặc UserId.");
 
             var targetComment = await _postCommentRepo.GetByIdAsync(request.CommentId);
             if (targetComment == null)
-                return Fail("Comment does not exist.");
+                return Fail("Bình luận không tồn tại.");
 
             var hasLiked = await _commentLikeRepo.HasUserLikedCommentAsync(request.CommentId, request.UserId);
             if (hasLiked)
-                return Fail("User has already liked this comment.");
+                return Fail("Người dùng đã thích bình luận này.");
 
             var like = new CommentLikeEntity
             {
@@ -50,10 +56,24 @@ namespace Application.Features.Forum.Commands
 
             await _commentLikeRepo.LikeCommentAsync(like);
 
+            // 📌 Gửi thông báo cho tác giả comment
+            if (!string.IsNullOrWhiteSpace(targetComment.user_id) && targetComment.user_id != request.UserId)
+            {
+                var liker = await _userRepo.GetById(request.UserId);
+                string message = $"{liker.displayname} đã thích bình luận của bạn.";
+                await _notificationService.SendNotificationToUsersAsync(
+                    new[] { targetComment.user_id },
+                    message,
+                    NotificationType.LikePostComment,
+                    forumPostId: targetComment.post_id,
+                    avatarUrl: liker.avata_url
+                );
+            }
+
             return new ApiResponse
             {
                 Success = true,
-                Message = "Like successfully.",
+                Message = "Thích bình luận bài viết thành công.",
             };
         }
 

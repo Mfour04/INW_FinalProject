@@ -1,8 +1,6 @@
 ﻿using Application.Features.ReadingProcess.Command;
 using Application.Features.ReadingProcess.Queries;
-using Domain.Entities.System;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebApi.Controllers
@@ -12,12 +10,10 @@ namespace WebApi.Controllers
     public class ReadingProcessesController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly FindCreterias _findCreterias;
 
         public ReadingProcessesController(IMediator mediator)
         {
             _mediator = mediator;
-            _findCreterias = new FindCreterias();
         }
 
         [HttpGet("history")]
@@ -43,7 +39,7 @@ namespace WebApi.Controllers
         {
             if (command == null)
             {
-                return BadRequest("Invalid reading process data.");
+                return BadRequest("Dữ liệu quá trình đọc không hợp lệ.");
             }
 
             var result = await _mediator.Send(command);
@@ -55,7 +51,7 @@ namespace WebApi.Controllers
         {
             if (command == null)
             {
-                return BadRequest("Invalid reading process data.");
+                return BadRequest("Dữ liệu quá trình đọc không hợp lệ.");
             }
 
             var result = await _mediator.Send(command);
@@ -67,7 +63,7 @@ namespace WebApi.Controllers
         {
             if (string.IsNullOrEmpty(id))
             {
-                return BadRequest("Reading process ID is required.");
+                return BadRequest("Cần phải đọc ID tiến trình.");
             }
 
             var result = await _mediator.Send(new DeleteReadingProcessCommand { ReadingProcessId = id });
@@ -76,6 +72,13 @@ namespace WebApi.Controllers
                 return Ok(result);
             }
             return BadRequest(result.Message);
+        }
+
+        [HttpDelete("bulk")]
+        public async Task<IActionResult> DeleteBulk([FromBody] DeleteReadingProcessBulkCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
     }
 }

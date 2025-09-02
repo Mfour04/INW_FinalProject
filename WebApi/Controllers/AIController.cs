@@ -1,4 +1,5 @@
 ﻿using Application.Features.OpenAI.Commands;
+using Application.Services.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,5 +23,18 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpPost("plagiarism")]
+        public async Task<IActionResult> CheckPlagiarism([FromBody] PlagiarismChapterContentCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPost("summarize")]
+        public async Task<IActionResult> Summarize([FromBody] SummarizeContentCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
     }
 }

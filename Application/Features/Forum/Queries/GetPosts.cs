@@ -58,7 +58,8 @@ namespace Application.Features.Forum.Queries
                     {
                         Id = user.id,
                         Username = user.username,
-                        Avatar = user.avata_url
+                        Avatar = user.avata_url,
+                        DisplayName = user.displayname
                     };
                 }
                 else

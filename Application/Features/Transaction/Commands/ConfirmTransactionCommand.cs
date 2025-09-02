@@ -36,12 +36,14 @@ namespace Application.Features.Transaction.Commands
                 completed_at = TimeHelper.NowTicks,
             };
 
-            await _transactionRepo.UpdateStatusAsync(transaction.id, updated);
+            var success = await _transactionRepo.UpdateStatusAsync(transaction.id, updated);
+            if (!success) return;
 
             if (transaction.type == PaymentType.TopUp)
             {
                 await _userRepo.IncreaseCoinAsync(transaction.requester_id, transaction.amount);
             }
         }
+        
     }
 }

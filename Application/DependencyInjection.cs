@@ -1,5 +1,6 @@
 using Application.Services.Implements;
 using Application.Services.Interfaces;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application
@@ -34,6 +35,7 @@ namespace Application
             services.AddScoped<ICommentSpamGuard, CommentSpamGuard>();
             services.AddScoped<IBadgeProgressService, BadgeProgressService>();
             services.AddScoped<IVietQrService, VietQrService>();
+            services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
             return services;
         }
     }

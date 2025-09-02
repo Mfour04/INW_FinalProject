@@ -38,5 +38,12 @@ namespace WebApi.Controllers
             await _mediator.Send(command.SenderId = userId);
             return Ok(new { success = true, message = "Notification sent." });
         }
+
+        [HttpPost("mark-as-read")]
+        public async Task<IActionResult> MarkAsRead([FromBody] MarkNotificationsAsReadCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
     }
 }

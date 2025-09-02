@@ -21,12 +21,18 @@ namespace Application.Features.Transaction.Queries
     {
         private readonly ITransactionRepository _transactionRepo;
         private readonly ITransactionLogRepository _logRepo;
+        private readonly IUserBankAccountRepository _userBankAccountRepo;
         private readonly IMapper _mapper;
 
-        public GetTransactionsHandler(ITransactionRepository transactionRepo, ITransactionLogRepository logRepo, IMapper mapper)
+        public GetTransactionsHandler(
+            ITransactionRepository transactionRepo,
+            ITransactionLogRepository logRepo,
+            IUserBankAccountRepository userBankAccountRepo, 
+            IMapper mapper)
         {
             _transactionRepo = transactionRepo;
             _logRepo = logRepo;
+            _userBankAccountRepo = userBankAccountRepo;
             _mapper = mapper;
         }
 
@@ -46,36 +52,36 @@ namespace Application.Features.Transaction.Queries
 
             var responseList = new List<object>();
             var withdrawIds = new List<string>();
-
-            foreach (var tx in transactions)
+            var bankAccountIds = new HashSet<string>();
+            
+             foreach (var tx in transactions)
             {
-                object mapped;
-
                 switch (tx.type)
                 {
                     case PaymentType.TopUp:
-                        mapped = _mapper.Map<AdminTopUpTransactionResponse>(tx);
+                        responseList.Add(_mapper.Map<AdminTopUpTransactionResponse>(tx));
                         break;
 
                     case PaymentType.WithdrawCoin:
+                    {
                         var withdraw = _mapper.Map<AdminWithdrawTransactionResponse>(tx);
                         withdrawIds.Add(tx.id);
-                        mapped = withdraw;
+
+                        if (!string.IsNullOrEmpty(tx.bank_account_id))
+                            bankAccountIds.Add(tx.bank_account_id);
+
+                        responseList.Add(withdraw);
                         break;
+                    }
 
                     case PaymentType.BuyNovel:
-                        mapped = _mapper.Map<AdminBuyNovelTransactionResponse>(tx);
+                        responseList.Add(_mapper.Map<AdminBuyNovelTransactionResponse>(tx));
                         break;
 
                     case PaymentType.BuyChapter:
-                        mapped = _mapper.Map<AdminBuyChapterTransactionResponse>(tx);
+                        responseList.Add(_mapper.Map<AdminBuyChapterTransactionResponse>(tx));
                         break;
-
-                    default:
-                        continue;
                 }
-
-                responseList.Add(mapped);
             }
 
             if (withdrawIds.Count > 0)
@@ -83,12 +89,7 @@ namespace Application.Features.Transaction.Queries
                 var logs = await _logRepo.GetLogsByTransactionIdsAsync(withdrawIds);
                 var logDict = logs.ToDictionary(
                     x => x.transaction_id,
-                    x => new
-                    {
-                        x.message,
-                        x.action_by_id,
-                        x.action_type
-                    });
+                    x => new { x.message, x.action_by_id, x.action_type });
 
                 foreach (var item in responseList)
                 {
@@ -98,6 +99,29 @@ namespace Application.Features.Transaction.Queries
                         withdraw.Message = log.message;
                         withdraw.ActionById = log.action_by_id;
                         withdraw.ActionType = log.action_type;
+                    }
+                }
+            }
+
+            if (bankAccountIds.Count > 0)
+            {
+                var bankAccounts = await _userBankAccountRepo.GetByIdsAsync(bankAccountIds.ToList());
+                var bankDict = bankAccounts.ToDictionary(b => b.id, b => b);
+
+                for (int i = 0; i < transactions.Count && i < responseList.Count; i++)
+                {
+                    var tx = transactions[i];
+                    if (responseList[i] is AdminWithdrawTransactionResponse withdraw &&
+                        !string.IsNullOrEmpty(tx.bank_account_id) &&
+                        bankDict.TryGetValue(tx.bank_account_id, out var bank))
+                    {
+                        withdraw.BankInfo = new AdminWithdrawTransactionResponse.UserBankInfomation
+                        {
+                            BankBin = bank.bank_bin,
+                            BankShortName = bank.bank_short_name,
+                            BankAccountNumber = bank.bank_account_number,
+                            BankAccountName = bank.bank_account_name
+                        };
                     }
                 }
             }

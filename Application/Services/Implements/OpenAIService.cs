@@ -24,7 +24,12 @@ namespace Application.Services.Implements
 
         public async Task<ModerationResult> CheckModerationAsync(string input)
         {
-            var requestBody = new { input };
+            var requestBody = new
+            {
+                input,
+                model = _config.ModerationModel 
+            };
+
             var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
             using var request = new HttpRequestMessage(HttpMethod.Post, _config.ModerationUrl)
@@ -79,26 +84,26 @@ namespace Application.Services.Implements
                 input = inputs
             };
 
-            Console.WriteLine("INPUT TO OPENAI:");
-            Console.WriteLine(JsonSerializer.Serialize(body));
+            var json = JsonSerializer.Serialize(body);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Post, _config.EmbeddingUrl);
+            var request = new HttpRequestMessage(HttpMethod.Post, _config.EmbeddingUrl)
+            {
+                Content = content
+            };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _config.ApiKey);
-            request.Content = content;
 
             var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
                 throw new Exception($"OpenAI error: {response.StatusCode} - {error}");
             }
 
-            var stream = await response.Content.ReadAsStreamAsync();
+            using var stream = await response.Content.ReadAsStreamAsync();
             using var doc = await JsonDocument.ParseAsync(stream);
 
-            var embeddings = doc.RootElement
+            return doc.RootElement
                 .GetProperty("data")
                 .EnumerateArray()
                 .Select(item => item.GetProperty("embedding")
@@ -106,9 +111,41 @@ namespace Application.Services.Implements
                     .Select(x => x.GetSingle())
                     .ToList()
                 ).ToList();
-
-            return embeddings;
         }
 
+
+        public async Task<string> SummarizeContentAsync(string content)
+        {
+            var requestBody = new
+            {
+                model = _config.SummaryModel, // "gpt-4o-mini"
+                messages = new object[]
+            {
+                new { role = "system", content = "Bạn là trợ lý AI chuyên tóm tắt văn bản ngắn gọn và đầy đủ ý chính." },
+                new { role = "user", content = $"Hãy tóm tắt nội dung sau giúp tôi từ:\n\n{content}" }
+            },
+                temperature = 0.7
+            };
+
+            var requestJson = JsonSerializer.Serialize(requestBody);
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, _config.SummaryUrl);
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _config.ApiKey);
+            httpRequest.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(httpRequest);
+            response.EnsureSuccessStatusCode();
+
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            using var document = await JsonDocument.ParseAsync(responseStream);
+
+            var summary = document
+                .RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+
+            return summary ?? string.Empty;
+        }
     }
 }

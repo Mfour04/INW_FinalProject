@@ -19,7 +19,7 @@ namespace WebApi.Controllers
         public SortCreterias SortCreterias { get; private set; }
         private string currentUserId =>
           User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-          ?? throw new UnauthorizedAccessException("User ID not found in token");
+          ?? throw new UnauthorizedAccessException("User ID không tìm thấy trong token");
 
         public NovelsController(IMediator mediator)
         {
@@ -97,7 +97,7 @@ namespace WebApi.Controllers
                 return Unauthorized(new ApiResponse
                 {
                     Success = false,
-                    Message = "User not authenticated."
+                    Message = "Người dùng chưa được xác thực."
                 });
             var result = await _mediator.Send(new GetNovelByAuthorId
             {
@@ -205,6 +205,7 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new CheckSlug { Slug = slugName });
             return Ok(result);
         }
+
         [HttpGet("recommend-by-novelid/{novelId}")]
         public async Task<IActionResult> GetRecommendByNovelId(string novelId, [FromQuery] int topN = 10)
         {

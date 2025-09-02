@@ -11,6 +11,8 @@ namespace Shared.Contracts.Response.Follow
         public string UserName { get; set; }
         public string DisplayName { get; set; }
         public string AvatarUrl { get; set; }
+        public bool IsNotification { get; set; }       
+        public NovelFollowReadingStatus ReadingStatus { get; set; } 
         public long FollowedAt { get; set; }
     }
     // <summary>
@@ -23,6 +25,8 @@ namespace Shared.Contracts.Response.Follow
         public string UserName { get; set; }
         public string DisplayName { get; set; }
         public string AvatarUrl { get; set; }
+        public bool IsNotification { get; set; }
+        public NovelFollowReadingStatus ReadingStatus { get; set; }
         public long FollowedAt { get; set; }
     }
 
@@ -47,6 +51,7 @@ namespace Shared.Contracts.Response.Follow
         public string FollowId { get; set; }         // id của bản ghi follow
         public string NovelId { get; set; }
         public string Title { get; set; }
+        public string Slug { get; set; }
         public string NovelImage { get; set; }
         public string NovelBanner { get; set; }
         public string AuthorId { get; set; }
@@ -58,6 +63,8 @@ namespace Shared.Contracts.Response.Follow
         public double RatingAvg { get; set; }
         public int Followers { get; set; }
         public int TotalChapters { get; set; }
+        public bool IsNotification { get; set; }
+        public NovelFollowReadingStatus ReadingStatus { get; set; }
         public long FollowedAt { get; set; }
     }
 

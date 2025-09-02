@@ -2,6 +2,8 @@
 using Application.Features.Novel.Queries;
 using Application.Features.User.Feature;
 using Application.Features.User.Queries;
+using Application.Services.Interfaces;
+using Google.Apis.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +12,7 @@ using Shared.Helpers;
 using Shared.SystemHelpers.TokenGenerate;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 
 namespace WebApi.Controllers
 {
@@ -19,12 +22,92 @@ namespace WebApi.Controllers
     {
         private readonly IMediator _mediator;
         private readonly JwtHelpers _jwtHelpers;
+        private readonly IConfiguration _config;
 
-        public UsersController(IMediator mediator, JwtHelpers jwtHelpers)
+        public UsersController(IMediator mediator, JwtHelpers jwtHelpers
+            , IConfiguration config)
         {
             _mediator = mediator;
             _jwtHelpers = jwtHelpers;
+            _config = config;
         }
+
+        public class GoogleLoginRequest
+        {
+            public string AccessToken { get; set; }
+        }
+        public class GoogleUserInfo
+        {
+            public string Sub { get; set; }
+            public string Name { get; set; }
+
+            [JsonPropertyName("given_name")]
+            public string GivenName { get; set; }
+
+            [JsonPropertyName("family_name")]
+            public string FamilyName { get; set; }
+
+            [JsonPropertyName("picture")]
+            public string Picture { get; set; }
+
+            [JsonPropertyName("email")]
+            public string Email { get; set; }
+
+            [JsonPropertyName("email_verified")]
+            public bool EmailVerified { get; set; }
+        }
+
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", request.AccessToken);
+
+                var response = await httpClient.GetStringAsync("https://www.googleapis.com/oauth2/v3/userinfo");
+
+                // 🔍 Log thử response từ Google
+                Console.WriteLine("Google userinfo response: " + response);
+
+                var userInfo = System.Text.Json.JsonSerializer.Deserialize<GoogleUserInfo>(
+                    response,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (userInfo == null || string.IsNullOrEmpty(userInfo.Email))
+                {
+                    return Unauthorized(new
+                    {
+                        Message = "Token truy cập Google không hợp lệ",
+                        Error = "Không tìm thấy thông tin người dùng",
+                        RawResponse = response   // 👈 thêm raw response để debug
+                    });
+                }
+
+                var command = new LoginGoogleCommand
+                {
+                    Email = userInfo.Email,
+                    Name = userInfo.Name ?? userInfo.GivenName ?? userInfo.Email,
+                    AvatarUrl = userInfo.Picture
+                };
+
+                var result = await _mediator.Send(command);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GoogleLogin Error] {ex}");
+                return Unauthorized(new
+                {
+                    Message = "Token truy cập Google không hợp lệ",
+                    Error = ex.Message,
+                    Stack = ex.StackTrace
+                });
+            }
+        }
+
 
         // Đăng ký người dùng mới
         [HttpPost("register")]
@@ -44,32 +127,43 @@ namespace WebApi.Controllers
         {
             var result = await _mediator.Send(request);
 
-            if (!result.Success)
-                return BadRequest(result);
+            TokenResult? tokenData = null;
+            string message;
 
-            // Gắn JWT vào cookie nếu đăng nhập thành công
-            var tokenData = result.Data as TokenResult;
-            var accessToken = tokenData?.AccessToken;
-
-            if (!string.IsNullOrEmpty(accessToken))
+            if (!result.Success || result.Data == null)
             {
-                // ✅ Gắn JWT accessToken vào cookie
-                Response.Cookies.Append("jwt", accessToken, new CookieOptions
+                // Trường hợp login fail
+                message = "Sai tài khoản hoặc mật khẩu";
+            }
+            else
+            {
+                // Trường hợp login thành công
+                tokenData = result.Data as TokenResult;
+                message = "Đăng nhập thành công";
+
+                // Gắn JWT vào cookie nếu có accessToken
+                var accessToken = tokenData?.AccessToken;
+                if (!string.IsNullOrEmpty(accessToken))
                 {
-                    HttpOnly = true,
-                    Secure = true, // để bảo mật hơn khi chạy https
-                    SameSite = SameSiteMode.None, // nếu dùng frontend khác domain
-                    Expires = DateTime.UtcNow.AddHours(1)
-                });
+                    Response.Cookies.Append("jwt", accessToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.None,
+                        Expires = TimeHelper.NowVN.AddHours(1)
+                    });
+                }
             }
 
-
+            // Trả về ApiResponse với token
             return Ok(new
             {
-                message = "Login success",
-                token = result.Data
+                success = result.Success,
+                message,
+                token = tokenData
             });
         }
+
 
         // Endpoint chỉ admin có thể truy cập
         [Authorize(Roles = "Admin")]
@@ -106,10 +200,10 @@ namespace WebApi.Controllers
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(new { message = "Invalid token" });
+                return Unauthorized(new { message = "Token không hợp lệ" });
             }
 
-            var result = await _mediator.Send(new GetUserById { UserId = userId });
+            var result = await _mediator.Send(new GetUserById { UserId = userId, CurrentUserId = userId });
 
             if (!result.Success) return Unauthorized();
 
@@ -125,7 +219,7 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new GetUserById
             {
                 UserId = userId,
-                CurrentUserId = currentUserId
+                CurrentUserId = currentUserId   
             });
 
             if (!result.Success)
@@ -140,7 +234,7 @@ namespace WebApi.Controllers
         public IActionResult Logout()
         {
             Response.Cookies.Delete("jwt");
-            return Ok(new { message = "Logout success" });
+            return Ok(new { message = "Đăng xuất thành công" });
         }
 
         [HttpGet("verify-email")]
@@ -150,11 +244,11 @@ namespace WebApi.Controllers
             {
                 var jwtToken = _jwtHelpers.Verify(token);
                 if (jwtToken == null)
-                    return BadRequest("Invalid or expired token.");
+                    return BadRequest("Token không hợp lệ hoặc đã hết hạn.");
 
                 var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
                 if (string.IsNullOrEmpty(userId))
-                    return BadRequest("Invalid token content.");
+                    return BadRequest("Token không hợp lệ hoặc đã hết hạn.");
 
                 var result = await _mediator.Send(new VerifyUserCommand { UserId = userId });
                 if (!result.Success)
@@ -168,8 +262,26 @@ namespace WebApi.Controllers
         }
 
         [HttpPut("update-user-profile")]
+        [Authorize]
         public async Task<IActionResult> UpdateUser([FromForm] UpdateUserProfileCommand command)
         {
+            // Add this validation
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                return BadRequest(new
+                {
+                    message = "Validation failed",
+                    errors = errors
+                });
+            }
+
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))

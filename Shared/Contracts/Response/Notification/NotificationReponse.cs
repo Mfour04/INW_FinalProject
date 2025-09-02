@@ -11,7 +11,11 @@ namespace Shared.Contracts.Response.Notification
     {
         public string NotificationId { get; set; }
         public string UserId { get; set; }
+        public string AvatarUrl { get; set; }
         public NotificationType Type { get; set; }
+        public string NovelId { get; set; }
+        public string NovelSlug { get; set; }
+        public string ForumPostId { get; set; }
         public string Message { get; set; }
         public bool IsRead { get; set; }
         public long CreateAt { get; set; }

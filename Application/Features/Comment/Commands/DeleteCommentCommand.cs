@@ -1,4 +1,5 @@
 ﻿using Application.Services.Interfaces;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -16,27 +17,32 @@ namespace Application.Features.Comment.Commands
         private readonly INovelRepository _novelRepo;
         private readonly IChapterRepository _chapterRepo;
         private readonly ICurrentUserService _currentUser;
-
+        private readonly INotificationService _notificationService;
         public DeleteCommentCommandHandler(
             ICommentRepository commentRepo,
             INovelRepository novelRepo,
             IChapterRepository chapterRepo,
-            ICurrentUserService currentUser)
+            ICurrentUserService currentUser,
+            INotificationService notificationService)
         {
             _commentRepo = commentRepo;
             _novelRepo = novelRepo;
             _chapterRepo = chapterRepo;
             _currentUser = currentUser;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(DeleteCommentCommand request, CancellationToken cancellationToken)
         {
             var existComment = await _commentRepo.GetByIdAsync(request.CommentId);
             if (existComment == null)
-                return Fail("Comment not found.");
+                return Fail("Không tìm thấy bình luận.");
+
+            bool isAdmin = _currentUser.IsAdmin();
+            bool isOwner = _currentUser.UserId == existComment.user_id;
 
             if (!_currentUser.IsAdmin() && _currentUser.UserId != existComment.user_id)
-                return Fail("You are not authorized to delete this comment.");
+                return Fail("Bạn không có quyền xóa bình luận này.");
 
             int totalDeleted = 1;
 
@@ -54,7 +60,7 @@ namespace Application.Features.Comment.Commands
             var deleted = await _commentRepo.DeleteAsync(request.CommentId);
             if (!deleted)
             {
-                return Fail("Failed to delete comment.");
+                return Fail("Xóa bình luận thất bại.");
             }
 
             if (string.IsNullOrWhiteSpace(existComment.parent_comment_id))
@@ -67,10 +73,20 @@ namespace Application.Features.Comment.Commands
             else if (!string.IsNullOrWhiteSpace(existComment.novel_id))
                 await _novelRepo.DecrementCommentsAsync(existComment.novel_id, totalDeleted);
 
+            // 🔔 Gửi thông báo nếu admin xóa bình luận của người khác
+            if (isAdmin && !isOwner)
+            {
+                await _notificationService.SendNotificationToUsersAsync(
+                    new[] { existComment.user_id },
+                    "1 bình luận của bạn đã bị quản trị viên xóa vì vi phạm quy tắc cộng đồng.",
+                    NotificationType.CommentDeleted
+                );
+            }
+
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment Deleted Successfully"
+                Message = "Xóa bình luận thành công"
             };
         }
 

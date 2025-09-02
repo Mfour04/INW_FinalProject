@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 
@@ -25,19 +25,19 @@ namespace Application.Features.BankAccount.Commands
         public async Task<ApiResponse> Handle(GenerateWithdrawQrCommand command, CancellationToken cancellationToken)
         {
             if (command.AccountNo <= 0)
-                return new ApiResponse { Success = false, Message = "Invalid account number." };
+                return new ApiResponse { Success = false, Message = "Số tài khoản không hợp lệ." };
 
             if (string.IsNullOrWhiteSpace(command.AccountName))
-                return new ApiResponse { Success = false, Message = "Account name cannot be empty." };
+                return new ApiResponse { Success = false, Message = "Tên tài khoản không được để trống." };
 
             if (command.AcqId <= 0)
-                return new ApiResponse { Success = false, Message = "Invalid bank code (AcqId)." };
+                return new ApiResponse { Success = false, Message = "Mã ngân hàng (AcqId) không hợp lệ." };
 
             if (command.Amount <= 0)
-                return new ApiResponse { Success = false, Message = "Amount must be greater than 0." };
+                return new ApiResponse { Success = false, Message = "Số tiền phải lớn hơn 0." };
 
             if (string.IsNullOrWhiteSpace(command.AddInfo))
-                return new ApiResponse { Success = false, Message = "Transfer description cannot be empty." };
+                return new ApiResponse { Success = false, Message = "Nội dung chuyển tiền không được để trống." };
 
             var qrImageUrl = await _vietQrService.GenerateWithdrawQrAsync(
                 command.AccountNo,
@@ -50,7 +50,7 @@ namespace Application.Features.BankAccount.Commands
             return new ApiResponse
             {
                 Success = true,
-                Message = "QR code generated successfully.",
+                Message = "QR code được tạo thành công.",
                 Data = qrImageUrl
             };
         }

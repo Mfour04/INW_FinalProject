@@ -12,9 +12,14 @@ namespace Application.Features.Chapter.Commands
     {
         private readonly IChapterRepository _chapterRepository;
         private readonly INovelRepository _novelRepository;
-        public DeteleChapterHandler(IChapterRepository chapterRepository)
+        private readonly IOpenAIRepository _openAIRepository;
+        private readonly ICommentRepository _commentRepository;
+        public DeteleChapterHandler(IChapterRepository chapterRepository, INovelRepository novelRepository, IOpenAIRepository openAIRepository, ICommentRepository commentRepository)
         {
             _chapterRepository = chapterRepository;
+            _novelRepository = novelRepository;
+            _openAIRepository = openAIRepository;
+            _commentRepository = commentRepository;
         }
         public async Task<ApiResponse> Handle(DeleteChapterCommand request, CancellationToken cancellationToken)
         {
@@ -24,7 +29,7 @@ namespace Application.Features.Chapter.Commands
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Chapter not found"
+                    Message = "Không tìm thấy chương"
                 };
             }
             var deleted= await _chapterRepository.DeleteAsync(request.ChapterId);
@@ -32,11 +37,14 @@ namespace Application.Features.Chapter.Commands
             {
                 await _chapterRepository.RenumberAsync(chapter.novel_id);
                 await _novelRepository.UpdateTotalChaptersAsync(chapter.novel_id);
+                await _openAIRepository.DeleteChapterContentEmbeddingAsync(request.ChapterId);
+                await _openAIRepository.DeleteChapterChunkEmbeddingsByChapterIdAsync(request.ChapterId);
+                await _commentRepository.DeleteChapterCommentsAsync(request.ChapterId);
             }
             return new ApiResponse
             {
                 Success = true,
-                Message = "Chapter Deleted Succuessfully",
+                Message = "Xóa chương thành công!",
                 Data = deleted
             };
         }

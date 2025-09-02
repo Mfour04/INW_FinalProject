@@ -41,7 +41,7 @@ namespace Application.Features.User.Feature
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Forbidden: Only admins can perform this action."
+                    Message = "Bị cấm: Chỉ quản trị viên mới có thể thực hiện hành động này."
                 };
             }
 
@@ -63,7 +63,7 @@ namespace Application.Features.User.Feature
                 return new ApiResponse
                 {
                     Success = false,
-                    Message = "Invalid ban duration type."
+                    Message = "Loại thời hạn cấm không hợp lệ."
                 };
             }
 
@@ -128,8 +128,8 @@ namespace Application.Features.User.Feature
             {
                 Success = true,
                 Message = request.isBanned
-                    ? $"Ban {request.UserIds.Count} users {(durationMinutes > 0 ? $"until {durationMinutes / 60} hours" : "permanent")}."
-                    : $"Unban {request.UserIds.Count} users.",
+                ? $"Khóa {request.UserIds.Count} người dùng {(durationMinutes > 0 ? $"đến {durationMinutes / 60} giờ" : "vĩnh viễn")}."
+                : $"Mở khóa {request.UserIds.Count} người dùng.",
                 Data = results
             };
         }

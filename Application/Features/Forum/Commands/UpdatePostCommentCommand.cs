@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -24,14 +24,14 @@ namespace Application.Features.Forum.Commands
         public async Task<ApiResponse> Handle(UpdatePostCommentCommand request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.Content))
-                return Fail("Content cannot be empty.");
+                return Fail("Nội dung không được để trống.");
 
             var comment = await _commentRepo.GetByIdAsync(request.Id);
             if (comment == null)
-                return Fail("Comment not found.");
+                return Fail("Không tìm thấy bình luận.");
 
             if (comment.user_id != request.UserId)
-                return Fail("You are not allowed to edit this comment.");
+                return Fail("Bạn không có quyền chỉnh sửa bình luận này.");
 
             ForumCommentEntity updated = new()
             {
@@ -40,12 +40,12 @@ namespace Application.Features.Forum.Commands
 
             var success = await _commentRepo.UpdateAsync(request.Id, updated);
             if (!success)
-                return Fail("Failed to update the comment.");
+                return Fail("Cập nhật bình luận thất bại.");
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Comment updated successfully.",
+                Message = "Cập nhật bình luận thành công.",
             };
         }
 

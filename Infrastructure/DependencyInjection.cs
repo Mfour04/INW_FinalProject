@@ -2,11 +2,15 @@
 using Infrastructure.InwContext;
 using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Shared.Contracts.Response;
 using Shared.SystemHelpers.TokenGenerate;
+using System.Security.Claims;
+using System.Text;
 
 namespace Infrastructure
 {
@@ -64,32 +68,13 @@ namespace Infrastructure
         }
 
         private static IServiceCollection AddAuthentication(
-            this IServiceCollection services,
-            IConfiguration configuration
-        )
+    this IServiceCollection services,
+    IConfiguration configuration
+)
         {
-            services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.Section));
-
-            services
-            .ConfigureOptions<JwtBearerTokenValidationConfiguration>()
-            .AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                // 👇 Thêm đoạn này để lấy JWT từ Cookie "jwt"
-                options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
-                {
-                    OnMessageReceived = context =>
-                    {
-                        if (context.Request.Cookies.ContainsKey("jwt"))
-                        {
-                            context.Token = context.Request.Cookies["jwt"];
-                        }
-                        return Task.CompletedTask;
-                    }
-                };
-            });
-
+            
             return services;
         }
+
     }
 }

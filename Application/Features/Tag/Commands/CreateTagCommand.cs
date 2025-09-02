@@ -44,7 +44,7 @@ namespace Application.Features.Tag.Command
             return new ApiResponse
             {
                 Success = true,
-                Message = "Created Tag Successfully",
+                Message = "Tạo tag thành công",
                 Data = tag
             };
         }

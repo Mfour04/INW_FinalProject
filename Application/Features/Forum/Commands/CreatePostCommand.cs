@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Repositories.Interfaces;
@@ -13,7 +13,7 @@ namespace Application.Features.Forum.Commands
     public class CreatePostCommand : IRequest<ApiResponse>
     {
         public string? UserId { get; set; }
-        public string Content { get; set; }
+        public string? Content { get; set; }
         public List<IFormFile>? Images { get; set; }
     }
 
@@ -34,8 +34,9 @@ namespace Application.Features.Forum.Commands
 
         public async Task<ApiResponse> Handle(CreatePostCommand request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(request.Content))
-                return new ApiResponse { Success = false, Message = "Content cannot be empty." };
+            var validation = ValidateRequest(request);
+            if (!validation.IsValid)
+                return validation.FailResponse!;
 
             var postImages = new List<string>();
             if (request.Images != null && request.Images.Any())
@@ -43,12 +44,12 @@ namespace Application.Features.Forum.Commands
                 postImages = await _cloudDinaryService.UploadMultipleImagesAsync(request.Images, CloudFolders.Forums);
             }
 
-			ForumPostEntity newPost = new()
+            ForumPostEntity newPost = new()
             {
                 id = SystemHelper.RandomId(),
                 user_id = request.UserId,
-                content = request.Content,
-				img_urls = postImages,
+                content = string.IsNullOrWhiteSpace(request.Content) ? null : request.Content,
+                img_urls = postImages,
                 like_count = 0,
                 comment_count = 0,
                 created_at = TimeHelper.NowTicks
@@ -62,15 +63,33 @@ namespace Application.Features.Forum.Commands
             {
                 Id = author.id,
                 Username = author.username,
-                Avatar = author.avata_url
+                Avatar = author.avata_url,
+                DisplayName = author.displayname
             };
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Post created successfully.",
+                Message = "Bài viết đã được tạo thành công.",
                 Data = response
             };
+        }
+
+        private (bool IsValid, ApiResponse? FailResponse) ValidateRequest(CreatePostCommand request)
+        {
+            bool hasContent = !string.IsNullOrWhiteSpace(request.Content);
+            bool hasImages = request.Images != null && request.Images.Any();
+
+            if (!hasContent && !hasImages)
+            {
+                return (false, new ApiResponse
+                {
+                    Success = false,
+                    Message = "Bạn phải cung cấp nội dung hoặc ít nhất một hình ảnh."
+                });
+            }
+
+            return (true, null);
         }
     }
 }

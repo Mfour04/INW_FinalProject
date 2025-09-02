@@ -65,4 +65,6 @@ jobs:
           app-name: 'InkWaveLibrary'
           slot-name: 'Production'
           package: .
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           

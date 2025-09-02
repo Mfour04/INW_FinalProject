@@ -1,3 +1,4 @@
+using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
@@ -17,13 +18,16 @@ namespace Application.Features.Transaction.Commands
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly IUserRepository _userRepository;
+        private readonly INotificationService _notificationService;
 
         public CancelWithdrawRequestCommandHandler(
             ITransactionRepository transactionRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            INotificationService notificationService)
         {
             _transactionRepository = transactionRepository;
             _userRepository = userRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(CancelWithdrawRequestCommand request, CancellationToken cancellationToken)
@@ -31,20 +35,20 @@ namespace Application.Features.Transaction.Commands
             var transaction = await _transactionRepository.GetByIdAsync(request.TransactionId);
 
             if (transaction == null)
-                return Fail("Transaction not found.");
+                return Fail("Không tìm thấy giao dịch.");
 
             if (transaction.requester_id != request.UserId)
-                return Fail("Permission denied.");
+                return Fail("Không có quyền thực hiện.");
 
             if (transaction.type != PaymentType.WithdrawCoin)
-                return Fail("Not a withdraw transaction.");
+                return Fail("Giao dịch không phải rút coin.");
 
             if (transaction.status != PaymentStatus.Pending)
-                return Fail("Only pending withdraws can be cancelled.");
+                return Fail("Chỉ những giao dịch rút đang chờ mới có thể hủy.");
 
             var user = await _userRepository.GetById(request.UserId);
             if (user == null)
-                return Fail("User not found.");
+                return Fail("Không tìm thấy người dùng.");
 
             // huỷ: trả block coin
             user.block_coin -= transaction.amount;
@@ -58,10 +62,16 @@ namespace Application.Features.Transaction.Commands
             await _userRepository.UpdateUserCoin(user.id, user.coin, user.block_coin);
             await _transactionRepository.UpdateStatusAsync(transaction.id, updated);
 
+            await _notificationService.SendNotificationToUsersAsync(
+            new[] { user.id },
+            $"Bạn đã hủy yêu cầu rút {transaction.amount} coin.",
+            NotificationType.WithdrawCancelled
+            );
+
             return new ApiResponse
             {
                 Success = true,
-                Message = "Withdraw request cancelled successfully.",
+                Message = "Yêu cầu rút tiền đã bị hủy thành công.",
                 Data = transaction
             };
         }

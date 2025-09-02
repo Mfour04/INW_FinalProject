@@ -4,6 +4,7 @@ using Domain.Entities.System;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response;
 using System.Security.Claims;
 
 namespace WebApi.Controllers
@@ -16,7 +17,7 @@ namespace WebApi.Controllers
         public FindCreterias FindCreterias { get; private set; }
         private string currentUserId =>
            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-           ?? throw new UnauthorizedAccessException("User ID not found in token");
+           ?? throw new UnauthorizedAccessException("User ID không tìm thấy trong token");
 
         public ChaptersController(IMediator mediator)
         {
@@ -115,15 +116,21 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
-        [HttpPut("update-lock-chapter/{chapterId}")]
+        [HttpPut("update-lock-chapters")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> LockvsUnlockChapter(string chapterId, [FromQuery] bool isLocked)
+        public async Task<IActionResult> UpdateLockChapters([FromBody] UpdateLockChapterStatusCommand request)
         {
-            var result = await _mediator.Send(new UpdateLockChapterStatusCommand
+            if (request == null || request.ChapterIds == null || !request.ChapterIds.Any())
             {
-                ChapterId = chapterId,
-                IsLocked = isLocked
-            });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Vui lòng truyền danh sách chapterIds."
+                });
+            }
+
+            var result = await _mediator.Send(request);
+
             if (!result.Success)
                 return BadRequest(result);
 

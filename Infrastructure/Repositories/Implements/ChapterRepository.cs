@@ -402,11 +402,10 @@ namespace Infrastructure.Repositories.Implements
         /// <summary>
         /// Phát hành các chương theo lịch đã lên
         /// </summary>
-        public async Task<int> ReleaseScheduledAsync()
+        public async Task<List<ChapterEntity>> ReleaseScheduledAndReturnAsync()
         {
             try
             {
-                //Cover cho trường hợp ticks của chapter trong db không đúng 00:00
                 var filter = Builders<ChapterEntity>.Filter.And(
                     Builders<ChapterEntity>.Filter.Gte(c => c.scheduled_at, TimeHelper.StartOfTodayTicksVN),
                     Builders<ChapterEntity>.Filter.Lte(c => c.scheduled_at, TimeHelper.EndOfTodayTicksVN),
@@ -416,9 +415,7 @@ namespace Infrastructure.Repositories.Implements
 
                 var chaptersToRelease = await _collection.Find(filter).ToListAsync();
                 if (!chaptersToRelease.Any())
-                    return 0;
-
-                int updatedCount = 0;
+                    return new List<ChapterEntity>();
 
                 var novelChapterMap = new Dictionary<string, int>();
                 var updates = new List<WriteModel<ChapterEntity>>();
@@ -450,13 +447,14 @@ namespace Infrastructure.Repositories.Implements
                 if (updates.Any())
                     await _collection.BulkWriteAsync(updates);
 
-                return updates.Count;
+                return chaptersToRelease; // ✅ trả về list chương đã release
             }
             catch
             {
                 throw new InternalServerException();
             }
         }
+
 
         public async Task IncreaseViewCountAsync(string chapterId)
         {
@@ -480,21 +478,23 @@ namespace Infrastructure.Repositories.Implements
             }
         }
 
-        public async Task UpdateLockChapterStatus(string chapterId, bool isLocked)
+        public async Task UpdateLockChaptersStatus(List<string> chapterIds, bool isLocked)
         {
             try
             {
-                var filter = Builders<ChapterEntity>.Filter.Eq(x => x.id, chapterId);
+                var filter = Builders<ChapterEntity>.Filter.In(x => x.id, chapterIds);
                 var updateLock = Builders<ChapterEntity>.Update.Combine(
-                                 Builders<ChapterEntity>.Update.Set(x => x.is_lock, isLocked),
-                                 Builders<ChapterEntity>.Update.Set(x => x.is_public, !isLocked));
-                await _collection.UpdateOneAsync(filter, updateLock);
+                                    Builders<ChapterEntity>.Update.Set(x => x.is_lock, isLocked),
+                                    Builders<ChapterEntity>.Update.Set(x => x.is_public, !isLocked));
+
+                await _collection.UpdateManyAsync(filter, updateLock);
             }
             catch
             {
                 throw new InternalServerException();
             }
         }
+
         public async Task UpdateHideAllChaptersByNovelIdAsync(string novelId, bool isPublic)
         {
             try
@@ -509,6 +509,16 @@ namespace Infrastructure.Repositories.Implements
             {
                 throw new InternalServerException();
             }
+        }
+
+        public async Task<List<ChapterEntity>> GetPublicPaidChaptersByNovelIdAsync(string novelId)
+        {
+            var filter = Builders<ChapterEntity>.Filter.Eq(c => c.novel_id, novelId) &
+                Builders<ChapterEntity>.Filter.Eq(c => c.is_public, true) &
+                Builders<ChapterEntity>.Filter.Eq(c => c.is_draft, false) &
+                Builders<ChapterEntity>.Filter.Eq(c => c.is_paid, true);
+
+            return await _collection.Find(filter).ToListAsync();
         }
     }
 }

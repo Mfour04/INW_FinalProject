@@ -1,22 +1,31 @@
 ﻿using Application.Services.Interfaces;
 using AutoMapper;
 using Domain.Entities;
+using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Shared.Contracts.Response;
+using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Tag;
 using Shared.Contracts.Response.User;
 using Shared.Helpers;
+using System.ComponentModel.DataAnnotations;
+using static Domain.Entities.UserEntity;
 
 namespace Application.Features.User.Feature
 {
     public class UpdateUserProfileCommand : IRequest<ApiResponse>
     {
         public string UserId { get; set; }
+        [Required(ErrorMessage = "Tên hiển thị là bắt buộc")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Tên hiển thị phải từ 2 đến 100 ký tự")]
         public string DisplayName { get; set; }
-        public string Bio { get; set; }
-        public IFormFile? AvataUrl { get; set; }
+
+        [StringLength(500, ErrorMessage = "Tiểu sử không được vượt quá 500 ký tự")]
+        public string? Bio { get; set; }
+
+        public IFormFile? AvatarUrl { get; set; }
         public IFormFile? CoverUrl { get; set; }
         public List<string> BadgeId { get; set; } = new();
         public List<string>? FavouriteType { get; set; } = new();
@@ -44,19 +53,19 @@ namespace Application.Features.User.Feature
         {
             var user = await _userRepository.GetById(request.UserId);
             if(user == null)
-                return new ApiResponse { Success = false, Message = "User not found." };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy người dùng." };
             var oldFavouriteTypes = user.favourite_type ?? new List<string>();
             user.displayname = request.DisplayName;
             user.displayname_unsigned = SystemHelper.RemoveDiacritics(request.DisplayName);
             user.displayname_normalized = SystemHelper.RemoveDiacritics(request.DisplayName);
             user.bio = request.Bio;
-            user.updated_at = DateTime.UtcNow.Ticks;
+            user.updated_at = TimeHelper.NowTicks;
             user.badge_id = request.BadgeId;
             user.favourite_type = request.FavouriteType;
 
-            if (request.AvataUrl != null && request.CoverUrl != null)
+            if (request.AvatarUrl != null)
             {
-                var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvataUrl, CloudFolders.Users);
+                var imageAUrl = await _cloudDinaryService.UploadImagesAsync(request.AvatarUrl, CloudFolders.Users);
                 user.avata_url = imageAUrl;
             }
 
@@ -108,7 +117,7 @@ namespace Application.Features.User.Feature
             return new ApiResponse 
             { 
                 Success = true, 
-                Message = "Profile updated successfully.",
+                Message = "Hồ sơ đã được cập nhật thành công.",
                 Data = response
             };
         }

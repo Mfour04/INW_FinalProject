@@ -12,7 +12,7 @@ namespace Application.Features.Rating.Command
         public int Score { get; set; }
         public string? Content { get; set; }
     }
-
+ 
     public class UpdateRatingCommandHandler : IRequestHandler<UpdateRatingCommand, ApiResponse>
     {
         private readonly IRatingRepository _ratingRepository;
@@ -33,10 +33,10 @@ namespace Application.Features.Rating.Command
         {
             var rating = await _ratingRepository.GetByIdAsync(request.RatingId);
             if (rating == null)
-                return Fail("Rating not found.");
+                return Fail("Không tìm thấy đánh giá.");
 
             if (rating.user_id != _currentUser.UserId)
-                return Fail("You are not authorized to update this rating.");
+                return Fail("Bạn không có quyền cập nhật đánh giá này.");
 
             RatingEntity updated = new()
             {
@@ -46,17 +46,17 @@ namespace Application.Features.Rating.Command
 
             var success = await _ratingRepository.UpdateAsync(request.RatingId, updated);
             if (!success)
-                return Fail("Failed to update the rating.");
+                return Fail("Cập nhật đánh giá thất bại.");
 
             var avg = await _ratingRepository.GetAverageRatingByNovelIdAsync(rating.novel_id);
             var count = await _ratingRepository.GetRatingCountByNovelIdAsync(rating.novel_id);
-            
+
             await _novelRepository.UpdateRatingStatsAsync(rating.novel_id, avg, count);
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Rating updated successfully."
+                Message = "Cập nhật đánh giá thành công."
             };
         }
 

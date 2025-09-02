@@ -379,5 +379,50 @@ namespace Infrastructure.Repositories.Implements
                 throw new InternalServerException();
             }
         }
+
+        public async Task<bool> IncreaseLikeCountAsync(string commentId, int inc = 1)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(commentId)) return false;
+
+                var filter = Builders<CommentEntity>.Filter.Eq(x => x.id, commentId);
+                var update = Builders<CommentEntity>.Update.Inc(x => x.like_count, inc);
+
+                var result = await _collection.UpdateOneAsync(filter, update);
+                return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task<bool> DecreaseLikeCountAsync(string commentId, int dec = 1)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(commentId)) return false;
+
+                var filter = Builders<CommentEntity>.Filter.And(
+                    Builders<CommentEntity>.Filter.Eq(x => x.id, commentId),
+                    Builders<CommentEntity>.Filter.Gt(x => x.like_count, 0) 
+                );
+                var update = Builders<CommentEntity>.Update.Inc(x => x.like_count, -dec);
+
+                var result = await _collection.UpdateOneAsync(filter, update);
+                return result.ModifiedCount > 0;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
+        }
+
+        public async Task DeleteChapterCommentsAsync(string chapterId)
+        {
+            var filter = Builders<CommentEntity>.Filter.Eq(c => c.chapter_id, chapterId);
+            await _collection.DeleteManyAsync(filter);
+        }
     }
 }

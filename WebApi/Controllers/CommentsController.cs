@@ -1,4 +1,4 @@
-using Application.Features.Comment.Commands;
+﻿using Application.Features.Comment.Commands;
 using Application.Features.Comment.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +14,7 @@ namespace WebApi.Controllers
         private readonly IMediator _mediator;
         private string currentUserId =>
            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-           ?? throw new UnauthorizedAccessException("User ID not found in token");
+           ?? throw new UnauthorizedAccessException("User ID không tìm thấy trong token");
 
         public CommentsController(IMediator mediator)
         {
@@ -55,7 +55,6 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(command);
             return Ok(result);
         }
-
 
         [HttpDelete("{id}")]
         [Authorize]

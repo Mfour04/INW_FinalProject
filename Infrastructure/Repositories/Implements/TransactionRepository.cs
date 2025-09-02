@@ -5,6 +5,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -45,10 +46,12 @@ namespace Infrastructure.Repositories.Implements
                 {
                     SortDefinition<TransactionEntity>? sortDef = criterion.Field switch
                     {
+                        "created_at" => criterion.IsDescending
+                           ? sortBuilder.Descending(x => x.created_at)
+                           : sortBuilder.Ascending(x => x.created_at),
                         "completed_at" => criterion.IsDescending
                             ? sortBuilder.Descending(t => t.completed_at)
                             : sortBuilder.Ascending(t => t.completed_at),
-
                         "amount" => criterion.IsDescending
                             ? sortBuilder.Descending(t => t.amount)
                             : sortBuilder.Ascending(t => t.amount),
@@ -106,7 +109,7 @@ namespace Infrastructure.Repositories.Implements
                 var update = Builders<TransactionEntity>
                    .Update.Set(x => x.status, entity?.status ?? transaction.status)
                    .Set(x => x.completed_at, entity.completed_at)
-                   .Set(x => x.updated_at, entity.updated_at);
+                   .Set(x => x.updated_at, TimeHelper.NowTicks);
 
                 await _collection.UpdateOneAsync(t => t.id == id, update);
 
@@ -313,7 +316,7 @@ namespace Infrastructure.Repositories.Implements
             var filterBuilder = Builders<TransactionEntity>.Filter;
 
             var filter = filterBuilder.In(x => x.novel_id, novelIds) &
-						 filterBuilder.In(x => (int)x.type, types) &
+                         filterBuilder.In(x => (int)x.type, types) &
                          filterBuilder.Eq(x => x.status, PaymentStatus.Completed) &
                          filterBuilder.Gte(x => x.completed_at, startTicks) &
                          filterBuilder.Lte(x => x.completed_at, endTicks);
@@ -329,6 +332,20 @@ namespace Infrastructure.Repositories.Implements
                 .Find(filter)
                 .Project<TransactionEntity>(projection)
                 .ToListAsync();
+        }
+
+        public async Task<List<TransactionEntity>> GetTransactionsByIdsAsync(List<string> transactionIds)
+        {
+            try
+            {
+                var filter = Builders<TransactionEntity>.Filter.In(u => u.id, transactionIds);
+                var result = await _collection.Find(filter).ToListAsync();
+                return result;
+            }
+            catch
+            {
+                throw new InternalServerException();
+            }
         }
     }
 }

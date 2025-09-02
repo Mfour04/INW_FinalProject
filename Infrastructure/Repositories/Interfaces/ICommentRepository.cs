@@ -9,6 +9,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> UpdateAsync(string id, CommentEntity entity);
         Task<bool> DeleteAsync(string id);
         Task<bool> DeleteRepliesByParentIdAsync(string parentId);
+        Task DeleteChapterCommentsAsync(string chapterId);
         Task DeleteManyAsync(List<string> ids);
         Task<CommentEntity> GetByIdAsync(string commentId);
         Task<List<CommentEntity>> GetCommentsByNovelIdAsync(string novelId, FindCreterias creterias, List<SortCreterias> sortCreterias);
@@ -18,5 +19,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> IsDuplicateCommentAsync(string userId, string novelId, string? chapterId, string content, int withinMinutes);
         Task<bool> IsSpammingTooFrequentlyAsync(string userId, int limit, int withinMinutes);
         Task<Dictionary<string, int>> CountRepliesPerCommentAsync(List<string> parentCommentIds);
+        Task<bool> IncreaseLikeCountAsync(string commentId, int inc = 1);
+        Task<bool> DecreaseLikeCountAsync(string commentId, int dec = 1);
     }
 }

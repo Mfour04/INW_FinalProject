@@ -7,11 +7,11 @@
 
         public MongoSetting()
         {
-            //ConnectionString = "mongodb+srv://root:Iwnkfinal%402025@cluster-1.zwy5uec.mongodb.net/?retryWrites=true&w=majority&appName=Cluster-1";
-            //DatabaseName = "INWK_Final_Project";
+            ConnectionString = "mongodb+srv://inwk_share:Inwk%402025@cluster-1.zwy5uec.mongodb.net/?retryWrites=true&w=majority&appName=Cluster-1";
+            DatabaseName = "INWK_Final_Project";
 
-            ConnectionString = "mongodb://localhost:27017";
-            DatabaseName = "INWProject";
+            // ConnectionString = "mongodb://localhost:27017";
+            // DatabaseName = "INWProject";
         }
     }
 }

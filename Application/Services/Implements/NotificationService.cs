@@ -1,27 +1,77 @@
 ﻿using Application.Services.Interfaces;
+using Domain.Entities;
 using Domain.Enums;
+using Infrastructure.Repositories.Interfaces;
 using Infrastructure.SignalRHub;
 using Microsoft.AspNetCore.SignalR;
+using MongoDB.Driver;
+using Shared.Helpers;
 
 namespace Application.Services.Implements
 {
     public class NotificationService : INotificationService
     {
         private readonly IHubContext<NotificationHub> _hubContext;
-
-        public NotificationService(IHubContext<NotificationHub> hubContext)
+        private readonly INotificationRepository _notificationRepository;
+        public NotificationService(IHubContext<NotificationHub> hubContext, INotificationRepository notificationRepository)
         {
             _hubContext = hubContext;
+            _notificationRepository = notificationRepository;
         }
 
-        public async Task SendNotificationAsync(string userId, string message, NotificationType type)
+        public async Task<IEnumerable<NotificationEntity>> SendNotificationToUsersAsync(
+            IEnumerable<string> userIds,
+            string message,
+            NotificationType type,
+            string novelId = null,
+            string novelSlug = null,
+            string forumPostId = null,
+            string avatarUrl = null) // ✅ cho phép null
         {
-            await _hubContext.Clients.User(userId).SendAsync("ReceiveNotification", new
+            if (userIds == null || !userIds.Any())
+                return Enumerable.Empty<NotificationEntity>();
+
+            Console.WriteLine($"[NotificationService] Sending notification to users: {string.Join(", ", userIds)}");
+
+            var nowTicks = TimeHelper.NowTicks;
+            var notifications = userIds.Select(uid => new NotificationEntity
             {
-                message,
-                type,
-                create_at = DateTime.UtcNow.Ticks
+                id = SystemHelper.RandomId(),
+                user_id = uid,
+                type = type,
+                message = message,
+                is_read = false,
+                novel_id = novelId,
+                novel_slug = novelSlug,
+                forum_post_id = forumPostId,
+                avatar_url = avatarUrl, // ✅ có thể null
+                created_at = nowTicks,
+                updated_at = nowTicks
+            }).ToList();
+
+            // 1. Save all notifications to the database
+            await _notificationRepository.CreateAsync(notifications);
+
+            // 2. Send real-time notifications via SignalR
+            var sendTasks = notifications.Select(n =>
+            {
+                Console.WriteLine($"[SignalR] Sending to userId = {n.user_id}, notificationId = {n.id}");
+                return _hubContext.Clients.User(n.user_id).SendAsync("ReceiveNotification", new
+                {
+                    n.id,
+                    n.type,
+                    n.message,
+                    n.novel_id,
+                    n.novel_slug,
+                    n.forum_post_id,
+                    n.avatar_url, // ✅ sẽ null nếu không truyền
+                    n.created_at
+                });
             });
-        }   
+
+            await Task.WhenAll(sendTasks);
+
+            return notifications;
+        }
     }
 }

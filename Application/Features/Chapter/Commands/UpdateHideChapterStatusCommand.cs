@@ -27,38 +27,38 @@ namespace Application.Features.Chapter.Commands
             var userId = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userId))
             {
-                return new ApiResponse { Success = false, Message = "Unauthorized" };
+                return new ApiResponse { Success = false, Message = "Chưa xác thực" };
             }
 
             var chapter = await _chapterRepository.GetByIdAsync(request.ChapterId);
             if (chapter == null)
             {
-                return new ApiResponse { Success = false, Message = "Chapter not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy chương" };
             }
             var novel = await _novelRepository.GetByNovelIdAsync(chapter.novel_id);
             if (novel == null)
             {
-                return new ApiResponse { Success = false, Message = "Novel not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy truyện" };
             }
             if (novel.author_id == null)
             {
-                return new ApiResponse { Success = false, Message = "Novel author not found" };
+                return new ApiResponse { Success = false, Message = "Không tìm thấy tác giả truyện" };
             }
 
             // Kiểm tra quyền
             if (novel.author_id != userId)
             {
-                return new ApiResponse { Success = false, Message = "You do not have permission to update this chapter" };
+                return new ApiResponse { Success = false, Message = "Bạn không có quyền cập nhật chương này" };
             }
 
             await _chapterRepository.UpdateHideChapterStatus(request.ChapterId, request.IsPublic);
 
-            var action = request.IsPublic ? "unhidden" : "hidden";
+            var action = request.IsPublic ? "hiển thị" : "ẩn";
             return new ApiResponse
             {
                 Success = true,
-                Message = $"Novel has been {action} successfully and affected users have been notified."
+                Message = $"Chương đã được {action} thành công và người dùng liên quan đã được thông báo."
             };
-        }   
+        }
     }
 }

@@ -3,6 +3,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
+using Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,12 +20,17 @@ namespace Infrastructure.Repositories.Implements
             mongoDBHelper.CreateCollectionIfNotExistsAsync("notification").Wait();
             _collection = mongoDBHelper.GetCollection<NotificationEntity>("notification");
         }
-        public async Task<NotificationEntity> CreateAsync(NotificationEntity notification)
+        public async Task CreateAsync(List<NotificationEntity> notifications)
         {
+            if (notifications == null || notifications.Count == 0)
+                return;
+
             try
             {
-                await _collection.InsertOneAsync(notification);
-                return notification;
+                await _collection.InsertManyAsync(
+                    notifications,
+                    new InsertManyOptions { IsOrdered = false } // Cho phép tiếp tục nếu 1 phần tử lỗi
+                );
             }
             catch
             {
@@ -59,7 +65,7 @@ namespace Infrastructure.Repositories.Implements
 
         public async Task DeleteOldReadNotificationsAsync()
         {
-            var cutoff = DateTime.UtcNow.AddDays(-30).Ticks;
+            var cutoff = TimeHelper.NowVN.AddDays(-30).Ticks; ;
             var filter = Builders<NotificationEntity>.Filter.And(
                 Builders<NotificationEntity>.Filter.Eq(x => x.is_read, true),
                 Builders<NotificationEntity>.Filter.Lt(x => x.created_at, cutoff)
@@ -86,13 +92,14 @@ namespace Infrastructure.Repositories.Implements
         }
 
 
-
-        public async Task MarkAsReadAsync(string notificationId)
+        public async Task MarkAsReadAsync(IEnumerable<string> notificationIds)
         {
             try
             {
+                var filter = Builders<NotificationEntity>.Filter.In(x => x.id, notificationIds);
                 var update = Builders<NotificationEntity>.Update.Set(x => x.is_read, true);
-                await _collection.UpdateOneAsync(x => x.id == notificationId, update);
+
+                await _collection.UpdateManyAsync(filter, update);
             }
             catch
             {

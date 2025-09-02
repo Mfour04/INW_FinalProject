@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Application.Features.UserFollow.Commands;
 using Application.Features.UserFollow.Queries;
 using MediatR;
@@ -14,7 +14,7 @@ namespace WebApi.Controllers
         private readonly IMediator _mediator;
         private string currentUserId =>
             User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? throw new UnauthorizedAccessException("User ID not found in token");
+            ?? throw new UnauthorizedAccessException("User ID không tìm thấy trong token");
             
 		public UserFollowController(IMediator mediator)
         {
@@ -71,6 +71,20 @@ namespace WebApi.Controllers
             {
                 CurrentUserId = currentUserId,
                 FollowerToRemoveId = followerId
+            };
+
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpGet("status/{targetUserId}")]
+        [Authorize]
+        public async Task<IActionResult> CheckFollowStatus(string targetUserId)
+        {
+            CheckFollowStatus command = new()
+            {
+                FollowerId = currentUserId,
+                TargetUserId = targetUserId
             };
 
             var result = await _mediator.Send(command);

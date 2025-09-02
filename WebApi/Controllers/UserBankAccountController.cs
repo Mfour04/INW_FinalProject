@@ -18,7 +18,6 @@ namespace WebApi.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<ActionResult> GetSupportedBanks()
         {
             var result = await _mediator.Send(new GetSupportedBanks());

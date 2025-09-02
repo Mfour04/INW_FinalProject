@@ -4,11 +4,7 @@ using Infrastructure.InwContext;
 using Infrastructure.Repositories.Interfaces;
 using MongoDB.Driver;
 using Shared.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Shared.Helpers;
 
 namespace Infrastructure.Repositories.Implements
 {
@@ -24,8 +20,8 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                entity.created_at = DateTime.UtcNow.Ticks;
-                entity.updated_at = DateTime.UtcNow.Ticks;
+                entity.created_at = TimeHelper.NowTicks;
+                entity.updated_at = TimeHelper.NowTicks;
                 await _collection.InsertOneAsync(entity);
                 return entity;
             }
@@ -119,7 +115,7 @@ namespace Infrastructure.Repositories.Implements
         {
             try
             {
-                entity.updated_at = DateTime.UtcNow.Ticks;
+                entity.updated_at = TimeHelper.NowTicks;
                 var filter = Builders<ReadingProcessEntity>.Filter.Eq(e => e.id, entity.id);
                 var result = await _collection.ReplaceOneAsync(filter, entity);
                 return entity;

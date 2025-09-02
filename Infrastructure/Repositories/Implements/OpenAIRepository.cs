@@ -11,11 +11,14 @@ namespace Infrastructure.Repositories.Implements
     {
         private readonly IMongoCollection<UserEmbeddingEntity> _userCollection;
         private readonly IMongoCollection<NovelEmbeddingEntity> _novelCollection;
-
+        private readonly IMongoCollection<ChapterContentEmbeddingEntity> _chapterContentCollection;
+        private readonly IMongoCollection<ChapterChunkEmbeddingEntity> _chapterChunkCollection;
         public OpenAIRepository(MongoDBHelper mongoDBHelper)
         {
             _userCollection = mongoDBHelper.GetCollection<UserEmbeddingEntity>("user_embedding");
             _novelCollection = mongoDBHelper.GetCollection<NovelEmbeddingEntity>("novel_embedding");
+            _chapterContentCollection = mongoDBHelper.GetCollection<ChapterContentEmbeddingEntity>("chapter_content_embeddings");
+            _chapterChunkCollection = mongoDBHelper.GetCollection<ChapterChunkEmbeddingEntity>("chapter_chunk_embeddings");
         }
         /// <summary>
         /// Embedding methods
@@ -61,22 +64,6 @@ namespace Infrastructure.Repositories.Implements
             return await _novelCollection.Find(Builders<NovelEmbeddingEntity>.Filter.Empty).ToListAsync();
         }
 
-        //public async Task SaveListNovelEmbeddingAsync(List<string> novelIds, List<float> vector)
-        //{
-        //    var models = novelIds.Select(novelId =>
-        //    {
-        //        var filter = Builders<NovelEmbeddingEntity>.Filter.Eq(x => x.novel_id, novelId);
-        //        var entity = new NovelEmbeddingEntity
-        //        {
-        //            novel_id = novelId,
-        //            vector_novel = vector,
-        //            updated_at = TimeHelper.NowUnixTimeSeconds
-        //        };
-        //        return new ReplaceOneModel<NovelEmbeddingEntity>(filter, entity) { IsUpsert = true };
-        //    }).ToList();
-
-        //    await _novelCollection.BulkWriteAsync(models);
-        //}
         public async Task SaveListNovelEmbeddingAsync(
             List<string> novelIds,
             List<List<float>> vectors,
@@ -119,7 +106,6 @@ namespace Infrastructure.Repositories.Implements
                 await _novelCollection.BulkWriteAsync(models);
             }
         }
-
 
         public async Task<List<string>> GetExistingNovelEmbeddingIdsAsync(List<string> novelIds)
         {
@@ -167,6 +153,84 @@ namespace Infrastructure.Repositories.Implements
                 // Xử lý lỗi nếu cần
                 throw new Exception("Lỗi khi lấy các tiểu thuyết tương tự", ex);
             }
+        }
+
+        public async Task SaveChapterContentEmbeddingAsync(ChapterContentEmbeddingEntity embedding)
+        {
+            try
+            {
+                var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(e => e.chapter_id, embedding.chapter_id);
+
+                var options = new ReplaceOptions { IsUpsert = true };
+
+                await _chapterContentCollection.ReplaceOneAsync(filter, embedding, options);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error when save embedding", ex);
+            }
+        }
+
+        public async Task<bool> ChapterContentEmbeddingExistsAsync(string chapterId)
+        {
+            var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(e => e.chapter_id, chapterId);
+            var count = await _chapterContentCollection.CountDocumentsAsync(filter);
+            return count > 0;
+        }
+
+        public async Task<List<ChapterContentEmbeddingEntity>> GetAllChapterContentEmbedding()
+        {
+            return await _chapterContentCollection.Find(_ => true).ToListAsync();
+        }
+
+        public async Task<ChapterContentEmbeddingEntity> GetChapterContentEmbeddingByIdAsync(string chapterId)
+        {
+            var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(x => x.chapter_id, chapterId);
+            return await _chapterContentCollection.Find(filter).FirstOrDefaultAsync();
+        }
+
+        public async Task UpdateChapterContentEmbeddingAsync(ChapterContentEmbeddingEntity entity)
+        {
+            var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(x => x.chapter_id, entity.chapter_id);
+            await _chapterContentCollection.ReplaceOneAsync(filter, entity, new ReplaceOptions { IsUpsert = false });
+        }
+
+        public async Task<List<ChapterChunkEmbeddingEntity>> GetChunksByChapterIdAsync(string chapterId)
+        {
+            return await _chapterChunkCollection.Find(c => c.chapter_id == chapterId)
+                                         .SortBy(c => c.chunk_index)
+                                         .ToListAsync();
+        }
+
+        public async Task SaveChapterChunksAsync(string chapterId, List<string> chunkTexts, List<List<float>> chunkEmbeddings, string novelId)
+        {
+            if (chunkTexts.Count != chunkEmbeddings.Count)
+                throw new ArgumentException("Số lượng chunkTexts và chunkEmbeddings không khớp.");
+
+            var docs = chunkTexts.Select((text, idx) => new ChapterChunkEmbeddingEntity
+            {
+                chunk_id = SystemHelper.RandomId(),
+                chapter_id = chapterId,
+                novel_id = novelId,
+                chunk_index = idx,
+                chunk_text = text,
+                vector_chunk_content = chunkEmbeddings[idx],
+                created_at = TimeHelper.NowTicks
+            }).ToList();
+
+            await _chapterChunkCollection.InsertManyAsync(docs);
+        }
+
+        public async Task DeleteChapterContentEmbeddingAsync(string chapterId)
+        {
+            var filter = Builders<ChapterContentEmbeddingEntity>.Filter.Eq(x => x.chapter_id, chapterId);
+            await _chapterContentCollection.DeleteOneAsync(filter);
+        }
+
+        public async Task DeleteChapterChunkEmbeddingsByChapterIdAsync(string chapterId)
+        {
+            var filter = Builders<ChapterChunkEmbeddingEntity>.Filter.Eq(x => x.chapter_id, chapterId);
+            await _chapterChunkCollection.DeleteManyAsync(filter);
         }
 
         /// <summary>
