@@ -31,7 +31,7 @@ namespace Application.Features.User.Queries
                 return new ApiResponse { Success = false, Message = "Not found admin" };
             }
             var response = _mapper.Map<UserResponse>(adminUser);
-            return new ApiResponse { Success = true, Message = " found admin", Data = response};
+            return new ApiResponse { Success = true, Message = " found admin", Data = response };
         }
     }
 }
