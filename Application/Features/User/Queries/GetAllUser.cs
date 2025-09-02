@@ -11,7 +11,7 @@ using Shared.Helpers;
 
 namespace Application.Features.User.Queries
 {
-    public class GetAllUser: IRequest<ApiResponse>
+    public class GetAllUser : IRequest<ApiResponse>
     {
         public string SortBy { get; set; } = "";
         public int Page { get; set; } = 0;
@@ -24,8 +24,11 @@ namespace Application.Features.User.Queries
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly ITagRepository _tagRepository;
-        public GetAllUserHanlder(IUserRepository userRepository, IMapper mapper
-            , ITagRepository tagRepository)
+
+        public GetAllUserHanlder(
+            IUserRepository userRepository,
+            IMapper mapper,
+            ITagRepository tagRepository)
         {
             _userRepository = userRepository;
             _mapper = mapper;
@@ -43,20 +46,36 @@ namespace Application.Features.User.Queries
             {
                 Page = request.Page,
                 Limit = request.Limit,
-                SearchTerm = string.IsNullOrWhiteSpace(exact) ? new() : new List<string> { exact },
+                SearchTerm = string.IsNullOrWhiteSpace(exact)
+                    ? new()
+                    : new List<string> { exact },
             };
 
-            var (users, totalCount) = await _userRepository.GetAllUserAsync(findCriteria, sortBy);
+            // Lấy tất cả user (không paginate ngay)
+            var findCriteriaAll = new FindCreterias
+            {
+                Page = 0,
+                Limit = int.MaxValue,
+                SearchTerm = findCriteria.SearchTerm,
+            };
+
+            var (allUsers, _) = await _userRepository.GetAllUserAsync(findCriteriaAll, sortBy);
 
             // Fallback: nếu không có, thử fuzzy
-            if ((users == null || users.Count == 0) && fuzzyTerms.Any())
+            if ((allUsers == null || allUsers.Count == 0) && fuzzyTerms.Any())
             {
-                findCriteria.SearchTerm = fuzzyTerms;
-                (users, totalCount) = await _userRepository.GetAllUserAsync(findCriteria, sortBy);
+                findCriteriaAll.SearchTerm = fuzzyTerms;
+                (allUsers, _) = await _userRepository.GetAllUserAsync(findCriteriaAll, sortBy);
             }
-            users = users?.Where(u => u.role != Role.Admin).ToList() ?? new List<UserEntity>();
-            totalCount = users.Count;
-            if (users == null || users.Count == 0)
+
+            // Filter Admin TRƯỚC KHI paginate
+            var filteredUsers = allUsers?
+                .Where(u => u.role != Role.Admin)
+                .ToList() ?? new List<UserEntity>();
+
+            var totalCount = filteredUsers.Count;
+
+            if (filteredUsers.Count == 0)
             {
                 return new ApiResponse
                 {
@@ -64,13 +83,20 @@ namespace Application.Features.User.Queries
                     Message = "No users found."
                 };
             }
-            var allTagIds = users
-            .Where(u => u.favourite_type != null)
-            .SelectMany(u => u.favourite_type)
-            .Distinct()
-            .ToList();
 
-            // Bước 2: Lấy thông tin tag từ repo
+            // Bây giờ mới paginate
+            var users = filteredUsers
+                .Skip(request.Page * request.Limit)
+                .Take(request.Limit)
+                .ToList();
+
+            // Lấy tất cả Tag
+            var allTagIds = users
+                .Where(u => u.favourite_type != null)
+                .SelectMany(u => u.favourite_type)
+                .Distinct()
+                .ToList();
+
             var tagEntities = await _tagRepository.GetTagsByIdsAsync(allTagIds);
             var tagDict = tagEntities.ToDictionary(t => t.id, t => t.name);
 
@@ -87,16 +113,16 @@ namespace Application.Features.User.Queries
                     {
                         TagId = tagId,
                         Name = tagDict[tagId]
-                    }).ToList();
+                    })
+                    .ToList();
             }
-
 
             int totalPages = (int)Math.Ceiling((double)totalCount / request.Limit);
 
             return new ApiResponse
             {
                 Success = true,
-                Message = "Retrieved novels successfully.",
+                Message = "Retrieved users successfully.",
                 Data = new
                 {
                     Users = userResponseList,
