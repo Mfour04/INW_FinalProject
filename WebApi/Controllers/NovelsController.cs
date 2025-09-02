@@ -51,7 +51,7 @@ namespace WebApi.Controllers
         //}
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] GetNovels query)
+        public async Task<IActionResult> GetAll([FromQuery] GetNovel query)
         {
             // Nếu tag truyền dạng chuỗi "Fantasy,Romance", ta tách ra
             if (query.SearchTagTerm?.Count == 1 && query.SearchTagTerm[0].Contains(','))
