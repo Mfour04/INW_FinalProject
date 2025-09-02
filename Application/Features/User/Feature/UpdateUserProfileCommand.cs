@@ -52,7 +52,7 @@ namespace Application.Features.User.Feature
         public async Task<ApiResponse> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetById(request.UserId);
-            if(user == null)
+            if (user == null)
                 return new ApiResponse { Success = false, Message = "Không tìm thấy người dùng." };
             var oldFavouriteTypes = user.favourite_type ?? new List<string>();
             user.displayname = request.DisplayName;
@@ -105,7 +105,7 @@ namespace Application.Features.User.Feature
             {
                 tagEntities = await _tagRepository.GetTagsByIdsAsync(user.favourite_type);
             }
-          
+
             var response = _mapper.Map<UpdateUserProfileReponse>(user);
 
             response.FavouriteType = tagEntities.Select(tag => new TagListResponse
@@ -114,9 +114,9 @@ namespace Application.Features.User.Feature
                 Name = tag.name
             }).ToList();
 
-            return new ApiResponse 
-            { 
-                Success = true, 
+            return new ApiResponse
+            {
+                Success = true,
                 Message = "Hồ sơ đã được cập nhật thành công.",
                 Data = response
             };
