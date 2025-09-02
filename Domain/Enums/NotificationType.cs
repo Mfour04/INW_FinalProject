@@ -55,7 +55,10 @@ namespace Domain.Enums
         WithdrawRequest,
         WithdrawCancelled,
         WithdrawApproved,
-        WithdrawRejected
+        WithdrawRejected,
+        ForumPostDeleted,
+        ForumCommentDeleted,
+        CommentDeleted
     }
 
 }
