@@ -113,14 +113,18 @@ namespace Application.Features.Novel.Queries
                     ? new List<string>()
                     : await _purchaserRepository.GetPurchasedChaptersAsync(_currentUser.UserId, request.NovelId);
                 var filteredChapters = allChapterEntities
-                .Where(c =>
-                    c.is_public ||
-                    isAuthor ||
-                    isAdmin ||
-                    hasPurchasedFull ||
-                    purchasedChapterIds.Contains(c.id)
-                )
-                .ToList();
+                 .Where(c =>
+                     !c.is_lock && // Ẩn các chapter bị lock
+                     (
+                         c.is_public ||
+                         isAuthor ||
+                         isAdmin ||
+                         hasPurchasedFull ||
+                         purchasedChapterIds.Contains(c.id)
+                     )
+                 )
+                 .ToList();
+
                 var chapterResponse = _mapper.Map<List<ChapterResponse>>(filteredChapters);
                 bool isAccessFull = isAuthor || isAdmin || hasPurchasedFull || (!novel.is_paid && novel.is_public);
 
