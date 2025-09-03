@@ -61,7 +61,6 @@ namespace Application.Features.Novel.Queries
 
                 var author = (await _userRepository.GetUsersByIdsAsync(new List<string> { novel.author_id }))
                .FirstOrDefault(u => u.id == novel.author_id);
-                // hoặc FullName nếu bạn dùng
                 novelResponse.AuthorName = author?.displayname;
 
                 // Lấy danh sách tagId
@@ -91,37 +90,66 @@ namespace Application.Features.Novel.Queries
                 if (!novel.is_public && !isAuthor && !isAdmin && !hasPurchasedFull && !hasPurchasedChapters)
                     return Fail("Truyện này chưa được công khai.");
 
-                var chapterCriteria = new ChapterFindCreterias
-                {
-                    Page = request.Page,
-                    Limit = request.Limit,
-                    ChapterNumber = request.ChapterNumber
-                };
-                var sort = SystemHelper.ParseSortCriteria(request.SortBy);
-
-                var (allChapterEntities, totalChapters, totalPages) = await _chapterRepository.GetPagedByNovelIdAsync(request.NovelId, chapterCriteria, sort);
-                var allChapterIds = allChapterEntities.Select(c => c.id).ToList();
-
-                // Lọc các chương miễn phí
-                var freeChapterIds = allChapterEntities
-                    .Where(c => !c.is_paid)
-                    .Select(c => c.id)
-                    .ToList();
-
-                // Chương đã mua (nếu chưa mua full)
+                // Lấy purchased chapters trước để filter
                 var purchasedChapterIds = hasPurchasedFull
                     ? new List<string>()
                     : await _purchaserRepository.GetPurchasedChaptersAsync(_currentUser.UserId, request.NovelId);
-                var filteredChapters = allChapterEntities
-                .Where(c =>
-                    c.is_public ||
-                    isAuthor ||
-                    isAdmin ||
-                    hasPurchasedFull ||
-                    purchasedChapterIds.Contains(c.id)
-                )
-                .ToList();
-                var chapterResponse = _mapper.Map<List<ChapterResponse>>(filteredChapters);
+
+                // Lấy tất cả chapters có thể truy cập được
+                var allChaptersExpanded = await _chapterRepository.GetPagedByNovelIdAsync(
+                    request.NovelId,
+                    new ChapterFindCreterias
+                    {
+                        Page = 0,
+                        Limit = int.MaxValue,
+                        ChapterNumber = request.ChapterNumber
+                    },
+                    SystemHelper.ParseSortCriteria(request.SortBy)
+                );
+
+                // Filter chapters theo quyền truy cập
+                var accessibleChapters = allChaptersExpanded.Item1
+                    .Where(c =>
+                        !c.is_lock && // Ẩn các chapter bị lock
+                        (
+                            c.is_public ||
+                            isAuthor ||
+                            isAdmin ||
+                            hasPurchasedFull ||
+                            purchasedChapterIds.Contains(c.id)
+                        )
+                    )
+                    .ToList();
+
+                // Tìm chapter được cập nhật gần nhất từ tất cả accessible chapters
+                var latestUpdatedChapter = accessibleChapters
+                    .Where(c => c.created_at != null)
+                    .OrderByDescending(c => c.created_at)
+                    .FirstOrDefault();
+
+                ChapterResponse latestChapterResponse = null;
+                if (latestUpdatedChapter != null)
+                {
+                    latestChapterResponse = _mapper.Map<ChapterResponse>(latestUpdatedChapter);
+                }
+
+                // Phân trang trên kết quả đã filter
+                var totalFilteredChapters = accessibleChapters.Count;
+                var totalFilteredPages = (int)Math.Ceiling((double)totalFilteredChapters / request.Limit);
+
+                var pagedChapters = accessibleChapters
+                    .Skip(request.Page * request.Limit)
+                    .Take(request.Limit)
+                    .ToList();
+
+                var chapterResponse = _mapper.Map<List<ChapterResponse>>(pagedChapters);
+
+                // Lọc các chương miễn phí từ tất cả chapters (không chỉ từ paged)
+                var freeChapterIds = allChaptersExpanded.Item1
+                    .Where(c => !c.is_paid && !c.is_lock)
+                    .Select(c => c.id)
+                    .ToList();
+
                 bool isAccessFull = isAuthor || isAdmin || hasPurchasedFull || (!novel.is_paid && novel.is_public);
 
                 string message = isAccessFull
@@ -136,11 +164,13 @@ namespace Application.Features.Novel.Queries
                     {
                         NovelInfo = novelResponse,
                         AllChapters = chapterResponse,
+                        LatestUpdatedChapter = latestChapterResponse, // Chapter được cập nhật gần nhất
                         IsAccessFull = isAccessFull,
                         FreeChapters = freeChapterIds,
                         PurchasedChapterIds = isAccessFull ? null : purchasedChapterIds,
-                        TotalChapters = totalChapters,
-                        TotalPages = totalPages,
+                        TotalChapters = totalFilteredChapters, // Số chapter sau khi filter
+                        ChapterInCurrentPage = pagedChapters.Count,
+                        TotalPages = totalFilteredPages // Số page sau khi filter
                     }
                 };
             }

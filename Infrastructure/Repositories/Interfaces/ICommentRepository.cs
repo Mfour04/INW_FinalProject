@@ -9,6 +9,7 @@ namespace Infrastructure.Repositories.Interfaces
         Task<bool> UpdateAsync(string id, CommentEntity entity);
         Task<bool> DeleteAsync(string id);
         Task<bool> DeleteRepliesByParentIdAsync(string parentId);
+        Task DeleteChapterCommentsAsync(string chapterId);
         Task DeleteManyAsync(List<string> ids);
         Task<CommentEntity> GetByIdAsync(string commentId);
         Task<List<CommentEntity>> GetCommentsByNovelIdAsync(string novelId, FindCreterias creterias, List<SortCreterias> sortCreterias);

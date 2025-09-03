@@ -205,6 +205,7 @@ namespace WebApi.Controllers
             var result = await _mediator.Send(new CheckSlug { Slug = slugName });
             return Ok(result);
         }
+
         [HttpGet("recommend-by-novelid/{novelId}")]
         public async Task<IActionResult> GetRecommendByNovelId(string novelId, [FromQuery] int topN = 10)
         {

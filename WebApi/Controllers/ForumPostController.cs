@@ -52,7 +52,7 @@ namespace WebApi.Controllers
 
         [HttpPut("{id}")]
         [Authorize]
-        public async Task<IActionResult> EditPost(string id, [FromBody] UpdatePostCommand command)
+        public async Task<IActionResult> EditPost(string id, [FromForm] UpdatePostCommand command)
         {
             command.UserId = currentUserId;
             command.Id = id;

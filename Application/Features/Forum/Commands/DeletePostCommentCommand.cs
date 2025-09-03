@@ -1,5 +1,6 @@
 ﻿using Application.Services.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
@@ -16,15 +17,20 @@ namespace Application.Features.Forum.Commands
         private readonly IForumCommentRepository _commentRepo;
         private readonly IForumPostRepository _postRepo;
         private readonly ICurrentUserService _currentUser;
-
+        private readonly ICurrentUserService _currentUserService;
+        private readonly INotificationService _notificationService;
         public DeletePostCommentCommandHandler(
             IForumCommentRepository commentRepo,
             IForumPostRepository postRepo,
-            ICurrentUserService currentUser)
+            ICurrentUserService currentUser,
+            ICurrentUserService currentUserService,
+            INotificationService notificationService)
         {
             _commentRepo = commentRepo;
             _postRepo = postRepo;
             _currentUser = currentUser;
+            _currentUserService = currentUserService;
+            _notificationService = notificationService;
         }
 
         public async Task<ApiResponse> Handle(DeletePostCommentCommand request, CancellationToken cancellationToken)
@@ -61,6 +67,15 @@ namespace Application.Features.Forum.Commands
             {
                 var totalDeleted = 1 + replyIds.Count;
                 await _postRepo.DecrementCommentsAsync(postId, totalDeleted);
+            }
+
+            if (_currentUser.IsAdmin() && comment.user_id != _currentUser.UserId)
+            {
+                await _notificationService.SendNotificationToUsersAsync(
+                    new[] { comment.user_id },
+                    "1 bình luận của bạn trong một bài đăng trên diễn đàn đã bị quản trị viên xóa vì vi phạm tiêu chuẩn cộng đồng.",
+                    NotificationType.ForumCommentDeleted
+                    );
             }
 
             return new ApiResponse

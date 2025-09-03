@@ -139,5 +139,71 @@ namespace Application.Services.Implements
 
             return (await Task.WhenAll(uploadTasks)).ToList();
         }
+
+        public async Task<bool> DeleteMultipleImagesAsync(List<string>? imageUrls)
+        {
+            if (imageUrls == null || imageUrls.Count == 0)
+                return false;
+
+            var allOk = true;
+
+            foreach (var imageUrl in imageUrls)
+            {
+                if (string.IsNullOrWhiteSpace(imageUrl))
+                    continue;
+
+                try
+                {
+                    var uri = new Uri(imageUrl);
+                    var path = uri.AbsolutePath;
+
+                    var uploadIndex = path.IndexOf("/upload/", StringComparison.OrdinalIgnoreCase);
+                    if (uploadIndex == -1)
+                    {
+                        allOk = false;
+                        continue;
+                    }
+
+                    var afterUpload = path.Substring(uploadIndex + "/upload/".Length);
+                    var segments = afterUpload.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+                    if (segments.Count > 0
+                        && segments[0].StartsWith("v", StringComparison.OrdinalIgnoreCase)
+                        && long.TryParse(segments[0].Substring(1), out _))
+                    {
+                        segments.RemoveAt(0);
+                    }
+
+                    if (segments.Count == 0)
+                    {
+                        allOk = false;
+                        continue;
+                    }
+
+                    var publicIdWithExt = string.Join("/", segments);
+                    var publicId = Path.ChangeExtension(publicIdWithExt, null);
+
+                    var deletionParams = new DeletionParams(publicId);
+                    var result = await _cloudDinary.DestroyAsync(deletionParams);
+
+                    if (result.Error != null)
+                    {
+                        allOk = false;
+                        continue;
+                    }
+
+                    if (!string.Equals(result.Result, "ok", StringComparison.OrdinalIgnoreCase))
+                    {
+                        allOk = false;
+                    }
+                }
+                catch
+                {
+                    allOk = false;
+                }
+            }
+
+            return allOk;
+        }
     }
 }

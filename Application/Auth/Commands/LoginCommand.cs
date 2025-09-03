@@ -45,38 +45,48 @@ namespace Application.Auth.Commands
         {
             if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Password))
             {
-                throw new ApiException("Email and Password are required.");
+                return new ApiResponse
+                {
+                    Success = true,
+                    Message = "Sai tài khoản hoặc mật khẩu",
+                    Data = null
+                };
             }
 
             var user = await _userRepository.GetByName(request.UserName);
             if (user == null)
             {
-                throw new ApiException("Invalid userName or password.");
-            }
-
-            if (user.is_banned)
-            {
-                if (TimeHelper.IsBanExpired(user.banned_until))
+                return new ApiResponse
                 {
-                    // Ban đã hết hạn => tự động gỡ ban
-                    user.is_banned = false;
-                    user.banned_until = null;
-                    await _userRepository.UpdateLockvsUnLockUser(user.id, false, null);
-                    await _notificationService.SendNotificationToUsersAsync(new List<string> { user.id }, "Your account has been automatically unlocked after the lock period.", NotificationType.UnBanUser);
-                }               
-                else
-                {
-                    // Ban chưa hết hạn => chặn đăng nhập
-                    var bannedUntilText = TimeHelper.FromTicks(user.banned_until.Value).ToString("HH:mm dd/MM/yyyy");
-                    throw new ApiException($"This account will be banned until {bannedUntilText}.");
-                }
+                    Success = true,
+                    Message = "Sai tài khoản hoặc mật khẩu",
+                    Data = null
+                };
             }
 
             // Kiểm tra mật khẩu
             var isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.password);
             if (!isValidPassword)
             {
-                throw new ApiException("Invalid email or password.");
+                return new ApiResponse
+                {
+                    Success = true,
+                    Message = "Sai tài khoản hoặc mật khẩu",
+                    Data = null
+                };
+            }
+
+            // Nếu user bị ban mà hết hạn thì gỡ ban
+            if (user.is_banned && TimeHelper.IsBanExpired(user.banned_until))
+            {
+                user.is_banned = false;
+                user.banned_until = null;
+                await _userRepository.UpdateLockvsUnLockUser(user.id, false, null);
+                await _notificationService.SendNotificationToUsersAsync(
+                    new List<string> { user.id },
+                    "Your account has been automatically unlocked after the lock period.",
+                    NotificationType.UnBanUser
+                );
             }
 
             var accessToken = _jwtHelpers.Generate(user.id, user.username, user.role.ToString());
@@ -87,6 +97,7 @@ namespace Application.Auth.Commands
             {
                 tagEntities = await _tagRepository.GetTagsByIdsAsync(user.favourite_type);
             }
+
             var userResponse = _mapper.Map<UserResponse>(user);
             userResponse.FavouriteType = tagEntities.Select(tag => new TagListResponse
             {
@@ -94,10 +105,11 @@ namespace Application.Auth.Commands
                 Name = tag.name
             }).ToList();
             userResponse.LastLogin = TimeHelper.NowVN.Ticks;
+
             return new ApiResponse
             {
                 Success = true,
-                Message = "Login successful.",
+                Message = "Đăng nhập thành công",
                 Data = new TokenResult
                 {
                     AccessToken = accessToken,

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Application.Features.User.Feature
 {
-    public class UpdateUserToAdminCommand: IRequest<ApiResponse>
+    public class UpdateUserToAdminCommand : IRequest<ApiResponse>
     {
         public string UserId { get; set; }
     }

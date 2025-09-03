@@ -1,16 +1,9 @@
 ﻿using AutoMapper;
-using DnsClient;
-using Infrastructure.Repositories.Implements;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Shared.Contracts.Response;
 using Shared.Contracts.Response.Novel;
 using Shared.Contracts.Response.Tag;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Features.Novel.Queries
 {

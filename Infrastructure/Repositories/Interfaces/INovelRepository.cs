@@ -7,7 +7,12 @@ namespace Infrastructure.Repositories.Interfaces
 {
     public interface INovelRepository
     {
-        Task<(List<NovelEntity> Novels, int TotalCount)> GetAllNovelAsync(FindCreterias filter, List<SortCreterias> sort);
+        Task<(List<NovelEntity> Novels, int TotalCount)> GetAllNovelAsync(
+            FindCreterias creterias,
+            List<SortCreterias> sortCreterias,
+            bool isAdmin,
+            string currentUserId
+        );
         Task<NovelEntity> GetByNovelIdAsync(string novelId);
         Task<NovelEntity> GetBySlugAsync(string slugName);
         Task<NovelEntity> CreateNovelAsync(NovelEntity entity);
@@ -29,5 +34,6 @@ namespace Infrastructure.Repositories.Interfaces
         Task<List<WeeklyStatItem>> CountNovelsPerDayCurrentWeekAsync();
         Task UpdateNovelPriceAsync(string novelId);
         Task UpdateIsPaidAsync(string novelId, bool isPaid);
+        Task<long> GetTotalViewsAsync();
     }
 }

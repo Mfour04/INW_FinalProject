@@ -1,8 +1,8 @@
 ﻿using Application.Features.Admin.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Contracts.Response.Admin;
 
 namespace WebApi.Controllers
 {
@@ -11,10 +11,12 @@ namespace WebApi.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IMediator _mediator;
+
         public AdminController(IMediator mediator)
         {
             _mediator = mediator;
         }
+
         [HttpGet("admin-dashboard")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAdminDashboardStats()
@@ -25,6 +27,14 @@ namespace WebApi.Controllers
                 return Ok(result);
             }
             return BadRequest(result);
+        }
+
+        [HttpGet("analysis")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> GetTotalViews([FromQuery] GetAdminAnalysis request)
+        {
+            var result = await _mediator.Send(request);
+            return Ok(result);
         }
     }
 }
