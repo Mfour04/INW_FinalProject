@@ -138,8 +138,8 @@ namespace Application.Features.Novel.Queries
 
             // Tìm chapter được cập nhật gần nhất từ tất cả accessible chapters
             var latestUpdatedChapter = allAccessibleChapters
-                .Where(c => c.updated_at != null)
-                .OrderByDescending(c => c.updated_at)
+                .Where(c => c.created_at != null)
+                .OrderByDescending(c => c.created_at)
                 .FirstOrDefault();
 
             ChapterResponse latestChapterResponse = null;
