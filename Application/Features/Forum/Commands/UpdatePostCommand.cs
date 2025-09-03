@@ -4,7 +4,6 @@ using Infrastructure.Repositories.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Shared.Contracts.Response;
-using Shared.Helpers;
 
 namespace Application.Features.Forum.Commands
 {
@@ -12,9 +11,9 @@ namespace Application.Features.Forum.Commands
     {
         public string? Id { get; set; }
         public string? UserId { get; set; }
-        public string Content { get; set; }
-        public List<IFormFile>? Images { get; set; }
-        public string? RemovedImageUrls { get; set; } 
+        public string Content { get; set; } = string.Empty;
+        public List<string>? KeepUrls { get; set; }
+        public List<IFormFile>? NewImages { get; set; }
     }
 
     public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, ApiResponse>
@@ -30,60 +29,76 @@ namespace Application.Features.Forum.Commands
 
         public async Task<ApiResponse> Handle(UpdatePostCommand request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(request.Content))
-                return Fail("Nội dung không được để trống.");
+            if (string.IsNullOrWhiteSpace(request.Id))
+                return Fail("Thiếu Id bài đăng.");
 
             var post = await _postRepo.GetByIdAsync(request.Id);
             if (post == null)
                 return Fail("Không tìm thấy bài đăng.");
-
             if (post.user_id != request.UserId)
                 return Fail("Bạn không có quyền chỉnh sửa bài đăng này.");
 
-            // Handle image updates
-            var currentImages = post.img_urls ?? new List<string>();
-            var updatedImages = new List<string>(currentImages);
+            var valid = ValidateUpdate(request, post);
+            if (!valid.IsValid) return valid.FailResponse!;
 
-            // Remove images that were marked for deletion
-            if (!string.IsNullOrWhiteSpace(request.RemovedImageUrls))
+            var oldUrls = post.img_urls ?? new List<string>();
+            var keepUrls = request.KeepUrls?.Where(u => !string.IsNullOrWhiteSpace(u)).Distinct().ToList() ?? new List<string>();
+
+            var toDelete = oldUrls.Except(keepUrls).ToList();
+            if (toDelete.Count > 0)
             {
-                var removedUrls = request.RemovedImageUrls.Split(',').ToList();
-                
-                updatedImages = updatedImages.Where(img => !removedUrls.Contains(img)).ToList();
+                await _cloudDinaryService.DeleteMultipleImagesAsync(toDelete);
             }
 
-            // Upload new images
-            if (request.Images != null && request.Images.Any())
+            var newUploaded = new List<string>();
+            if (request.NewImages != null && request.NewImages.Count > 0)
             {
-                var newImages = await _cloudDinaryService.UploadMultipleImagesAsync(request.Images, CloudFolders.Forums);
-                updatedImages.AddRange(newImages);
+                newUploaded = await _cloudDinaryService.UploadMultipleImagesAsync(request.NewImages, CloudFolders.Forums);
+                if (newUploaded == null || newUploaded.Count == 0)
+                    return Fail("Tải ảnh lên thất bại.");
             }
 
-            ForumPostEntity updated = new()
+            var finalUrls = new List<string>(keepUrls.Count + newUploaded.Count);
+            finalUrls.AddRange(keepUrls);
+            finalUrls.AddRange(newUploaded);
+
+            var updated = new ForumPostEntity
             {
-                content = request.Content,
-                img_urls = updatedImages
+                content = (request.Content ?? string.Empty).Trim(),
+                img_urls = finalUrls
             };
 
-            var success = await _postRepo.UpdateAsync(request.Id, updated);
-            
-            if (!success)
-                return Fail("Cập nhật bài đăng thất bại.");
+            var success = await _postRepo.UpdateAsync(request.Id!, updated);
+            if (!success) return Fail("Cập nhật bài đăng thất bại.");
 
-            // Verify the update by fetching the post again
-            var updatedPost = await _postRepo.GetByIdAsync(request.Id);
-
-            return new ApiResponse
-            {
-                Success = true,
-                Message = "Cập nhật bài đăng thành công."
-            };
+            return new ApiResponse { Success = true, Message = "Cập nhật bài đăng thành công." };
         }
 
-        private ApiResponse Fail(string message) => new()
+        /// <summary>
+        /// Không cho phép bài đăng trở thành "rỗng": sau update phải còn content hoặc ít nhất một hình ảnh.
+        /// </summary>
+        private (bool IsValid, ApiResponse? FailResponse) ValidateUpdate(UpdatePostCommand request, ForumPostEntity post)
         {
-            Success = false,
-            Message = message
-        };
+            var newContent = (request.Content ?? string.Empty).Trim();
+            bool hasContentAfter = !string.IsNullOrWhiteSpace(newContent);
+
+            var keepUrls = request.KeepUrls?.Where(u => !string.IsNullOrWhiteSpace(u)).Distinct().ToList() ?? new List<string>();
+            bool hasNew = request.NewImages != null && request.NewImages.Count > 0;
+
+            bool willHaveImages = keepUrls.Any() || hasNew;
+
+            if (!hasContentAfter && !willHaveImages)
+            {
+                return (false, new ApiResponse
+                {
+                    Success = false,
+                    Message = "Bài viết phải còn nội dung hoặc ít nhất một hình ảnh."
+                });
+            }
+
+            return (true, null);
+        }
+
+        private static ApiResponse Fail(string message) => new() { Success = false, Message = message };
     }
 }

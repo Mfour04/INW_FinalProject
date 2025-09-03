@@ -35,10 +35,6 @@ builder.Services.AddSingleton<MongoDBHelper>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
 
-// Add Cloudinary configuration
-builder.Services.Configure<Domain.Entities.System.CloudinarySettings>(
-    builder.Configuration.GetSection("CloudinarySettings"));
-
 builder.Services.AddMediatR(config =>
 {
     config.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);

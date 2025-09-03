@@ -97,13 +97,8 @@ namespace Infrastructure.Repositories.Implements
 
                 var update = Builders<ForumPostEntity>
                     .Update.Set(x => x.content, entity.content ?? post.content)
+                    .Set(x => x.img_urls, entity.img_urls ?? post.img_urls)
                     .Set(x => x.updated_at, TimeHelper.NowTicks);
-
-                // Add image URLs update if provided
-                if (entity.img_urls != null)
-                {
-                    update = update.Set(x => x.img_urls, entity.img_urls);
-                }
 
                 var updated = await _collection.FindOneAndUpdateAsync(
                     filter,
