@@ -127,32 +127,43 @@ namespace WebApi.Controllers
         {
             var result = await _mediator.Send(request);
 
-            if (!result.Success)
-                return BadRequest(result);
+            TokenResult? tokenData = null;
+            string message;
 
-            // Gắn JWT vào cookie nếu đăng nhập thành công
-            var tokenData = result.Data as TokenResult;
-            var accessToken = tokenData?.AccessToken;
-
-            if (!string.IsNullOrEmpty(accessToken))
+            if (!result.Success || result.Data == null)
             {
-                // ✅ Gắn JWT accessToken vào cookie
-                Response.Cookies.Append("jwt", accessToken, new CookieOptions
+                // Trường hợp login fail
+                message = "Sai tài khoản hoặc mật khẩu";
+            }
+            else
+            {
+                // Trường hợp login thành công
+                tokenData = result.Data as TokenResult;
+                message = "Đăng nhập thành công";
+
+                // Gắn JWT vào cookie nếu có accessToken
+                var accessToken = tokenData?.AccessToken;
+                if (!string.IsNullOrEmpty(accessToken))
                 {
-                    HttpOnly = true,
-                    Secure = true, // để bảo mật hơn khi chạy https
-                    SameSite = SameSiteMode.None, // nếu dùng frontend khác domain
-                    Expires = TimeHelper.NowVN.AddHours(1)
-                });
+                    Response.Cookies.Append("jwt", accessToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.None,
+                        Expires = TimeHelper.NowVN.AddHours(1)
+                    });
+                }
             }
 
-
+            // Trả về ApiResponse với token
             return Ok(new
             {
-                message = "Đăng nhập thành công",
-                token = result.Data
+                success = result.Success,
+                message,
+                token = tokenData
             });
         }
+
 
         // Endpoint chỉ admin có thể truy cập
         [Authorize(Roles = "Admin")]

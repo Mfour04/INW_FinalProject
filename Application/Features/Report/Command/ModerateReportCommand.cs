@@ -36,7 +36,7 @@ namespace Application.Features.Report.Command
             ICommentRepository commentRepo,
             IForumPostRepository forumPostRepo,
             IForumCommentRepository forumCommentRepo,
-            ICurrentUserService currentUser, 
+            ICurrentUserService currentUser,
             INotificationService notificationService,
             IUserRepository userRepo)
         {
@@ -104,8 +104,8 @@ namespace Application.Features.Report.Command
             var reporter = await _userRepo.GetById(report.reporter_id);
             if (reporter != null)
             {
-                string statusText = request.Status.ToString();
-                string actionText = request.Action.ToString();
+                string statusText = EnumTranslations.ReportStatusVi.TryGetValue(request.Status, out var s) ? s : request.Status.ToString();
+                string actionText = EnumTranslations.ModerationActionVi.TryGetValue(request.Action, out var a) ? a : request.Action.ToString();
                 string note = string.IsNullOrEmpty(request.ModeratorNote) ? "" : $"\nGhi chú: {request.ModeratorNote}";
 
                 string message =
@@ -147,7 +147,7 @@ namespace Application.Features.Report.Command
                         return await ModerateForumPostAsync(r.forum_post_id, action);
                     case ReportScope.ForumComment:
                         return await ModerateForumCommentAsync(r.forum_comment_id, action);
-                    case ReportScope.User: // NEW
+                    case ReportScope.User: 
                         return await ModerateUserAsync(r.target_user_id, action, suspendUntilTicks);
                     default: return false;
                 }
@@ -270,6 +270,27 @@ namespace Application.Features.Report.Command
                     // Action không áp dụng cho user (HideResource/DeleteResource...) => coi như no-op
                     return true;
             }
+        }
+
+        private static class EnumTranslations
+        {
+            public static readonly Dictionary<ReportStatus, string> ReportStatusVi = new()
+            {
+                { ReportStatus.Pending, "Đang chờ xử lý" },
+                { ReportStatus.Resolved, "Đã xử lý" },
+                { ReportStatus.Rejected, "Bị từ chối" },
+                { ReportStatus.Ignored, "Bị bỏ qua" }
+            };
+
+            public static readonly Dictionary<ModerationAction, string> ModerationActionVi = new()
+            {
+                { ModerationAction.None, "Không có" },
+                { ModerationAction.HideResource, "Ẩn tài nguyên" },
+                { ModerationAction.DeleteResource, "Xóa tài nguyên" },
+                { ModerationAction.WarnUser, "Cảnh cáo người dùng" },
+                { ModerationAction.SuspendUser, "Tạm khóa tài khoản" },
+                { ModerationAction.BanUser, "Cấm vĩnh viễn" }
+            };
         }
     }
 }

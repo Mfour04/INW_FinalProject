@@ -86,6 +86,14 @@ namespace Application.Features.Novel.Queries
             var sort = SystemHelper.ParseSortCriteria(request.SortBy);
 
             var (allChapterEntities, totalChapters, totalPages) = await _chapterRepo.GetPagedByNovelIdAsync(novel.id, chapterCriteria, sort);
+
+            if (!isAuthor && !isAdmin)
+            {
+                allChapterEntities = allChapterEntities
+                    .Where(c => !c.is_lock)
+                    .ToList();
+            }
+
             var allChapterIds = allChapterEntities.Select(c => c.id).ToList();
             var chapterResponse = _mapper.Map<List<ChapterResponse>>(allChapterEntities);
 
